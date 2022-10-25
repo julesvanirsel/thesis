@@ -1,0 +1,100 @@
+
+2:54
+
+slide 5:  "can see ... currents", how do we see that?
+
+magnetosphere has currents fron distortion
+
+**streamline
+
+sl6:  add an image?  use your cartoon up front
+
+sl7:  add an image (add icon of cartoon)
+
+sl8:  kelley/brekke ref
+add jpar(x,y) for 2d map ref;  add an image, perhaps a contour output plot
+
+sl9:  we're >> were
+
+sl10:  why is fujii 3d?
+
+sl11: verbal ref to kaeppler hall thought? "as we discussed
+using gemini for isinglass and arcs, the idea of hall/ dissipationletss became intereting"
+
+***before thesis statement, need some more about open questions, 
+how ionosphere chooses, wht is meant by "self consistent" solution, "reading the aurora"
+
+(3:02) thesis statement
+
+sl16: don't say "the potential of .." 
+
+sl17:  refs for gemini?  or on earlier slide?
+
+sl19:  adjust for drive 2, solve one two ways
+
+sl21:  show examples of driving maps
+
+(3:07)
+
+sl22:  replicate cite clayton2019
+show two different cases (drive wtih flow, find j, and vv)
+
+sl23:  decide what to say, introduce the 4panel maps
+
+sl24: clayton19 ref not 21
+--glow, show example different spectra and why might matter
+--write out SEA
+
+sl27:  add background color for strength of j?  anything to indicate relative dominance of which currents
+--introduce the idea of a vertical cut of the model space, and
+of the output data
+--need to have some cuts before this new plot
+
+sl28: with movie say explicitly connects out into along-arc direciton
+
+sl29: don't say "current";  do say "Alfvenic" in first bullet
+
+(3:16)
+
+sl32: not enough pictures, don't do all in words
+
+sl33: spend more time here, walk through axes
+
+sl39,40:  talk more re current artifacts (blow up);
+filamentary currecnt from an along-arc driver
+
+various:  add figure headings to different run examples
+
+sl43: note sharc seen at poker (show?);  does sharc include full current sheet**distinguish
+
+sl46:  cross-ref to ted/picket
+
+sl48:  careful with dismissive "anyways"
+--refer back to alex study (flow chart?)
+
+sl49:  why "suppression" step?
+
+sl52:
+(3:26)
+
+**need some closure to science plan before movign to schedule/tasks
+**after sl50, need some bridege/closure, why all cool, reading 
+the aurora, exciteing.
+
+sl53:  can't see purple text;  and, fix link
+--decide what to say, ***streaminline
+
+
+slide 58:  studies >> studied
+
+sl59:  AFU
+--will aim to pass >> will complete
+
+sl60:  other groups?
+
+sl61:  better ending
+
+
+
+
+
