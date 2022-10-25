@@ -381,7 +381,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylim([min(ALT_p(:)),alt_hsv_p])
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
-            mkdir(direc,'plots',folder);
+            mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
@@ -422,7 +422,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.Exponent = clb_exp;
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
-            mkdir(direc,'plots',folder);
+            mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
@@ -515,7 +515,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clim(j1_range_p)
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
-            mkdir(direc,'plots',folder);
+            mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
@@ -653,7 +653,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             yline(alt_rac_p,'r--')
 
             if ~exist(fullfile(direc,'plots',folder),'dir')
-                mkdir(direc,'plots',folder);
+                mkdir(direc,fullfile('plots',folder));
             end
             filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
             disp(['Saving: ',filename])
@@ -723,7 +723,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clim(v2_range_p)
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
-            mkdir(direc,'plots',folder);
+            mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
@@ -836,7 +836,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.Exponent = clb_exp;
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
-            mkdir(direc,'plots',folder);
+            mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
@@ -959,7 +959,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         xline(mlon_rac_p,'r--')
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
-            mkdir(direc,'plots',folder);
+            mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
@@ -1114,7 +1114,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             end
 
             if ~exist(fullfile(direc,'plots',folder),'dir')
-                mkdir(direc,'plots',folder);
+                mkdir(direc,fullfile('plots',folder));
             end
             filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
             disp(['Saving: ',filename])
@@ -1212,7 +1212,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         xline(mlon_rac_p,'r--')
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
-            mkdir(direc,'plots',folder);
+            mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
