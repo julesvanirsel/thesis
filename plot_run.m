@@ -294,7 +294,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % closure current plot
     if ismember('closure',plots)
-        folder = 'plots_closure';
+        folder = 'closure';
         suffix = 'clos';
 
         figure
@@ -380,10 +380,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clim(jH_range_p)
         ylim([min(ALT_p(:)),alt_hsv_p])
 
-        if ~exist(fullfile(direc,folder),'dir')
-            mkdir(direc,folder);
+        if ~exist(fullfile(direc,'plots',folder),'dir')
+            mkdir(direc,'plots',folder);
         end
-        filename = fullfile(direc,folder,[filename_prefix,'_',suffix,'.png']);
+        filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
         saveas(gcf,filename)
         close all
@@ -391,7 +391,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % conductance plot
     if ismember('conductance',plots)
-        folder = 'plots_conductance';
+        folder = 'conductance';
         suffix = 'cond';
 
         figure
@@ -421,10 +421,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
 
-        if ~exist(fullfile(direc,folder),'dir')
-            mkdir(direc,folder);
+        if ~exist(fullfile(direc,'plots',folder),'dir')
+            mkdir(direc,'plots',folder);
         end
-        filename = fullfile(direc,folder,[filename_prefix,'_',suffix,'.png']);
+        filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
         saveas(gcf,filename)
         close all
@@ -432,7 +432,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % continuity plot
     if ismember('continuity',plots)
-        folder = 'plots_continuity';
+        folder = 'continuity';
         suffix = 'cont';
 
         figure
@@ -514,10 +514,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
 
-        if ~exist(fullfile(direc,folder),'dir')
-            mkdir(direc,folder);
+        if ~exist(fullfile(direc,'plots',folder),'dir')
+            mkdir(direc,'plots',folder);
         end
-        filename = fullfile(direc,folder,[filename_prefix,'_',suffix,'.png']);
+        filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
         saveas(gcf,filename)
         close all
@@ -527,10 +527,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     if ismember('contour',plots)
         for isauto = [0,1]
             if isauto
-                folder = 'plots_contour-auto';
+                folder = 'contour-auto';
                 title_suffix = ' (autocolored)';
             else
-                folder = 'plots_contour-standard';
+                folder = 'contour-standard';
                 title_suffix = '';
             end
             suffix = 'cntr';
@@ -652,10 +652,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             end
             yline(alt_rac_p,'r--')
 
-            if ~exist(fullfile(direc,folder),'dir')
-                mkdir(direc,folder);
+            if ~exist(fullfile(direc,'plots',folder),'dir')
+                mkdir(direc,'plots',folder);
             end
-            filename = fullfile(direc,folder,[filename_prefix,'_',suffix,'.png']);
+            filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
             disp(['Saving: ',filename])
             saveas(gcf,filename)
             close all
@@ -664,7 +664,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % density plot
     if ismember('density',plots)
-        folder = 'plots_density';
+        folder = 'density';
         suffix = 'dens';
 
         figure
@@ -722,10 +722,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.Exponent = clb_exp;
         clim(v2_range_p)
 
-        if ~exist(fullfile(direc,folder),'dir')
-            mkdir(direc,folder);
+        if ~exist(fullfile(direc,'plots',folder),'dir')
+            mkdir(direc,'plots',folder);
         end
-        filename = fullfile(direc,folder,[filename_prefix,'_',suffix,'.png']);
+        filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
         saveas(gcf,filename)
         close all
@@ -733,7 +733,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % flow-current-conductance-precipitation plot
     if ismember('fccp',plots)
-        folder = 'plots_fccp';
+        folder = 'fccp';
         suffix = 'fccp';
 
         figure
@@ -835,10 +835,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
 
-        if ~exist(fullfile(direc,folder),'dir')
-            mkdir(direc,folder);
+        if ~exist(fullfile(direc,'plots',folder),'dir')
+            mkdir(direc,'plots',folder);
         end
-        filename = fullfile(direc,folder,[filename_prefix,'_',suffix,'.png']);
+        filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
         saveas(gcf,filename)
         close all
@@ -846,7 +846,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % joule heating plot
     if ismember('joule',plots)
-        folder = 'plots_jouleheating';
+        folder = 'jouleheating';
         suffix = 'joul';
 
         figure
@@ -958,10 +958,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clim([-1,1]*5)
         xline(mlon_rac_p,'r--')
 
-        if ~exist(fullfile(direc,folder),'dir')
-            mkdir(direc,folder);
+        if ~exist(fullfile(direc,'plots',folder),'dir')
+            mkdir(direc,'plots',folder);
         end
-        filename = fullfile(direc,folder,[filename_prefix,'_',suffix,'.png']);
+        filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
         saveas(gcf,filename)
         close all
@@ -971,10 +971,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     if ismember('multi',plots)
         for isauto = [0,1]
             if isauto
-                folder = 'plots_multipanel-auto';
+                folder = 'multipanel-auto';
                 title_suffix = ' (autocolored)';
             else
-                folder = 'plots_multipanel-standard';
+                folder = 'multipanel-standard';
                 title_suffix = '';
             end
             suffix = 'mult';
@@ -1113,10 +1113,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 clim(j_range_hard_p)
             end
 
-            if ~exist(fullfile(direc,folder),'dir')
-                mkdir(direc,folder);
+            if ~exist(fullfile(direc,'plots',folder),'dir')
+                mkdir(direc,'plots',folder);
             end
-            filename = fullfile(direc,folder,[filename_prefix,'_',suffix,'.png']);
+            filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
             disp(['Saving: ',filename])
             saveas(gcf,filename)
             close all
@@ -1125,7 +1125,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % temperature plot
     if ismember('temp',plots)
-        folder = 'plots_temperature';
+        folder = 'temperature';
         suffix = 'temp';
 
         figure
@@ -1211,10 +1211,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clim(u_range_p)
         xline(mlon_rac_p,'r--')
 
-        if ~exist(fullfile(direc,folder),'dir')
-            mkdir(direc,folder);
+        if ~exist(fullfile(direc,'plots',folder),'dir')
+            mkdir(direc,'plots',folder);
         end
-        filename = fullfile(direc,folder,[filename_prefix,'_',suffix,'.png']);
+        filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
         disp(['Saving: ',filename])
         saveas(gcf,filename)
         close all
