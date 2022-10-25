@@ -16,15 +16,15 @@ if options.plot
 end
 
 if options.video
-    images2video(direc,'plots_conductance');
-    images2video(direc,'plots_continuity');
-    images2video(direc,'plots_contour-auto');
-    images2video(direc,'plots_contour-standard');
-    images2video(direc,'plots_density');
-    images2video(direc,'plots_fccp');
-    images2video(direc,'plots_jouleheating');
-    images2video(direc,'plots_multipanel-auto');
-    images2video(direc,'plots_multipanel-standard');
+    images2video(direc,['plots',filesep,'conductance']);
+    images2video(direc,['plots',filesep,'continuity']);
+    images2video(direc,['plots',filesep,'contour-auto']);
+    images2video(direc,['plots',filesep,'contour-standard']);
+    images2video(direc,['plots',filesep,'density']);
+    images2video(direc,['plots',filesep,'fccp']);
+    images2video(direc,['plots',filesep,'jouleheating']);
+    images2video(direc,['plots',filesep,'multipanel-auto']);
+    images2video(direc,['plots',filesep,'multipanel-standard']);
 end
 
 if options.vtk
