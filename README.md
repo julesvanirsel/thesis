@@ -7,8 +7,19 @@ Ph. D. thesis work
 2)  "cp LynchK/public_html/Gemini3D/<PREVIOUS SIMULATION NAME>/config.nml LynchK/public_html/Gemini3D/<SIMULATION NAME>"
     -   If you're building on an old simulation, copy that simulation's config.nml
 3)  Edit config.nml in <SIMULATION NAME> to your liking.
-    -   See below for details on config.nml
-
+    -   See below for details on config.nml entries
+4)  If not already done so, open a MATLAB screen with "screen -S mat"
+5)  In MATLAB screen, run "matlab -nodisplay"
+6)  In MATLAB, navigate to <SIMULATION NAME> and run "gemini3d.model.setup('.','.')"
+7)  If not already done so, open a Gemini screen with "screen -S gem"
+8)  In Gemini screen, navigate to LynchK directory
+9)  In Gemini screen, run "mpiexec -np 36 gemini/gemini3d/build/gemini.bin public_html/Gemini3D/<SIMULATION NAME>"
+    -   Make sure that -np even divides nx2 x nx3, e.g. 144 x 216 / 36 = 864 cells per processor
+10) In MATLAB screen, navigate to LynchK/Jules/thesis
+11) In MATLAB screen, run "process('../../public_html/Gemini3D/<SIMULATION NAME>',<options>)". Options include
+    -   plot=1 for plotting
+    -   video=1 for making videos
+    -   vtk=0 for making paraview files
 
 ## Configuration file details:
 
@@ -37,7 +48,7 @@ Ph. D. thesis work
 - eq_dir = '/dartfs-hpc/rc/lab/L/LynchK/Jules/initial_conditions/null_02' -------- directory to equalibrium run
 - setup_functions = 'gemscr.functions.aurora' -------- callable matlab input function
 
-&flags
+### flags
 - potsolve = 1 -------- 0 - no; 1 - electrostatic; 2 - inductive
 - flagperiodic = 0 -------- 0 - not periodic in x3; 1 - periodic in x3
 - flagoutput = 1 -------- what info in output:  1 - all; 2 - avg plasma parameters; 3 - ne only
@@ -98,7 +109,7 @@ Ph. D. thesis work
 - ap_cad2 = 4
 - ap_cad3 = 1
 
-## How to make ssh key
+## How to make an ssh key on andes
 1)  ssh-keygen -t ed25519 -C "your_email@example.com"
 2)  eval "$(ssh-agent -s)"
 3)  ssh-add ~/.ssh/id_ed25519
