@@ -25,23 +25,29 @@ fn = gemini3d.find.config(direc);
 
 for i = 1:length(vals)
     val = vals(i);
-    new_direc = [direc,'_',erase(par,'_'),'=',num2str(val,'%+6.0e')]
+    new_direc = [direc,'_',erase(par,'_'),'=',num2str(val,'%+6.0e')];
     if ~exist(new_direc,'dir')
         mkdir(new_direc);
     end
     new_fn = fullfile(new_direc,'config.nml');
     new_fid = fopen(new_fn,'w');
     fid = fopen(fn);
+    found = false;
     while ~feof(fid)
         line = fgetl(fid);
         if length(line) > lp
             if strcmp(line(1:lp),par)
+                found = true;
                 line = [line(1:lp+3),num2str(vals(i)),' ! auto generated'];
             end
         end
         fprintf(new_fid,[line,newline]);
     end
-%     gemini3d.model.setup(new_direc)
+    if ~found
+        fclose all;
+        error(['Parameter ',par,' not found in ',char(fn),'.'])
+    end
+    gemini3d.model.setup(new_direc)
 end
-fclose('all');
+fclose all;
 end
