@@ -23,15 +23,15 @@ Teinf = 1500                exospheric electron temperature
 /
 
 &setup
-glat = 65.8                                 geographic center latitude
-glon = 207.7                                geographic center longitude
-xdist = 3400e3                              east-west span in meters
-ydist = 1200e3                              north-south span in meters
-alt_min = 80e3
-alt_max = 950e3
-alt_scale = 10e3, 8e3, 500e3, 150e3
-x2parms = 400e3, 18.8e3, 50e3, 100e3
-x3parms = 400e3, 1.625e3, 18.5e3, 50e3
+glat = 65.8                             geographic center latitude
+glon = 207.7                            geographic center longitude
+xdist = 3400e3                          rough east-west span in meters
+ydist = 1200e3                          rough north-south span in meters
+alt_min = 80e3                          minimum altitude in meters
+alt_max = 950e3                         maximum altitude in meters
+alt_scale = 10e3, 8e3, 500e3, 150e3     d1 + d2*tanh((alt - d3)/d4)
+x2parms = 400e3, 18.8e3, 50e3, 100e3    d2 + d3*(1 + tanh((x - xdist/2 + d1)/d4))/2 mirrored
+x3parms = 400e3, 1.625e3, 18.5e3, 50e3  d2 + d3*(1 + tanh((y - ydist/2 + d1)/d4))/2 mirrored
 lxp = 1
 lyp = 1
 Bincl = 90
