@@ -7,5 +7,6 @@ else
     addpath('//dartfs-hpc/rc/lab/L/LynchK/gemini/mat_gemini')
     addpath('//dartfs-hpc/rc/lab/L/LynchK/gemini/mat_gemini-scripts')
     setenv('EDITOR','vi')
+    direc = '/dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/aurora_null_01';
 end
 setup
