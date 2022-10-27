@@ -1,7 +1,7 @@
 # thesis
 Ph. D. thesis work
 
-How to run a Gemini simulation on Andes:
+## How to run a Gemini simulation on Andes:
 1)  "mkdir LynchK/public_html/Gemini3D/<SIMULATION NAME>"
     -   Try and stick to a sensible simulation name such as <function>_<type>_<descriptor>_<version>, e.g. aurora_sharc_wide_02
 2)  "cp LynchK/public_html/Gemini3D/<PREVIOUS SIMULATION NAME>/config.nml LynchK/public_html/Gemini3D/<SIMULATION NAME>"
@@ -10,7 +10,7 @@ How to run a Gemini simulation on Andes:
     -   See below for details on config.nml
 
 
-Configuration file details:
+## Configuration file details:
 
 &base
 ymd = 2015,2,1              year,month,day
@@ -23,47 +23,47 @@ Teinf = 1500                exospheric electron temperature
 /
 
 &setup
-glat = 65.8                             geographic center latitude
-glon = 207.7                            geographic center longitude
-xdist = 3400e3                          rough east-west span in meters
-ydist = 1200e3                          rough north-south span in meters
-alt_min = 80e3                          minimum altitude in meters
-alt_max = 950e3                         maximum altitude in meters
-alt_scale = 10e3, 8e3, 500e3, 150e3     d1 + d2*tanh((alt - d3)/d4)
-x2parms = 400e3, 18.8e3, 50e3, 100e3    d2 + d3*(1 + tanh((x - xdist/2 + d1)/d4))/2 mirrored
-x3parms = 400e3, 1.625e3, 18.5e3, 50e3  d2 + d3*(1 + tanh((y - ydist/2 + d1)/d4))/2 mirrored
-lxp = 1
-lyp = 1
-Bincl = 90
-eq_dir = '/dartfs-hpc/rc/lab/L/LynchK/Jules/initial_conditions/null_02'
-setup_functions = 'gemscr.functions.aurora'
+glat = 65.8                                     geographic center latitude
+glon = 207.7                                    geographic center longitude
+xdist = 3400e3                                  rough east-west span in meters
+ydist = 1200e3                                  rough north-south span in meters
+alt_min = 80e3                                  minimum altitude in meters
+alt_max = 950e3                                 maximum altitude in meters
+alt_scale = 10e3, 8e3, 500e3, 150e3             d1 + d2*tanh((alt - d3)/d4)
+x2parms = 400e3, 18.8e3, 50e3, 100e3            d2 + d3*(1 + tanh((x - xdist/2 + d1)/d4))/2 mirrored
+x3parms = 400e3, 1.625e3, 18.5e3, 50e3          d2 + d3*(1 + tanh((y - ydist/2 + d1)/d4))/2 mirrored
+lxp = 1                                         number of east-west cells
+lyp = 1                                         number of north-south cells
+Bincl = 90                                      geomagnetic inclination in degrees
+eq_dir = '/dartfs-hpc/rc/lab/L/LynchK/Jules/initial_conditions/null_02'     directory to equalibrium run
+setup_functions = 'gemscr.functions.aurora'     callable matlab input function
 /
 
 &flags
-potsolve = 1
-flagperiodic = 0
-flagoutput = 1
+potsolve = 1        0 - no; 1 - electrostatic; 2 - inductive
+flagperiodic = 0    0 - not periodic in x3; 1 - periodic in x3
+flagoutput = 1      what info in output:  1 - all; 2 - avg plasma parameters; 3 - ne only
 /
 
 &files
 file_format = 'h5'
-indat_size = 'inputs/simsize.h5'
-indat_grid = 'inputs/simgrid.h5'
-indat_file = 'inputs/initial_conditions.h5'
+indat_size = 'inputs/simsize.h5'                location of grid size file
+indat_grid = 'inputs/simgrid.h5'                location of grid file
+indat_file = 'inputs/initial_conditions.h5'     location of intial conditions file
 /
 
 &precip
-dtprec = 1
-prec_dir = 'inputs/particles'
+dtprec = 1                      precip input cadance
+prec_dir = 'inputs/particles'   location of precip files
 /
 
 &efield
-dtE0 = 10
-E0_dir = 'inputs/fields'
+dtE0 = 10                   current/potential input cadance
+E0_dir = 'inputs/fields'    location of current/potential files
 /
 
 &aurora_parameters
-driftE = 0
+driftE = 0      TBD
 driftN = 0
 ctr_spn = 1e5
 ctr_slp = 0
@@ -104,3 +104,17 @@ ap_np = 16
 ap_cad2 = 4
 ap_cad3 = 1
 /
+
+## How to make ssh key
+1)  ssh-keygen -t ed25519 -C "your_email@example.com"
+2)  eval "$(ssh-agent -s)"
+3)  ssh-add ~/.ssh/id_ed25519
+4)  clip < ~/.ssh/id_ed25519.pub
+5)  in github.com/julesvanirsel go to
+    -   settings
+    -   SSH and GPG keys
+    -   New SSH key
+    enter a Title and paste the key
+6)  git remote set-url origin git@github.com:julesvanirsel/thesis.git
+7)  git config --global user.name "your_username"
+8)  git config --global user.email "your_email_address@example.com"
