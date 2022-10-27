@@ -12,7 +12,7 @@ Ph. D. thesis work
 
 ## Configuration file details:
 
-&base
+### base
 ymd = 2015,2,1              year,month,day
 UTsec0 = 35850              initial second of day
 tdur = 300                  run duration in seconds
@@ -20,9 +20,8 @@ dtout = 10                  output cadance in seconds
 activ = 137.6,143.7,20      F10.7 3-month avg, F10.7 daily, Ap daily
 tcfl = 0.9                  Courant number
 Teinf = 1500                exospheric electron temperature
-/
 
-&setup
+### setup
 glat = 65.8                                     geographic center latitude
 glon = 207.7                                    geographic center longitude
 xdist = 3400e3                                  rough east-west span in meters
@@ -37,32 +36,27 @@ lyp = 1                                         number of north-south cells
 Bincl = 90                                      geomagnetic inclination in degrees
 eq_dir = '/dartfs-hpc/rc/lab/L/LynchK/Jules/initial_conditions/null_02'     directory to equalibrium run
 setup_functions = 'gemscr.functions.aurora'     callable matlab input function
-/
 
 &flags
 potsolve = 1        0 - no; 1 - electrostatic; 2 - inductive
 flagperiodic = 0    0 - not periodic in x3; 1 - periodic in x3
 flagoutput = 1      what info in output:  1 - all; 2 - avg plasma parameters; 3 - ne only
-/
 
-&files
+### files
 file_format = 'h5'
 indat_size = 'inputs/simsize.h5'                location of grid size file
 indat_grid = 'inputs/simgrid.h5'                location of grid file
 indat_file = 'inputs/initial_conditions.h5'     location of intial conditions file
-/
 
-&precip
+### precip
 dtprec = 1                      precip input cadance
 prec_dir = 'inputs/particles'   location of precip files
-/
 
-&efield
+### efield
 dtE0 = 10                   current/potential input cadance
 E0_dir = 'inputs/fields'    location of current/potential files
-/
 
-&aurora_parameters
+### aurora_parameters
 driftE = 0      TBD
 driftN = 0
 ctr_spn = 1e5
@@ -103,7 +97,6 @@ ap_EyBg = 0
 ap_np = 16
 ap_cad2 = 4
 ap_cad3 = 1
-/
 
 ## How to make ssh key
 1)  ssh-keygen -t ed25519 -C "your_email@example.com"
