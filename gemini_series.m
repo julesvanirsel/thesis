@@ -47,7 +47,7 @@ for i = 1:length(vals)
         fclose all;
         error(['Parameter ',par,' not found in ',char(fn),'.'])
     end
-    gemini3d.model.setup(new_direc)
+    gemini3d.model.setup(new_direc,new_direc)
 end
 fclose all;
 end
