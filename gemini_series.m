@@ -7,17 +7,21 @@
 %   direc   base gemini run directory
 %   par     function paramater to change
 %   vals    list of values to change par to
+%   run     (option) run simulation
+%   np      (option) number of processors
 %
 % Dependencies:
 %   matlab R2022a or higher
 %
 % Contact: jules.van.irsel.gr@dartmouth.edu
 
-function gemini_series(direc,par,vals)
+function gemini_series(direc,par,vals,options)
 arguments
     direc (1,:) char {mustBeFolder}
     par (1,:) char {mustBeNonzeroLengthText}
     vals (1,:) double {mustBeNonempty}
+    options.run (1,1) logical {mustBeNonempty} = false
+    options.np (1,1) int16 {mustBePositive} = 36
 end
 
 lp = length(par);
@@ -48,6 +52,10 @@ for i = 1:length(vals)
         error(['Parameter ',par,' not found in ',char(fn),'.'])
     end
     gemini3d.model.setup(new_direc,new_direc)
+    if options.run
+        gemini_bin = fullfile(getenv('GEMINI_ROOT'),'build','gemini.bin');
+        system(['mpiexec -np ',num2str(options.np),' ',gemini_bin,' ',new_direc],'-echo')
+    end
 end
 fclose all;
 end
