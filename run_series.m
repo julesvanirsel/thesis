@@ -9,7 +9,7 @@
 %   direc           base gemini run directory
 %   pars            function paramaters to change
 %   vals            list of values to change parameters to
-%   setup = false   (option) run gemini3d.model.setup
+%   setup = true    (option) run gemini3d.model.setup
 %
 % Dependencies:
 %   matlab R2022a or higher
@@ -21,7 +21,7 @@ arguments
     direc (1,:) char {mustBeFolder}
     pars (1,:) string {mustBeNonempty}
     vals (:,:) double {mustBeNonempty}
-    options.setup (1,1) logical {mustBeNonempty} = false
+    options.setup (1,1) logical {mustBeNonempty} = true
 end
 
 npars = length(pars);
