@@ -63,13 +63,13 @@ Ph. D. thesis work
 - dtprec = 1 -------- precip input cadance
 - prec_dir = 'inputs/particles' -------- location of precip files
 
-### efield
-- dtE0 = 10 -------- current/potential input cadance
-- E0_dir = 'inputs/fields' -------- location of current/potential files
-
 ### precip_BG
 - PhiWBG = 1e-5 -------- total energy flux (mW/m^2)
 - W0BG = 3e3 -------- characteristic energy (eV)
+
+### efield
+- dtE0 = 10 -------- current/potential input cadance
+- E0_dir = 'inputs/fields' -------- location of current/potential files
 
 ### aurora_parameters
 - driftE = 0 -------- TBD
