@@ -2,21 +2,21 @@
 Ph. D. thesis work
 
 ## How to run a Gemini simulation on Andes:
-1)  "mkdir LynchK/public_html/Gemini3D/<SIMULATION NAME>"
-    -   Try and stick to a sensible simulation name such as <function>_<type>_<descriptor>_<version>, e.g. aurora_sharc_wide_02
-2)  "cp LynchK/public_html/Gemini3D/<PREVIOUS SIMULATION NAME>/config.nml LynchK/public_html/Gemini3D/<SIMULATION NAME>"
+1)  "mkdir LynchK/public_html/Gemini3D/\<SIMULATION NAME\>"
+    -   Try and stick to a sensible simulation name such as \<function\>\_\<type\>\_\<descriptor\>\_\<version\>, e.g. aurora_sharc_wide_02
+2)  "cp LynchK/public_html/Gemini3D/\<PREVIOUS SIMULATION NAME\>/config.nml LynchK/public_html/Gemini3D/\<SIMULATION NAME\>"
     -   If you're building on an old simulation, copy that simulation's config.nml
-3)  Edit config.nml in <SIMULATION NAME> to your liking.
+3)  Edit config.nml in \<SIMULATION NAME\> to your liking.
     -   See below for details on config.nml entries
 4)  If not already done so, open a MATLAB screen with "screen -S mat"
 5)  In MATLAB screen, run "matlab -nodisplay"
-6)  In MATLAB, navigate to <SIMULATION NAME> and run "gemini3d.model.setup('.','.')"
+6)  In MATLAB, navigate to \<SIMULATION NAME\> and run "gemini3d.model.setup('.','.')"
 7)  If not already done so, open a Gemini screen with "screen -S gem"
 8)  In Gemini screen, navigate to LynchK directory
-9)  In Gemini screen, run "mpiexec -np 36 gemini/gemini3d/build/gemini.bin public_html/Gemini3D/<SIMULATION NAME>"
+9)  In Gemini screen, run "mpiexec -np 36 gemini/gemini3d/build/gemini.bin public_html/Gemini3D/\<SIMULATION NAME\>"
     -   Make sure that -np even divides nx2 x nx3, e.g. 144 x 216 / 36 = 864 cells per processor
 10) In MATLAB screen, navigate to LynchK/Jules/thesis
-11) In MATLAB screen, run "process('../../public_html/Gemini3D/<SIMULATION NAME>',<options>)". Options include
+11) In MATLAB screen, run "process('../../public_html/Gemini3D/\<SIMULATION NAME\>',\<OPTIONS\>)". Options include
     -   plot=1 for plotting
     -   video=1 for making videos
     -   vtk=0 for making paraview files
