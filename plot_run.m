@@ -70,7 +70,7 @@ e_scl = 1e+3; units.e = 'mV/m';   clm.e = 'D13';
 j_scl = 1e+6; units.j = 'uA/m^2'; clm.j = 'D1A';
 n_scl = 1e+0; units.n = 'm^{-3}'; clm.n = 'L9';
 p_scl = 1e-3; units.p = 'kV';     clm.p = 'D10';
-s_scl = 1e+0; units.s = 'S/m^2';  clm.s = 'L18';
+s_scl = 1e+0; units.s = 'S';      clm.s = 'L18';
 t_scl = 1e-3; units.t = 'kK';     clm.t = 'L3';
 u_scl = 1e+6; units.u = 'uW/m^3'; clm.u = 'L19';
 U_scl = 1e+3; units.U = 'mW/m^2'; clm.U = 'L19';
