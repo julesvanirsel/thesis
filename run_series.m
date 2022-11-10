@@ -7,6 +7,7 @@
 %
 % Arguments:
 %   direc           base gemini run directory
+%   name            name of series
 %   pars            function paramaters to change
 %   vals            list of values to change parameters to
 %   setup = true    (option) run gemini3d.model.setup
@@ -16,13 +17,19 @@
 %
 % Contact: jules.van.irsel.gr@dartmouth.edu
 
-function run_series(direc,pars,vals,options)
+function run_series(direc,name,pars,vals,options)
 arguments
     direc (1,:) char {mustBeFolder}
+    name (1,:) char {mustBeNonzeroLengthText}
     pars (1,:) string {mustBeNonempty}
     vals (:,:) double {mustBeNonempty}
     options.setup (1,1) logical {mustBeNonempty} = true
+    options.run (1,1) logical {mustBeNonempty} = false
+    options.np (1,1) int16 {mustBePositive} = 36
 end
+
+name = strrep(name,' ','_');
+sims_direc = fileparts(direc);
 
 npars = length(pars);
 nruns = length(vals);
@@ -31,11 +38,7 @@ fn = gemini3d.find.config(direc);
 
 for i = 1:nruns
     fid = fopen(fn);
-    if npars==1
-        new_direc = [direc,'_',erase(char(pars),'_'),'=',num2str(vals(i),'%+6.0e')];
-    else
-        new_direc = [direc,'_',char(64+i)];
-    end
+    new_direc = fullfile(sims_direc,[name,'_',char(64+i)]);
     if ~exist(new_direc,'dir')
         mkdir(new_direc);
     end
@@ -70,4 +73,13 @@ for i = 1:nruns
     end
 end
 fclose all;
+
+if options.run
+    for i = 1:nruns
+        new_direc = fullfile(sims_direc,[name,'_',char(64+i)]);
+        gemini_bin = fullfile(getenv('GEMINI_ROOT'),'build','gemini.bin');
+        system(['mpiexec -np ',num2str(options.np),' ',gemini_bin,' ',new_direc],'-echo')
+    end
+end
+
 end
