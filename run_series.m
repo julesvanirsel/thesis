@@ -11,6 +11,8 @@
 %   pars            function paramaters to change
 %   vals            list of values to change parameters to
 %   setup = true    (option) run gemini3d.model.setup
+%   run = false     (option) run simulation
+%   process = false (option) process simulation
 %
 % Dependencies:
 %   matlab R2022a or higher
@@ -25,7 +27,8 @@ arguments
     vals (:,:) double {mustBeNonempty}
     options.setup (1,1) logical {mustBeNonempty} = true
     options.run (1,1) logical {mustBeNonempty} = false
-    options.np (1,1) int16 {mustBePositive} = 36
+    options.np (1,1) int16 {mustBePositive} = 36     
+    options.process (1,1) logical {mustBeNonempty} = false
 end
 
 name = strrep(name,' ','_');
@@ -59,10 +62,6 @@ for i = 1:nruns
             end
         end
         fprintf(new_fid,[line,newline]);
-        %         if options.run
-        %             gemini_bin = fullfile(getenv('GEMINI_ROOT'),'build','gemini.bin');
-        %             system(['mpiexec -np ',num2str(options.np),' ',gemini_bin,' ',new_direc],'-echo')
-        %         end
     end
     if not(all(found))
         fclose all;
@@ -79,6 +78,13 @@ if options.run
         new_direc = fullfile(sims_direc,[name,'_',char(64+i)]);
         gemini_bin = fullfile(getenv('GEMINI_ROOT'),'build','gemini.bin');
         system(['mpiexec -np ',num2str(options.np),' ',gemini_bin,' ',new_direc],'-echo')
+    end
+end
+
+if options.process
+    for i = 1:nruns
+        new_direc = fullfile(sims_direc,[name,'_',char(64+i)]);
+        process(new_direc)
     end
 end
 

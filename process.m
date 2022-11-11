@@ -25,6 +25,7 @@ if options.video
     images2video(direc,['plots',filesep,'jouleheating']);
     images2video(direc,['plots',filesep,'multipanel-auto']);
     images2video(direc,['plots',filesep,'multipanel-standard']);
+    images2video(direc,['plots',filesep,'temperature']);
 end
 
 if options.vtk
