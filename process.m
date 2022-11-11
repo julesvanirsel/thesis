@@ -16,16 +16,22 @@ if options.plot
 end
 
 if options.video
-    images2video(direc,['plots',filesep,'conductance']);
-    images2video(direc,['plots',filesep,'continuity']);
-    images2video(direc,['plots',filesep,'contour-auto']);
-    images2video(direc,['plots',filesep,'contour-standard']);
-    images2video(direc,['plots',filesep,'density']);
-    images2video(direc,['plots',filesep,'fccp']);
-    images2video(direc,['plots',filesep,'jouleheating']);
-    images2video(direc,['plots',filesep,'multipanel-auto']);
-    images2video(direc,['plots',filesep,'multipanel-standard']);
-    images2video(direc,['plots',filesep,'temperature']);
+    plots_dirs = dir(fullfile(direc,'plots'));
+    for i = 3:length(plots_dirs)
+        plots_name = plots_dirs(i).name;
+        images2video(direc,fullfile('plots',plots_name))
+    end
+
+%     images2video(direc,['plots',filesep,'conductance']);
+%     images2video(direc,['plots',filesep,'continuity']);
+%     images2video(direc,['plots',filesep,'contour-auto']);
+%     images2video(direc,['plots',filesep,'contour-standard']);
+%     images2video(direc,['plots',filesep,'density']);
+%     images2video(direc,['plots',filesep,'fccp']);
+%     images2video(direc,['plots',filesep,'jouleheating']);
+%     images2video(direc,['plots',filesep,'multipanel-auto']);
+%     images2video(direc,['plots',filesep,'multipanel-standard']);
+%     images2video(direc,['plots',filesep,'temperature']);
 end
 
 if options.vtk
