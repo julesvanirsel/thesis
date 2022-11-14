@@ -82,8 +82,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     %% loading simulation data
     time = datetime(ymd) + seconds(UTsec);
     time.Format = 'yyyyMMdd''T''HHmmss.SSS';
-    %     dat = gemini3d.read.frame(direc,'time',time);
-    dat = options.dat;
+    if isempty(options.dat)
+        dat = gemini3d.read.frame(direc,'time',time);
+    else
+        dat = options.dat;
+    end
     title_time = char(dat.time);
     filename_prefix = [char(time),'UT'];
     [~,runname] = fileparts(direc);
