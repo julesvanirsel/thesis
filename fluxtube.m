@@ -72,9 +72,8 @@ lx = length(x); ly = length(y); lz = length(z);
 [I,J,K] = ndgrid(1:lx,1:ly,1:lz);
 [X,Y,Z] = ndgrid(x,y,z);
 [Xm,Ym,Zm] = meshgrid(x,y,z);
-[dX,dY,dZ] = ndgrid(dx,dy,dz);
+[dX,dY,~] = ndgrid(dx,dy,dz);
 dA = dX.*dY;
-dV = dX.*dY.*dZ;
 gi = griddedInterpolant(X,Y,Z,I); % stream3 is more robust in index space. back and forth interpolation required
 gj = griddedInterpolant(X,Y,Z,J);
 gk = griddedInterpolant(X,Y,Z,K);
