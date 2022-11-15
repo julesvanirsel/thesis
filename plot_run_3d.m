@@ -1,12 +1,13 @@
-function plot_run_3d(direc,plots,alt_ref,options)
+function plot_run_3d(direc,plots,alt_ref,lon_ref,options)
 arguments
     direc (1,:) char {mustBeFolder}
     plots (1,:) string
     alt_ref (1,1) double {mustBePositive}
+    lon_ref (1,1) double {mustBeNumeric}
     options.start (1,1) double {mustBeNumeric} = -1
     options.cad (1,1) double {mustBeNumeric} = -1
     options.stop (1,1) double {mustBeNumeric} = -1
-    options.dat (:,:) struct
+    options.dat (:,:) struct = struct
 end
 
 % assertions
@@ -24,8 +25,9 @@ end
 %% hard coded parameters
 f_scl = 1e-3; units.f = 'kA';
 j_scl = 1e+6; units.j = 'uA/m^2';   clm.j = 'D1A';
+n_scl = 1e+0; units.n = 'm^{-3}';   clm.n = 'L9';
 p_scl = 1e-6; units.p = 'MW';
-s_scl = 1e+0; units.s = 'S/m';      clm.s = 'L18';
+% s_scl = 1e+0; units.s = 'S/m';      clm.s = 'L18';
 x_scl = 1e-3; units.x = 'km';
 
 zmin = 80e3;
@@ -34,7 +36,6 @@ ylims = [-190,360]*1e3;
 zlims = [zmin,alt_ref*1.05];
 sized = 10;
 qnt = 0.99; % quantile value used to set data ranges
-xref = 700e3;
 
 %% loading grid data
 xg = gemini3d.read.grid(direc);
@@ -82,7 +83,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     %% loading simulation data
     time = datetime(ymd) + seconds(UTsec);
     time.Format = 'yyyyMMdd''T''HHmmss.SSS';
-    if isempty(options.dat)
+    if isempty(fields(options.dat))
         dat = gemini3d.read.frame(direc,'time',time);
     else
         dat = options.dat;
@@ -94,7 +95,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     %% formatting simulation data
     phi = dat.Phitop;
     [Ez,Ex,Ey] = gemscr.postprocess.pot2field(xg,phi);
-    [sigP,sigH,~,~] = load_conductances(direc,time,dat,cfg,xg);
+%     [sigP,sigH,~,~] = load_conductances(direc,time,dat,cfg,xg);
 
     Ex = permute(Ex(1:ubz,:,:),[2,3,1]);
     Ey = permute(Ey(1:ubz,:,:),[2,3,1]);
@@ -102,8 +103,9 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     jx = permute(dat.J2(1:ubz,:,:),[2,3,1]);
     jy = permute(dat.J3(1:ubz,:,:),[2,3,1]);
     jz = permute(dat.J1(1:ubz,:,:),[2,3,1]);
-    sigP = permute(sigP(1:ubz,:,:),[2,3,1]);
-    sigH = -permute(sigH(1:ubz,:,:),[2,3,1]);
+    ne = permute(dat.ne(1:ubz,:,:),[2,3,1]);
+%     sigP = permute(sigP(1:ubz,:,:),[2,3,1]);
+%     sigH = -permute(sigH(1:ubz,:,:),[2,3,1]);
 
     % implicit simulation data
     joule = jx.*Ex + jy.*Ey + jz.*Ez;
@@ -115,13 +117,14 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     set(0,'defaultTextFontSize',0.8*sized)
 
     jz_p = -jz*j_scl;
-    sigP_p = sigP*s_scl; sigH_p = sigH*s_scl;
+%     sigP_p = sigP*s_scl; sigH_p = sigH*s_scl;
+    ne_p = ne*n_scl;
     Xm_p = Xm*x_scl; Ym_p = Ym*x_scl; Zm_p = Zm*x_scl;
 
     xlims_p = xlims*x_scl;
     ylims_p = ylims*x_scl;
     zlims_p = zlims*x_scl;
-    xref_p = xref*x_scl;
+    lon_ref_p = lon_ref*x_scl;
     alt_ref_p = alt_ref*x_scl;
 
     j1_range_p = j1_range*j_scl;
@@ -131,7 +134,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         folder = 'fluxtubes';
         suffix = 'flux';
         folder_suffix = {'iso','side','top','side2'};
-        p0 = [[xref_p,40,300];[xref_p,100,300];[xref_p,160,300]]*1e3*x_scl;
+        p0 = [[lon_ref_p,40,300];[lon_ref_p,100,300];[lon_ref_p,160,300]]*1e3*x_scl;
         r0 = [1,1,1]*400e3*x_scl;
         r1 = [1,1,1]*20e3*x_scl;
         colors = [[1, 0.5, 0];...
@@ -160,9 +163,9 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             title([runname,' at ',title_time,' UT'],'FontSize',sized*2,'FontWeight','bold','Interpreter','none')
             t = tiledlayout(1,1,'TileSpacing','compact');
             axj = axes(t); %#ok<LAXES>
-            axs = axes(t); %#ok<LAXES>
+            axn = axes(t); %#ok<LAXES>
             axt = axes(t); %#ok<LAXES>
-            axa = [axj,axs,axt];
+            axa = [axj,axn,axt];
 
             set(axa,...
                 'FontSize',sized...
@@ -173,12 +176,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 ,'ZColor','blue'...
                 ,'ZTick',alt_ref_p...
                 )
-            set(axs,...
+            set(axn,...
                 'Color','none'...
                 ,'XColor','red'...
                 ,'YColor','none'...
                 ,'ZColor','none'...
-                ,'XTick',xref_p ...
+                ,'XTick',lon_ref_p ...
                 )
             set(axt,...
                 'Color','none'...
@@ -188,16 +191,16 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 )
 
             xlim(axj,xlims_p)
-            xlim(axs,xlims_p + (xref_p-xlims_p(1)))
+            xlim(axn,xlims_p + (lon_ref_p-xlims_p(1)))
             xlim(axt,xlims_p)
             ylim(axa,ylims_p)
             zlim(axj,zlims_p + (alt_ref-zmin)*x_scl)
-            zlim(axs,zlims_p)
+            zlim(axn,zlims_p)
             zlim(axt,zlims_p)
             view(axa,vv)
             ar = [0.4*range(xlims_p),range(ylims_p),2*range(zlims_p)];
             pbaspect(axj,ar)
-            pbaspect(axs,ar)
+            pbaspect(axn,ar)
             pbaspect(axt,ar)
             hold(axa,'on')
 
@@ -210,11 +213,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             clb.Position = [0.91,0.04,0.015,0.44];
             clim(axj,j1_range_p)
 
-            slice(axs,Xm_p,Ym_p,Zm_p,permute(sigP_p,[2,1,3]),xref_p,[],[]);
-            colormap(axs,colorcet(clm.s))
-            shading(axs,'flat')
-            clb = colorbar(axs);
-            clb.Label.String = ['\sigma_P [',units.s,']'];
+%             slice(axs,Xm_p,Ym_p,Zm_p,permute(sigP_p,[2,1,3]),xref_p,[],[]);
+            slice(axn,Xm_p,Ym_p,Zm_p,permute(ne_p,[2,1,3]),lon_ref_p,[],[]);
+            colormap(axn,colorcet(clm.n))
+            shading(axn,'flat')
+            clb = colorbar(axn);
+            clb.Label.String = ['n_e [',units.n,']'];
             clb.FontSize = sized;
             clb.Position = [0.91,0.52,0.015,0.44];
 
