@@ -38,7 +38,7 @@ function images2video(direc,img_direc,ext,options)
     end
     
     if strcmp(options.vid_name,'auto')
-        [~,options.vid_name] = fileparts(img_direc);
+        [~,options.vid_name] = fileparts(strip(img_direc,filesep));
     end
     
     if options.compressed
