@@ -18,7 +18,7 @@ end
 if ismember('all',plots)
     plots = plot_options;
 end
-if direc(end)==filesep
+if any(direc(end)=='/\')
     direc = direc(1:end-1);
 end
 
@@ -133,15 +133,15 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     if ismember('fluxtubes',plots)
         folder = 'fluxtubes';
         suffix = 'flux';
-        folder_suffix = {'iso','side','top','side2'};
+        folder_suffix = {'iso','side','top'};
         p0 = [[lon_ref_p,40,300];[lon_ref_p,100,300];[lon_ref_p,160,300]]*1e3*x_scl;
         r0 = [1,1,1]*400e3*x_scl;
         r1 = [1,1,1]*20e3*x_scl;
         colors = [[1, 0.5, 0];...
                   [0.2, 0.8, 0.2];...
                   [0, 0.2, 1]];
-        views = [[30,45];[90,0];[0,90];[0,0]];
-        dviews = [[10*2*(UTsec0-UTsec+tdur/2)/tdur,0];[0,0];[0,0];[0,0]];
+        views = [[30,45];[90,0];[0,90]];
+        dviews = [[10*2*(UTsec0-UTsec+tdur/2)/tdur,0];[0,0];[0,0]];
         ntubes = length(r0);
 %         text_pos = [[0.60, 0.70, 0.22, 0.70];...
 %                     [0.65, 0.90, 0.22, 0.90];...
