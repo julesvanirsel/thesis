@@ -60,7 +60,7 @@ end
 if ismember('all',plots)
     plots = plot_options;
 end
-if direc(end)==filesep
+if any(direc(end)=='/\')
     direc = direc(1:end-1);
 end
 
@@ -1140,7 +1140,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.t))
         clb = colorbar;
-        clb.Label.String = ['Te [',units.t,']'];
+        clb.Label.String = ['T_e [',units.t,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Te_range_p)
@@ -1153,7 +1153,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.t))
         clb = colorbar;
-        clb.Label.String = ['Te [',units.t,']'];
+        clb.Label.String = ['T_e [',units.t,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Te_range_p)
@@ -1166,7 +1166,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.t))
         clb = colorbar;
-        clb.Label.String = ['Ti [',units.t,']'];
+        clb.Label.String = ['T_i [',units.t,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Ti_range_p)
@@ -1179,7 +1179,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.t))
         clb = colorbar;
-        clb.Label.String = ['Ti [',units.t,']'];
+        clb.Label.String = ['T_i [',units.t,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Ti_range_p)
