@@ -42,6 +42,9 @@ arguments
     options.reverse (1,1) logical {mustBeNonempty} = false
     options.v0 (1,3) double {mustBeNonempty} = [1,0,0]
     options.v1 (1,3) double {mustBeNonempty} = [0,1,0]
+    options.xlims (1,2) double {mustBeNonempty} = [-1,1]*1500;
+    options.ylims (1,2) double {mustBeNonempty} = [-1,1]*400;
+    options.zmin (1,1) double {mustBeNonnegative} = 80;
     options.plot (1,1) logical {mustBeNonempty} = false
     options.show_reverse_test (1,1) logical {mustBeNonempty} = false
     options.calculate_hull (1,1) logical {mustBeNonempty} = false
@@ -69,6 +72,9 @@ dy = double(xg.dx3h*x_scl);
 dz = double(xg.dx1h(1:ubz)*x_scl);
 dmin = min([dx;dy;dz]);
 lx = length(x); ly = length(y); lz = length(z);
+xlims = options.xlims;
+ylims = options.ylims;
+zmin = options.zmin;
 [I,J,K] = ndgrid(1:lx,1:ly,1:lz);
 [X,Y,Z] = ndgrid(x,y,z);
 [Xm,Ym,Zm] = meshgrid(x,y,z);
@@ -170,9 +176,7 @@ end
 %% plotting
 if options.plot
     sized = 20;
-    xlims = [-1,1]*1500e3*x_scl;
-    ylims = [-1,1]*400e3*x_scl;
-    zlims = [0,1]*alt_ref*1.05; % add 5% buffer
+    zlims = [zmin,alt_ref*1.05]; % add 5% buffer
     shadow = nan(size(in0));
     shadow(in0) = 0;
     shadow(in1) = 0;
@@ -208,7 +212,9 @@ if options.plot
     xlim(xlims)
     ylim(ylims)
     zlim(zlims)
-    pbaspect([max(xlims),2*max(ylims),2*max(zlims)])
+%     ar = [0.4*range(xlims_p),range(ylims_p),2*range(zlims_p)]; %%%CHANGE
+    ar = [0.2*range(xlims),range(ylims),range(zlims)]; %%%CHANGE
+    pbaspect(ar)
     xlabel(['East [',options.units,']'],'FontSize',sized)
     ylabel(['North [',options.units,']'],'FontSize',sized)
     zlabel(['Up [',options.units,']'],'FontSize',sized)
