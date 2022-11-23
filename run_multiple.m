@@ -9,11 +9,11 @@ end
 
 for i = 1:nargin
     gemini_bin = fullfile(getenv('GEMINI_ROOT'),'build','gemini.bin');
-    system(['mpiexec -np ',num2str(options.np),' ',gemini_bin,' ',varargin(i)],'-echo')
+    system(['mpiexec -np ',num2str(options.np),' ',gemini_bin,' ',varargin{i}],'-echo')
 end
 if options.process
     for i = 1:nargin
-        process(varargin(i))
+        process(varargin{i})
     end
 end
 end
