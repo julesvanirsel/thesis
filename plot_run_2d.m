@@ -43,6 +43,7 @@ arguments
     options.cad (1,1) double {mustBeNonempty} = -1
     options.stop (1,1) double {mustBeNonempty} = -1
     options.mlon_ref (1,1) double {mustBeNonempty} = -1
+    options.x1_range (1,2) double {mustBeNonempty} = [80e3,300e3]
     options.x3_range (1,2) double {mustBeNonempty} = [-30e3,30e3]
     %     options.j_range (1,2) double {mustBeNonempty} = [-2e-6,2e-6]
     %     options.n_range (1,2) double {mustBeNonempty} = [1e9,1e12]
@@ -84,6 +85,7 @@ ctr_lw = 0.3; % contour plot linewidth
 % n_range_hard = options.n_range;
 % p_range_hard = options.p_range;
 % v_range_hard = [-1,1]*hsv_sat;
+x1_range = options.x1_range;
 x3_range = options.x3_range;
 qnt = 0.99; % quantile value used to set data ranges
 
@@ -227,6 +229,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     %     n_range_hard_p = n_range_hard*n_scl;
     %     p_range_hard_p = p_range_hard*p_scl;
     %     v_range_hard_p = v_range_hard*v_scl;
+    x1_range_p = x1_range*x_scl;
     x3_range_p = x3_range*x_scl;
 
     % common plot titles and labels
@@ -487,7 +490,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.Exponent = clb_exp;
         clim(v2_range_p)
         xlim(x3_range_p)
-        ylim([min(X1_p(:)),max(X1_p(:))])
+        ylim(x1_range_p)
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
             mkdir(direc,fullfile('plots',folder));
