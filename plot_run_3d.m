@@ -31,11 +31,13 @@ p_scl = 1e-6; units.p = 'MW';
 x_scl = 1e-3; units.x = 'km';
 
 zmin = 80e3;
-xlims = [-1,1]*1450e3;
+xlims = [-1,1]*1050e3;
 ylims = [-190,360]*1e3;
 zlims = [zmin,alt_ref*1.05];
-sized = 10;
 qnt = 0.99; % quantile value used to set data ranges
+fts = 17; % fontsize
+clb_fmt = '%+ 5.1f'; % colorbar ticklabel format
+clb_exp = 0; % force no colorbar exponents
 
 %% loading grid data
 xg = gemini3d.read.grid(direc);
@@ -95,7 +97,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     %% formatting simulation data
     phi = dat.Phitop;
     [Ez,Ex,Ey] = gemscr.postprocess.pot2field(xg,phi);
-%     [sigP,sigH,~,~] = load_conductances(direc,time,dat,cfg,xg);
+    %     [sigP,sigH,~,~] = load_conductances(direc,time,dat,cfg,xg);
 
     Ex = permute(Ex(1:ubz,:,:),[2,3,1]);
     Ey = permute(Ey(1:ubz,:,:),[2,3,1]);
@@ -104,8 +106,8 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     jy = permute(dat.J3(1:ubz,:,:),[2,3,1]);
     jz = permute(dat.J1(1:ubz,:,:),[2,3,1]);
     ne = permute(dat.ne(1:ubz,:,:),[2,3,1]);
-%     sigP = permute(sigP(1:ubz,:,:),[2,3,1]);
-%     sigH = -permute(sigH(1:ubz,:,:),[2,3,1]);
+    %     sigP = permute(sigP(1:ubz,:,:),[2,3,1]);
+    %     sigH = -permute(sigH(1:ubz,:,:),[2,3,1]);
 
     % implicit simulation data
     joule = jx.*Ex + jy.*Ey + jz.*Ez;
@@ -114,10 +116,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     j1_range = [-1,1]*quantile(abs(jz(:)),qnt);
 
     %% plotting routines
-    set(0,'defaultTextFontSize',0.8*sized)
+    set(0,'defaultTextFontSize',fts)
 
     jz_p = -jz*j_scl;
-%     sigP_p = sigP*s_scl; sigH_p = sigH*s_scl;
+    %     sigP_p = sigP*s_scl; sigH_p = sigH*s_scl;
     ne_p = ne*n_scl;
     Xm_p = Xm*x_scl; Ym_p = Ym*x_scl; Zm_p = Zm*x_scl;
 
@@ -135,18 +137,15 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         suffix = 'flux';
         folder_suffix = {'iso','side','top'};
         p0 = [[lon_ref_p,40,300];[lon_ref_p,100,300];[lon_ref_p,160,300]]*1e3*x_scl;
-        r0 = [1,1,1]*400e3*x_scl;
+        r0 = [1,1,1]*200e3*x_scl;
         r1 = [1,1,1]*20e3*x_scl;
-        colors = [[1, 0.5, 0];...
-                  [0.2, 0.8, 0.2];...
-                  [0, 0.2, 1]];
+        colors = [[1.0, 0.5, 0.0];...
+            [0.2, 0.8, 0.2];...
+            [0.8, 0.1, 0.8]];
         views = [[30,45];[90,0];[0,90]];
         dviews = [[10*2*(UTsec0-UTsec+tdur/2)/tdur,0];[0,0];[0,0]];
+        paper_w = [8,11,9.5];
         ntubes = length(r0);
-%         text_pos = [[0.60, 0.70, 0.22, 0.70];...
-%                     [0.65, 0.90, 0.22, 0.90];...
-%                     [0.70, 0.70, 0.15, 0.35]];
-%         text_spc = 0.025;
         fluxes = zeros(2,ntubes);
         joule_heatings = zeros(1,ntubes);
 
@@ -159,36 +158,18 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             vv = views(v,:)+dviews(v,:);
 
             figure(v)
-            set(gcf,'PaperUnits','inches','PaperPosition',[0,0,12,6])
-            title([runname,' at ',title_time,' UT'],'FontSize',sized*2,'FontWeight','bold','Interpreter','none')
+            set(gcf,'PaperUnits','inches','PaperPosition',[0,0,paper_w(v),6])
+            title([runname,' at ',title_time,' UT'],'FontSize',fts*2,'FontWeight','bold','Interpreter','none')
             t = tiledlayout(1,1,'TileSpacing','compact');
             axj = axes(t); %#ok<LAXES>
             axn = axes(t); %#ok<LAXES>
             axt = axes(t); %#ok<LAXES>
             axa = [axj,axn,axt];
 
-            set(axa,...
-                'FontSize',sized...
-                )
-            set(axj,...
-                'XColor','none'...
-                ,'YColor','none'...
-                ,'ZColor','blue'...
-                ,'ZTick',alt_ref_p...
-                )
-            set(axn,...
-                'Color','none'...
-                ,'XColor','red'...
-                ,'YColor','none'...
-                ,'ZColor','none'...
-                ,'XTick',lon_ref_p ...
-                )
-            set(axt,...
-                'Color','none'...
-                ,'XGrid','on'...
-                ,'YGrid','on'...
-                ,'ZGrid','on'...
-                )
+            set(axa,'FontSize',fts)
+            set(axj,'XColor','none','YColor','none','ZColor','none','ZTick',alt_ref_p)
+            set(axn,'Color','none','XColor','none','YColor','none','ZColor','none','XTick',lon_ref_p)
+            set(axt,'Color','none','XGrid','on','YGrid','on','ZGrid','on')
 
             xlim(axj,xlims_p)
             xlim(axn,xlims_p + (lon_ref_p-xlims_p(1)))
@@ -207,20 +188,27 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             slice(axj,Xm_p,Ym_p,Zm_p,permute(jz_p,[2,1,3]),[],[],alt_ref_p);
             colormap(axj,colorcet(clm.j))
             shading(axj,'flat')
-            clb = colorbar(axj);
-            clb.Label.String = ['j_{||} [',units.j,']'];
-            clb.FontSize = sized;
-            clb.Position = [0.91,0.04,0.015,0.44];
+            if v == 2
+                clb = colorbar(axj);
+                clb.Label.String = ['j_{||} [',units.j,']'];
+                clb.FontSize = fts;
+                clb.Position = [0.87,0.07,0.015,0.44];
+                clb.Ruler.TickLabelFormat = clb_fmt;
+                clb.Ruler.Exponent = clb_exp;
+            end
             clim(axj,j1_range_p)
 
-%             slice(axs,Xm_p,Ym_p,Zm_p,permute(sigP_p,[2,1,3]),xref_p,[],[]);
-            slice(axn,Xm_p,Ym_p,Zm_p,permute(ne_p,[2,1,3]),lon_ref_p,[],[]);
+            slice(axn,Xm_p,Ym_p,Zm_p,permute(log10(ne_p),[2,1,3]),lon_ref_p,[],[]);
             colormap(axn,colorcet(clm.n))
             shading(axn,'flat')
-            clb = colorbar(axn);
-            clb.Label.String = ['n_e [',units.n,']'];
-            clb.FontSize = sized;
-            clb.Position = [0.91,0.52,0.015,0.44];
+            if v == 2
+                clb = colorbar(axn);
+                clb.Label.String = ['n_e [',units.n,']'];
+                clb.FontSize = fts;
+                clb.Position = [0.87,0.55,0.015,0.44];
+                clb.Ruler.TickLabelFormat = clb_fmt;
+                clb.Ruler.Exponent = clb_exp;
+            end
 
             for n = 1:ntubes
                 color = colors(n,:);
@@ -244,39 +232,20 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 pl1 = plot3(axt,c1(:,1),c1(:,2),c1(:,3));
                 stl = streamline(axt,verts);
                 shd = slice(axj,Xm_p,Ym_p,Zm_p,permute(shadow,[2,1,3]),[],[],alt_ref_p);
-                %                 isosurface(Xm_p,Ym_p,Zm_p,permute(hull*mean(-jz_p(:)),[2,1,3]),mean(-jz_p(:)))
+                plot3(axt,[1,1,1]*lon_ref_p,[ylims_p,ylims_p(2)],[zlims_p(1),zlims_p],'--','Color',[0,1.0,0]);
+                plot3(axt,[xlims_p(1),xlims_p],[ylims_p,ylims_p(2)],[1,1,1]*alt_ref_p,'--','Color',[0,0,1.0]);
 
                 shading(axj,'flat')
-                set(pl0,'Color',color,'LineWidth',2)
+                set(pl0,'Color','k','LineWidth',1)
                 set(pl1,'Color',color,'LineWidth',1)
                 set(shd,'FaceAlpha',0.5)
                 set(stl,'Color',[color,0.5],'LineWidth',1)
 
-                xlabel(['East [',units.x,']'],'FontSize',sized)
-                ylabel(['North [',units.x,']'],'FontSize',sized)
-                zlabel(['Up [',units.x,']'],'FontSize',sized)
-                %                 text(text_pos(v,1), text_pos(v,2)-(n-1)*text_spc,...
-                %                     [...
-                %                     num2str(flux0,3), ' ', units.f, ' ',...
-                %                     num2str(joule_tot*p_scl,3), ' ', units.p...
-                %                     ], 'Color', color, 'fontweight', 'bold', 'Units', 'normalized')
-                %                 text(text_pos(v,3), text_pos(v,4)-(n-1)*text_spc,...
-                %                     [...
-                %                     num2str(flux1,3), ' ', units.f...
-                %                     ], 'Color', color, 'fontweight', 'bold', 'Units', 'normalized')
-%                 annotation('textbox',[text_pos(v,1),text_pos(v,2)-(n-1)*text_spc,0.01,0.01],'string',...
-%                     [...
-%                     ' ', num2str(flux0,3), ' ', units.f, ' - ',...
-%                     num2str(joule_tot*p_scl,3), ' ', units.p...
-%                     ], 'FitBoxToText','on', 'Color', color, 'EdgeColor', 'none', 'BackgroundColor', 'w' ...
-%                     )
-%                 annotation('textbox',[text_pos(v,3),text_pos(v,4)-(n-1)*text_spc,0.01,0.01],'string',...
-%                     [...
-%                     ' ', num2str(flux1,3), ' ', units.f,...
-%                     ], 'FitBoxToText','on', 'Color', color, 'EdgeColor', 'none', 'BackgroundColor', 'w' ...
-%                     )
+                xlabel(['East [',units.x,']'],'FontSize',fts)
+                ylabel(['North [',units.x,']'],'FontSize',fts)
+                zlabel(['Up [',units.x,']'],'FontSize',fts)
             end
-            
+
             flux_strings = cell(2,ntubes);
             heat_strings = cell(1,ntubes);
             for n = 1:ntubes
@@ -287,12 +256,13 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 heat_strings{n} = ['\color[rgb]{',num2str(colors(n,:)),'}'...
                     ,num2str(joule_heatings(n)*p_scl,3),' ',units.p,'  ','\color{black}'];
             end
-
-            annotation('textbox',[0.02,0.97,0.01,0.01],'String',[...
-                'Current In:  ',cell2mat(flux_strings(1,:)),newline,...
-                'Current Out:  ',cell2mat(flux_strings(2,:)),newline,...
-                'Joule Heating:  ',cell2mat(heat_strings),...
-                ],'FitBoxToText','on','EdgeColor','none','BackgroundColor','w')
+            if v == 1
+                annotation('textbox',[0.53,0.97,0.01,0.01],'String',[...
+                    'Current In:  ',cell2mat(flux_strings(1,:)),newline,...
+                    'Current Out:  ',cell2mat(flux_strings(2,:)),newline,...
+                    'Joule Heating:  ',cell2mat(heat_strings),...
+                    ],'FitBoxToText','on','EdgeColor','none','BackgroundColor','none','FontSize',0.7*fts)
+            end
 
             full_folder = [folder,'_',cell2mat(folder_suffix(v))];
             if ~exist(fullfile(direc,'plots_3d',full_folder),'dir')
