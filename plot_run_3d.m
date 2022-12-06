@@ -137,10 +137,14 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         suffix = 'flux';
         folder_suffix = {'iso','side','top'};
 %         p0 = [[lon_ref_p,40,300];[lon_ref_p,110,300];[lon_ref_p,180,300]]*1e3*x_scl;
-        p0 = [[lon_ref_p,40,300];[lon_ref_p,80,300];[]];
+%         v0 = [[1,0,0];[1,0,0];[1,0,0]];
+        p0 = [[lon_ref_p,40,300];[lon_ref_p,80,300];[1000,100,115]]*1e3*x_scl;
+        v0 = [[1,0,0];[1,0,0];[0,0,1]];
+        r0 = [200,200,10]*1e3*x_scl;
+        r1 = [20,20,45]*1e3*x_scl;
         ntubes = length(p0);
-        r0 = ones(1,ntubes)*200e3*x_scl;
-        r1 = ones(1,ntubes)*20e3*x_scl;
+%         r0 = ones(1,ntubes)*200e3*x_scl;
+%         r1 = ones(1,ntubes)*20e3*x_scl;
         colors = [[1.0, 0.5, 0.0];...
             [0.2, 0.8, 0.2];...
             [0.8, 0.1, 0.8]
@@ -155,7 +159,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         % call fluxtube prior for speed
         tubes = struct;
         for n = 1:ntubes
-            tubes.(char(64+n)) = fluxtube(xg,dat,alt_ref*x_scl,p0(n,:),r0(n),r1(n),reverse=1,calculate_hull=1,res=64);
+            tubes.(char(64+n)) = fluxtube(xg,dat,alt_ref*x_scl,p0(n,:),r0(n),r1(n),v0=v0(n,:),reverse=1,calculate_hull=1,res=64);
         end
         for v = 1:length(views)
             vv = views(v,:)+dviews(v,:);
