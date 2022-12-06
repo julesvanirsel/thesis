@@ -74,7 +74,7 @@ U_scl = 1e+3; units.U = 'mW/m^2'; clm.U = 'L19';
 v_scl = 1e-3; units.v = 'km/s';   clm.v = 'D2';
 x_scl = 1e-3; units.x = 'km';
 
-fts = 8; % fontsize
+fts = 8*0+17; % fontsize
 ftn = 'Consolas'; % fontname (use monospaced fonts for better videos)
 clb_fmt = '%+ 6.1f'; % colorbar ticklabel format
 clb_exp = 0; % force no colorbar exponents
@@ -256,7 +256,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         suffix = '2d';
 
         figure
-        set(gcf,'PaperPosition',[0,0,6.5,7.5])
+        set(gcf,'PaperPosition',[0,0,10,13])
         tlo = tiledlayout(5,2);
         title(tlo,[plot_title,' (mlon = ',num2str(mlon_rac_p),'°)']...
             ,'FontSize',fts...
@@ -399,7 +399,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         suffix = 'cond';
 
         figure
-        set(gcf,'PaperPosition',[0,0,5,3])
+        set(gcf,'PaperPosition',[0,0,10,6])
         title(plot_title,'FontSize',fts,'FontName',ftn,'FontWeight','bold','Interpreter','none')
         subtitle(['alt = ',num2str(alt_rac_p),' ',units.x,', mlon = ',num2str(mlon_rac_p),'°'])
 
@@ -436,16 +436,16 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         suffix = 'vecs';
 
         figure
-        set(gcf,'PaperPosition',[0,0,6.5,3])
-        tlo = tiledlayout(1,2);
-        title(tlo,[plot_title,' (mlon = ',num2str(mlon_rac_p),'°)']...
-            ,'FontSize',fts...
-            ,'FontName',ftn...
-            ,'FontWeight'...
-            ,'bold'...
-            ,'Interpreter','none'...
-            )
-        qr = 10;
+        set(gcf,'PaperPosition',[0,0,6,6])
+%         tlo = tiledlayout(1,1);
+%         title(tlo,[plot_title,' (mlon = ',num2str(mlon_rac_p),'°)']...
+%             ,'FontSize',fts...
+%             ,'FontName',ftn...
+%             ,'FontWeight'...
+%             ,'bold'...
+%             ,'Interpreter','none'...
+%             )
+        qr = 10*0+4;
         lw = 0.5;
 
         nexttile
@@ -468,29 +468,29 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
         xlim(x3_range_p)
-        ylim([min(X1_p(:)),max(X1_p(:))])
-
-        nexttile
-        hold on
-        pcolor(X3_p,X1_p,v2_p)
-        quiver(...
-            X3_p(1:qr:end,1:qr:end)...
-            ,X1_p(1:qr:end,1:qr:end)...
-            ,v3_p(1:qr:end,1:qr:end)...
-            ,v1_p(1:qr:end,1:qr:end)...
-            ,'-k','MarkerFaceColor','k','LineWidth',lw)
-        hold off
-        title('Ion Flow')
-        xlabel(north_label)
-        ylabel(alt_label)
-        colormap(gca,colorcet(clm.v))
-        clb = colorbar;
-        clb.Label.String = ['v_E [',units.v,']'];
-        clb.Ruler.TickLabelFormat = clb_fmt;
-        clb.Ruler.Exponent = clb_exp;
-        clim(v2_range_p)
-        xlim(x3_range_p)
         ylim(x1_range_p)
+
+%         nexttile
+%         hold on
+%         pcolor(X3_p,X1_p,v2_p)
+%         quiver(...
+%             X3_p(1:qr:end,1:qr:end)...
+%             ,X1_p(1:qr:end,1:qr:end)...
+%             ,v3_p(1:qr:end,1:qr:end)...
+%             ,v1_p(1:qr:end,1:qr:end)...
+%             ,'-k','MarkerFaceColor','k','LineWidth',lw)
+%         hold off
+%         title('Ion Flow')
+%         xlabel(north_label)
+%         ylabel(alt_label)
+%         colormap(gca,colorcet(clm.v))
+%         clb = colorbar;
+%         clb.Label.String = ['v_E [',units.v,']'];
+%         clb.Ruler.TickLabelFormat = clb_fmt;
+%         clb.Ruler.Exponent = clb_exp;
+%         clim(v2_range_p)
+%         xlim(x3_range_p)
+%         ylim(x1_range_p)
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
             mkdir(direc,fullfile('plots',folder));
