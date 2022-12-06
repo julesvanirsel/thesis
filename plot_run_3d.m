@@ -238,7 +238,9 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 pl0 = plot3(axt,c0(:,1),c0(:,2),c0(:,3));
                 pl1 = plot3(axt,c1(:,1),c1(:,2),c1(:,3));
                 stl = streamline(axt,verts);
+                if n~=3
                 shd = slice(axj,Xm_p,Ym_p,Zm_p,permute(shadow,[2,1,3]),[],[],alt_ref_p);
+                end
                 plot3(axt,[1,1,1]*lon_ref_p,[ylims_p,ylims_p(2)],[zlims_p(1),zlims_p],'--','Color',[0,1.0,0]);
                 plot3(axt,[xlims_p(1),xlims_p],[ylims_p,ylims_p(2)],[1,1,1]*alt_ref_p,'--','Color',[0,0,1.0]);
 

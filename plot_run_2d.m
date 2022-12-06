@@ -445,7 +445,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 %             ,'bold'...
 %             ,'Interpreter','none'...
 %             )
-        qr = 10*0+4;
+        qr = 10*0+2;
         lw = 0.5;
 
         nexttile
