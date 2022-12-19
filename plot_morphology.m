@@ -7,8 +7,9 @@ runs = [...
     ,"aurora_E0-dependance_01_C"...
     ,"aurora_E0-dependance_01_D"...
     ,"aurora_E0-dependance_01_E"...
+    ,"aurora_highQlowE0_01"...
     ,"aurora_sharc_02"...
-    ,"aurora_highQlowE0_01"
+    ,"aurora_E2BG_05"
     ];
 lruns = length(runs);
 alt_ref = 300;
@@ -27,9 +28,6 @@ r1 = ones(1,ltubes)*20;
 
 %%
 dats = struct;
-p3 = zeros(lruns,ltubes);
-d2 = zeros(lruns,ltubes);
-d3 = zeros(lruns,ltubes);
 E0 = zeros(lruns,1);
 t = 35990;
 for i = 1:lruns
@@ -43,10 +41,15 @@ for i = 1:lruns
 end
 
 %%
+p1 = zeros(lruns,ltubes);
+p3 = zeros(lruns,ltubes);
+d1 = zeros(lruns,ltubes);
+d2 = zeros(lruns,ltubes);
+d3 = zeros(lruns,ltubes);
 for i = 1:lruns
     disp(runs(i))
     dat = dats.(char(64+i));
-    if i == lruns
+    if i == 7
         offset = [-lon_ref,0,0];
     else
         offset = [0,0,0];
@@ -57,14 +60,21 @@ for i = 1:lruns
         [msg,id] = lastwarn();
         if not(isempty(msg))
             p3(i,n) = missing;
+            d1(i,n) = missing;
             d2(i,n) = missing;
             d3(i,n) = missing;
         else
             c0 = tube.caps.start;
             c1 = tube.caps.end;
+            verts = tube.vertices;
+            vertmins = cell2mat(cellfun(@(v) min(v(:,3)),verts,'UniformOutput',false));
+            cls0 = min(vertmins);
+            cls1 = max(vertmins);
             ctr0 = mean(c0);
             ctr1 = mean(c1);
+            p1(i,n) = mean([cls0,cls1]);
             p3(i,n) = ctr0(2);
+            d1(i,n) = cls1 - cls0;
             d2(i,n) = ctr1(1)-ctr0(1);
             d3(i,n) = ctr1(2)-ctr0(2);
         end
@@ -72,7 +82,7 @@ for i = 1:lruns
 end
 
 %%
-colors = [zeros(1,lruns-2);linspace(0,1,lruns-2);zeros(1,lruns-2)]';
+colors = [zeros(1,lruns-3);linspace(0,1,lruns-3);zeros(1,lruns-3)]';
 fts = 17;
 ftn = 'consolas';
 
@@ -89,74 +99,69 @@ set(0,'defaultSurfaceEdgeColor','flat')
 folder = 'morphology';
 fn = 'E0-dependancy_morp';
 
-% pp = ["\Deltax_N","\Deltax_E"];
-% legend_strings = strings(2*lruns,1);
-% for p = 1:length(pp)
-%     for i = 1:lruns
-%         legend_strings(2*i-1+p-1) = pp(p) + " " + num2str(E0(i)/1e3) + " keV";
-%     end
-% end
 legend_strings = [...
-    num2str(E0(1:end-2)/1e3)...
-    ,repmat(' keV  ',lruns-2,1)...
-    ,num2str(E0(1:end-2)/1e3)...
-    ,repmat(' mW/m^2',lruns-2,1)...
+    num2str(E0(1:end-3)/1e3)...
+    ,repmat(' keV  ',lruns-3,1)...
+    ,num2str(E0(1:end-3)/1e3)...
+    ,repmat(' mW/m^2',lruns-3,1)...
     ];
 
 figure
-set(gcf,'PaperPosition',[0,0,15,5])
-tlo = tiledlayout(1,3);
+set(gcf,'PaperPosition',[0,0,18,4.5])
+tlo = tiledlayout(1,4);
 
 nexttile
 hold on
-for i=1:lruns-2
-    plot(p3(i,:),d2(i,:),'-o','Color',colors(i,:))
+for i=1:lruns-3
+    plot(-d2(i,:),-d3(i,:),'-o','Color',colors(i,:))
 end
-plot(p3(end-1,:),d2(end-1,:),'-ob')
-plot(p3(end,:),d2(end,:),'-or')
-title('East-West Deflection')
-xlabel('FAC Inflection Distance [km]')
-ylabel('Relative Distance, \DeltaX_E [km]')
-legend([legend_strings;" 3 keV   3 mw/m^2";" 1 keV 100 mW/m^2"],'Location','southwest','FontSize',0.6*fts)
+plot(-d2(end-2,:),-d3(end-2,:),'-ob')
+plot(-d2(end-1,:),-d3(end-1,:),'-or')
+plot(-d2(end-0,:),-d3(end-0,:),'-om')
+xlabel('E-W Deflection, \DeltaX_E [km]')
+ylabel('N-S Deflection, \DeltaX_N [km]')
 grid on
 
 nexttile
 hold on
-for i=1:lruns-2
-    plot(p3(i,:),d3(i,:),'-o','Color',colors(i,:))
-end
-plot(p3(end-1,:),d3(end-1,:),'-ob')
-plot(p3(end,:),d3(end,:),'-or')
-title('North-South Deflection')
-xlabel('FAC Inflection Distance [km]')
-ylabel('Relative Distance, \DeltaX_N [km]')
-legend([legend_strings;" 3 keV   3 mw/m^2";" 1 keV 100 mW/m^2"],'Location','southwest','FontSize',0.6*fts)
-grid on
-
-nexttile
-hold on
-for i=1:lruns-2
+for i=1:lruns-3
     plot(p3(i,:),d2(i,:)./d3(i,:),'-o','Color',colors(i,:))
 end
-plot(p3(end-1,:),d2(end-1,:)./d3(end-1,:),'-ob')
-plot(p3(end,:),d2(end,:)./d3(end,:),'-or')
-title('Deflection Ratio')
+plot(p3(end-2,:),d2(end-2,:)./d3(end-2,:),'-ob')
+plot(p3(end-1,:),d2(end-1,:)./d3(end-1,:),'-or')
+plot(p3(end,:),d2(end,:)./d3(end,:),'-om')
 xlabel('FAC Inflection Distance [km]')
-ylabel('Deflection Ratio, \DeltaX_N/\DeltaX_E')
-legend([legend_strings;" 3 keV   3 mw/m^2";" 1 keV 100 mW/m^2"],'Location','northwest','FontSize',0.6*fts)
+ylabel('Deflection Ratio, \DeltaX_E/\DeltaX_N')
 grid on
 
-% nexttile
-% hold on
-% for i=1:lruns-1
-%     plot(d2(i,:),d3(i,:),'-o','Color',colors(i,:))
-% end
-% plot(d2(end,:),d3(end,:),'-or')
-% title('Deflection Ratio')
-% xlabel('FAC Inflection Distance [km]')
-% ylabel('Deflection Ratio, \DeltaX_N/\DeltaX_E')
-% legend([legend_strings;" 1 keV, 100 mW/m^2"],'Location','southeast','FontSize',0.6*fts)
-% grid on
+nexttile
+hold on
+a = p3;
+b = p1;
+for i=[1,lruns-3]%1:lruns-3
+    plot(a(i,:),b(i,:),'-o','Color',colors(i,:))
+end
+plot(a(end-2,:),b(end-2,:),'-ob')
+plot(a(end-1,:),b(end-1,:),'-or')
+plot(a(end-0,:),b(end-0,:),'-om')
+xlabel('FAC Inflection Distance [km]')
+ylabel('Avg. Closure Altitude [km]')
+grid on
+
+nexttile
+hold on
+a = p3;
+b = d1;
+for i=1:lruns-3
+    plot(a(i,:),b(i,:),'-o','Color',colors(i,:))
+end
+plot(a(end-2,:),b(end-2,:),'-ob')
+plot(a(end-1,:),b(end-1,:),'-or')
+plot(a(end-0,:),b(end-0,:),'-om')
+xlabel('FAC Inflection Distance [km]')
+ylabel('Closure Alt. Range, \DeltaX_U [km]')
+grid on
+legend([legend_strings;" 1 keV 100 mW/m^2";" Sharc";" E_E = 10 mV/m"],'Location','northeast','FontSize',0.8*fts,'box','off')
 
 if ~exist(fullfile('plots',folder),'dir')
     mkdir(fullfile('plots',folder));
@@ -178,34 +183,3 @@ for n = 1:numel(properties)
     end
 end
 end
-
-
-% figure
-% set(gcf,'PaperPosition',[0,0,5,3])
-% title(plot_title,'FontSize',fts,'FontName',ftn,'FontWeight','bold','Interpreter','none')
-% subtitle(['alt = ',num2str(alt_rac_p),' ',units.x,', mlon = ',num2str(mlon_rac_p),'°'])
-%
-% hold on
-% yyaxis left
-% plot(x3_p,E3_p)
-% plot(x3_p,-j1_p(alt_rid,:))
-% yyaxis right
-% plot(x3_p,SIGP_p)
-% plot(x3_p,SIGH_p)
-% hold off
-% xlabel(north_label)
-% legend(...
-%     ['E_N [',units.e,']']...
-%     ,['j_{||} [',units.j,']']...
-%     ,['\Sigma_P [',units.S,']']...
-%     ,['\Sigma_H [',units.S,']']...
-%     )
-% xlim(x3_range_p)
-% grid on
-%
-% if ~exist(fullfile(direc,'plots',folder),'dir')
-%     mkdir(direc,fullfile('plots',folder));
-% end
-% filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-% disp(['Saving: ',filename])
-% saveas(gcf,filename)
