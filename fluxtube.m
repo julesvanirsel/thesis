@@ -21,7 +21,7 @@
 %     plot = false              (option) plotting option
 %     show_reverse_test = false (option) plot reverse flux tube test
 %     calculate_hull = false    (option) calculate flux tube hull
-%     var = 'j'                 (option) flux tube variable ('j','b')
+%     var = 'j'                 (option) flux tube variable ('j','v','b')
 %     res = 32                  (option) number of flux tube streamlines
 %     color = [0,0,0]           (option) plotting color
 %     units = 'km'              (option) length units ('m','km')
@@ -47,8 +47,9 @@ arguments
     options.zmin (1,1) double {mustBeNonnegative} = 80;
     options.plot (1,1) logical {mustBeNonempty} = false
     options.show_reverse_test (1,1) logical {mustBeNonempty} = false
+    options.show_flux (1,1) logical {mustBeNonempty} = false
     options.calculate_hull (1,1) logical {mustBeNonempty} = false
-    options.var (1,1) char {mustBeMember(options.var,['j','b'])} = 'j'
+    options.var (1,1) char {mustBeMember(options.var,['j','v','b'])} = 'j'
     options.res (1,1) int16 {mustBePositive} = 32
     options.color (1,3) double {mustBeNonempty} = [0,0,0]
     options.units (1,:) char {mustBeMember(options.units,['m','km'])} = 'km'
@@ -104,6 +105,10 @@ if strcmp(options.var,'j')
     Vx = permute(dat.J2,[3,2,1]); % stream3 requires meshgrid format
     Vy = permute(dat.J3,[3,2,1]);
     Vz = permute(dat.J1,[3,2,1]);
+elseif strcmp(options.var,'v')
+    Vx = permute(dat.v2,[3,2,1]); % stream3 requires meshgrid format
+    Vy = permute(dat.v3,[3,2,1]);
+    Vz = permute(dat.v1,[3,2,1]);
 elseif strcmp(options.var,'b')
     error('Magnetic field fluxtubes not yet incorperated')
 end
@@ -212,14 +217,16 @@ if options.plot
     xlim(xlims)
     ylim(ylims)
     zlim(zlims)
-%     ar = [0.4*range(xlims_p),range(ylims_p),2*range(zlims_p)]; %%%CHANGE
-    ar = [0.2*range(xlims),range(ylims),range(zlims)]; %%%CHANGE
+    ar = [0.4*range(xlims),range(ylims),2*range(zlims)]; %%%CHANGE
+    %     ar = [0.2*range(xlims),range(ylims),range(zlims)]; %%%CHANGE
     pbaspect(ar)
     xlabel(['East [',options.units,']'],'FontSize',sized)
     ylabel(['North [',options.units,']'],'FontSize',sized)
     zlabel(['Up [',options.units,']'],'FontSize',sized)
-    text(c0(1,1)-6e2,c0(1,2)+0e2,1.05*alt_ref,[num2str(flux0,3),'<V> ',options.units,'^2'],'Color',options.color,'FontSize',0.8*sized)
-    text(c1(1,1)+1e2,c1(1,2)+1e2,1.05*alt_ref,[num2str(flux1,3),'<V> ',options.units,'^2'],'Color',options.color,'FontSize',0.8*sized)
+    if options.show_flux
+        text(c0(1,1)-6e2,c0(1,2)+0e2,1.05*alt_ref,[num2str(flux0,3),'<V> ',options.units,'^2'],'Color',options.color,'FontSize',0.8*sized)
+        text(c1(1,1)+1e2,c1(1,2)+1e2,1.05*alt_ref,[num2str(flux1,3),'<V> ',options.units,'^2'],'Color',options.color,'FontSize',0.8*sized)
+    end
 end
 
 tube.vertices = verts;
