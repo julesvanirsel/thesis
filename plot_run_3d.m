@@ -49,12 +49,12 @@ z = double(xg.x1(3:end-2));
 ubz = ubz + 1; % add buffer cell
 z = z(1:ubz);
 lz = length(z);
-dx = double(xg.dx2h);
-dy = double(xg.dx3h);
-dz = double(xg.dx1h(1:ubz));
+% dx = double(xg.dx2h);
+% dy = double(xg.dx3h);
+% dz = double(xg.dx1h(1:ubz));
 [Xm,Ym,Zm] = meshgrid(x,y,z);
-[dX,dY,dZ] = ndgrid(dx,dy,dz);
-dV = dX.*dY.*dZ;
+% [dX,dY,dZ] = ndgrid(dx,dy,dz);
+% dV = dX.*dY.*dZ;
 
 %% loading configuration data
 cfg = gemini3d.read.config(direc);
@@ -95,19 +95,19 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     [~,runname] = fileparts(direc);
 
     %% formatting simulation data
-    phi = dat.Phitop;
-    [Ez,Ex,Ey] = gemscr.postprocess.pot2field(xg,phi);
+    %     phi = dat.Phitop;
+    %     [Ez,Ex,Ey] = gemscr.postprocess.pot2field(xg,phi);
 
-    Ex = permute(Ex(1:ubz,:,:),[2,3,1]);
-    Ey = permute(Ey(1:ubz,:,:),[2,3,1]);
-    Ez = permute(Ez(1:ubz,:,:),[2,3,1]);
-    jx = permute(dat.J2(1:ubz,:,:),[2,3,1]);
-    jy = permute(dat.J3(1:ubz,:,:),[2,3,1]);
+    %     Ex = permute(Ex(1:ubz,:,:),[2,3,1]);
+    %     Ey = permute(Ey(1:ubz,:,:),[2,3,1]);
+    %     Ez = permute(Ez(1:ubz,:,:),[2,3,1]);
+    %     jx = permute(dat.J2(1:ubz,:,:),[2,3,1]);
+    %     jy = permute(dat.J3(1:ubz,:,:),[2,3,1]);
     jz = permute(dat.J1(1:ubz,:,:),[2,3,1]);
     ne = permute(dat.ne(1:ubz,:,:),[2,3,1]);
 
     % implicit simulation data
-    joule = jx.*Ex + jy.*Ey + jz.*Ez;
+    %     joule = jx.*Ex + jy.*Ey + jz.*Ez;
 
     % set data ranges
     j1_range = [-1,1]*quantile(abs(jz(:,:,end)),qnt,'all');
@@ -136,7 +136,8 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         if opts.plot_type == 1
             ntubes = 3;
             p0 = [[lon_ref_p,40,300];[lon_ref_p,110,300];[lon_ref_p,180,300]]*1e3*x_scl;
-            v0 = [[1,0,0];[1,0,0];[1,0,0]];
+            v0 = repmat([1,0,0],ntubes,1);
+            v1 = repmat([0,1,0],ntubes,1);
             r0 = ones(1,ntubes)*200e3*x_scl;
             r1 = ones(1,ntubes)*20e3*x_scl;
             colors = [...
@@ -145,10 +146,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 [0.0, 0.5, 0.0];...
                 ];
             res = [64,64,64];
+            rev = ones(1,ntubes);
         elseif opts.plot_type == 2
             ntubes = 3;
             p0 = [[lon_ref_p,40,300];[lon_ref_p,160,300];[1000,100,115]]*1e3*x_scl;
             v0 = [[1,0,0];[1,0,0];[0,0,1]];
+            v1 = repmat([0,1,0],ntubes,1);
             r0 = [200,200,10]*1e3*x_scl;
             r1 = [20,20,45]*1e3*x_scl;
             colors = [...
@@ -157,6 +160,34 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 [1.0, 0.0, 0.0]...
                 ];
             res = [64,64,32];
+            rev = ones(1,ntubes);
+        elseif opts.plot_type == 3
+            ntubes = 10;
+            p0 = [-400+30*(0:10:40); ones(1,ntubes/2)*7; 125+(0:10:40)]'*1e3*x_scl;
+            p0 = repmat(p0,2,1);
+            v0 = repmat([1,0,0],ntubes,1);
+            v1 = repmat([0,0,1],ntubes,1);
+            r0 = ones(1,ntubes)*100e3*x_scl;
+            r1 = ones(1,ntubes)*5e3*x_scl;
+            %             colors = [(1-(0:10:40)/40); (0:10:40)/40; zeros(1,5)]';
+            colors = [[1,0,0];[1,0,1];[0,0,1];[0,1,1];[0,1,0]];
+            colors = repmat(colors,2,1);
+            res = ones(1,ntubes)*32;
+            rev = [ones(1,ntubes/2),zeros(1,ntubes/2)];
+        elseif opts.plot_type == 4
+            ntubes = 3;
+            p0 = [[lon_ref_p,5,200];[lon_ref_p,10,200];[lon_ref_p,15,200]]*1e3*x_scl;
+            v0 = repmat([1,0,0],ntubes,1);
+            v1 = repmat([0,1,0],ntubes,1);
+            r0 = ones(1,ntubes)*2e3*x_scl;
+            r1 = ones(1,ntubes)*2e3*x_scl;
+            colors = [...
+                [1.0, 0.5, 0.0];...
+                [0.2, 0.2, 0.8];...
+                [0.0, 0.5, 0.0];...
+                ];
+            res = [64,64,64];
+            rev = ones(1,ntubes);
         end
 
         views = [[30,45];[90,0];[0,90]];
@@ -168,7 +199,9 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         % call fluxtube prior for speed
         tubes = struct;
         for n = 1:ntubes
-            tubes.(char(64+n)) = fluxtube(xg,dat,alt_ref*x_scl,p0(n,:),r0(n),r1(n),v0=v0(n,:),reverse=1,calculate_hull=1,res=res(n));
+            tubes.(char(64+n)) = fluxtube(xg,dat,alt_ref*x_scl...
+                ,p0(n,:),r0(n),r1(n),v0=v0(n,:),v1=v1(n,:)...
+                ,reverse=rev(n),calculate_hull=0,res=res(n));
         end
         for v = 1:length(views)
             vv = views(v,:)+dviews(v,:);
@@ -236,8 +269,8 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 fluxes(2,n) = tube.flux.out*j_scl*f_scl;
                 in0 = tube.flux.area.in;
                 in1 = tube.flux.area.out;
-                hull = tube.hull;
-                joule_heatings(n) = sum(joule.*dV.*hull,'all');
+                %                 hull = tube.hull;
+                %                 joule_heatings(n) = sum(joule.*dV.*hull,'all');
 
                 shadow = nan(size(in0));
                 shadow(in0) = 0;
@@ -247,7 +280,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 pl0 = plot3(axt,c0(:,1),c0(:,2),c0(:,3));
                 pl1 = plot3(axt,c1(:,1),c1(:,2),c1(:,3));
                 stl = streamline(axt,verts);
-                if any(not(isnan(shadow,'all')))
+                if any(not(isnan(shadow)),'all')
                     shd = slice(axj,Xm_p,Ym_p,Zm_p,permute(shadow,[2,1,3]),[],[],alt_ref_p);
                 end
                 plot3(axt,[1,1,1]*lon_ref_p,[ylims_p,ylims_p(2)],[zlims_p(1),zlims_p],'--','Color',[0,1,0]);
