@@ -45,6 +45,7 @@ arguments
     options.mlon_ref (1,1) double {mustBeNonempty} = -1
     options.x1_range (1,2) double {mustBeNonempty} = [80e3,300e3]
     options.x3_range (1,2) double {mustBeNonempty} = [-30e3,30e3]
+    options.dat (:,:) struct = struct
     %     options.j_range (1,2) double {mustBeNonempty} = [-2e-6,2e-6]
     %     options.n_range (1,2) double {mustBeNonempty} = [1e9,1e12]
     %     options.p_range (1,2) double {mustBeNonempty} = [-3e3,3e3]
@@ -77,6 +78,7 @@ x_scl = 1e-3; units.x = 'km';
 fts = 8*0+17; % fontsize
 ftn = 'Consolas'; % fontname (use monospaced fonts for better videos)
 clb_fmt = '%+ 6.1f'; % colorbar ticklabel format
+% clb_fmt = '%+ 3.0f';
 clb_exp = 0; % force no colorbar exponents
 ctr_lc = 'k'; % contour plot linecolor
 ctr_lw = 0.3; % contour plot linewidth
@@ -147,7 +149,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     %% loading simulation data
     time = datetime(ymd) + seconds(UTsec);
     time.Format = 'yyyyMMdd''T''HHmmss.SSS';
-    dat = gemini3d.read.frame(direc,'time',time);
+    if isempty(fields(options.dat))
+        dat = gemini3d.read.frame(direc,'time',time);
+    else
+        dat = options.dat;
+    end
     title_time = char(dat.time);
     filename_prefix = [char(time),'UT'];
     [~,runname] = fileparts(direc);
@@ -184,15 +190,15 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     E3 = -gradient(phi)./dx3';
 
     % precipitation variables
-    [~,precip_fn,~] = fileparts(dat.filename);
-    precip = dir(fullfile(direc,'*particles',[char(precip_fn),'.*']));
-    if isempty(precip)
-        precip = dir(fullfile(direc,'*','*particles',[char(precip_fn),'.*']));
-    end
-    Q = h5read(fullfile(precip.folder,precip.name),'/Qp')/1e3; % Q defaults with mW/m^2 units
-    E0 = h5read(fullfile(precip.folder,precip.name),'/E0p'); % eV
-    Q = Q(mlon_rid,:);
-    E0 = E0(mlon_rid,:);
+%     [~,precip_fn,~] = fileparts(dat.filename);
+%     precip = dir(fullfile(direc,'*particles',[char(precip_fn),'.*']));
+%     if isempty(precip)
+%         precip = dir(fullfile(direc,'*','*particles',[char(precip_fn),'.*']));
+%     end
+%     Q = h5read(fullfile(precip.folder,precip.name),'/Qp')/1e3; % Q defaults with mW/m^2 units
+%     E0 = h5read(fullfile(precip.folder,precip.name),'/E0p'); % eV
+%     Q = Q(mlon_rid,:);
+%     E0 = E0(mlon_rid,:);
     %     QM = contour(squeeze(MLON(1,:,:)),squeeze(MLAT(1,:,:)),Q,1);
     %     QM = QM(:,2:end); % (mlon,mlat) contour points
     %     Q_inds = abs(QM(1,:)-mlon_rac) < 0.1*median(diff(MLON(1,:,1))); % contour line intersections
@@ -200,7 +206,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     %% plotting routines
     % scale simulation data for plotting
-    E0_p = E0*c_scl; Q_p = Q*U_scl;
+%     E0_p = E0*c_scl; Q_p = Q*U_scl;
     E3_p = E3*e_scl;
     j1_p = j1*j_scl; j2_p = j2*j_scl; j3_p = j3*j_scl;
     ne_p = ne*n_scl;
@@ -399,26 +405,25 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         suffix = 'cond';
 
         figure
-        set(gcf,'PaperPosition',[0,0,10,6])
-        title(plot_title,'FontSize',fts,'FontName',ftn,'FontWeight','bold','Interpreter','none')
-        subtitle(['alt = ',num2str(alt_rac_p),' ',units.x,', mlon = ',num2str(mlon_rac_p),'°'])
+        set(gcf,'PaperPosition',[0,0,4,6])
+%         title(plot_title,'FontSize',fts,'FontName',ftn,'FontWeight','bold','Interpreter','none')
+%         subtitle(['alt = ',num2str(alt_rac_p),' ',units.x,', mlon = ',num2str(mlon_rac_p),'°'])
 
         hold on
-        yyaxis left
-        plot(x3_p,E3_p)
-        plot(x3_p,-j1_p(alt_rid,:))
-        yyaxis right
-        plot(x3_p,SIGP_p)
-        plot(x3_p,SIGH_p)
+        plot(v2_p(alt_rid,:),x3_p,'b')
+        plot(-j1_p(alt_rid,:),x3_p,'r')
+        plot(SIGP_p/100,x3_p,'k')
+        plot(SIGH_p/100,x3_p,'--k')
         hold off
-        xlabel(north_label)
+        ylabel(north_label)
         legend(...
-            ['E_N [',units.e,']']...
+            ['v_E [',units.v,']']...
             ,['j_{||} [',units.j,']']...
-            ,['\Sigma_P [',units.S,']']...
-            ,['\Sigma_H [',units.S,']']...
-            )
-        xlim(x3_range_p)
+            ,['\Sigma_P [100 ',units.S,']']...
+            ,['\Sigma_H [100 ',units.S,']']...
+            ,'FontSize',0.5*fts,'Location','southwest','box','off')
+        xlim([-1,1]*3.1)
+        ylim(x3_range_p)
         grid on
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
@@ -436,7 +441,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         suffix = 'vecs';
 
         figure
-        set(gcf,'PaperPosition',[0,0,6,6])
+        set(gcf,'PaperPosition',[0,0,4,6])
 %         tlo = tiledlayout(1,1);
 %         title(tlo,[plot_title,' (mlon = ',num2str(mlon_rac_p),'°)']...
 %             ,'FontSize',fts...
@@ -445,20 +450,20 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 %             ,'bold'...
 %             ,'Interpreter','none'...
 %             )
-        qr = 10*0+2;
+        qr = 10*0+4;
         lw = 0.5;
 
         nexttile
         hold on
         pcolor(X3_p,X1_p,j2_p)
         quiver(...
-            X3_p(1:qr:end,1:qr:end)...
-            ,X1_p(1:qr:end,1:qr:end)...
-            ,j3_p(1:qr:end,1:qr:end)...
-            ,j1_p(1:qr:end,1:qr:end)...
+            X3_p(1:qr/2:end,1:qr:end)...
+            ,X1_p(1:qr/2:end,1:qr:end)...
+            ,j3_p(1:qr/2:end,1:qr:end)...
+            ,j1_p(1:qr/2:end,1:qr:end)...
             ,'-k','MarkerFaceColor','k','LineWidth',lw)
         hold off
-        title('Current Closure')
+%         title('Current Closure')
         xlabel(north_label)
         ylabel(alt_label)
         colormap(gca,colorcet(clm.j))
@@ -466,7 +471,8 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Label.String = ['j_E [',units.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
-        clim(j1_range_p)
+%         clim(j1_range_p)
+        clim([-1,1]*31)
         xlim(x3_range_p)
         ylim(x1_range_p)
 
