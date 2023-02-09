@@ -31,17 +31,27 @@ arguments
     options.process (1,1) logical {mustBeNonempty} = false
 end
 
+if any(direc(end)=='/\')
+    direc = direc(1:end-1);
+end
 name = strrep(name,' ','_');
 sims_direc = fileparts(direc);
 
 npars = length(pars);
-nruns = length(vals);
+nruns = size(vals,2);
 assert(npars==size(vals,1),'Number of parameters does not match the values array size.')
 fn = gemini3d.find.config(direc);
 
+
+
 for i = 1:nruns
     fid = fopen(fn);
-    new_direc = fullfile(sims_direc,[name,'_',char(64+i)]);
+    if nruns == 1
+        fullname =name;
+    else
+        fullname = [name,'_',char(64+i)];
+    end
+    new_direc = fullfile(sims_direc,fullname);
     if ~exist(new_direc,'dir')
         mkdir(new_direc);
     end
@@ -75,7 +85,7 @@ fclose all;
 
 if options.run
     for i = 1:nruns
-        new_direc = fullfile(sims_direc,[name,'_',char(64+i)]);
+        new_direc = fullfile(sims_direc,fullname);
         gemini_bin = fullfile(getenv('GEMINI_ROOT'),'build','gemini.bin');
         system(['mpiexec -np ',num2str(options.np),' ',gemini_bin,' ',new_direc],'-echo')
     end
@@ -83,7 +93,7 @@ end
 
 if options.process
     for i = 1:nruns
-        new_direc = fullfile(sims_direc,[name,'_',char(64+i)]);
+        new_direc = fullfile(sims_direc,fullname);
         process(new_direc)
     end
 end
