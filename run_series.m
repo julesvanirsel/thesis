@@ -31,6 +31,9 @@ arguments
     options.process (1,1) logical {mustBeNonempty} = false
 end
 
+if any(direc(end)=='/\')
+    direc = direc(1:end-1);
+end
 name = strrep(name,' ','_');
 sims_direc = fileparts(direc);
 
@@ -69,6 +72,7 @@ for i = 1:nruns
     end
     if options.setup
         gemini3d.model.setup(new_direc,new_direc)
+        pause(5)
     end
 end
 fclose all;
@@ -78,6 +82,7 @@ if options.run
         new_direc = fullfile(sims_direc,[name,'_',char(64+i)]);
         gemini_bin = fullfile(getenv('GEMINI_ROOT'),'build','gemini.bin');
         system(['mpiexec -np ',num2str(options.np),' ',gemini_bin,' ',new_direc],'-echo')
+        pause(5)
     end
 end
 
@@ -85,6 +90,7 @@ if options.process
     for i = 1:nruns
         new_direc = fullfile(sims_direc,[name,'_',char(64+i)]);
         process(new_direc)
+        pause(5)
     end
 end
 
