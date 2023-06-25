@@ -71,7 +71,7 @@ j_scl = 1e+6; units.j = 'uA/m^2'; clm.j = 'D1A';
 n_scl = 1e+0; units.n = 'm^{-3}'; clm.n = 'L9';
 p_scl = 1e-3; units.p = 'kV';     clm.p = 'D10';
 s_scl = 1e+0; units.s = 'S';      clm.s = 'L18';
-t_scl = 1e-3; units.t = 'kK';     clm.t = 'L3';
+t_scl = 1/1.16e4; units.t = 'eV'; clm.t = 'L3';
 u_scl = 1e+6; units.u = 'uW/m^3'; clm.u = 'L19';
 U_scl = 1e+3; units.U = 'mW/m^2'; clm.U = 'L19';
 v_scl = 1e-3; units.v = 'km/s';   clm.v = 'D2';
@@ -79,7 +79,9 @@ x_scl = 1e-3; units.x = 'km';
 
 fts = 8; % fontsize
 ftn = 'Consolas'; % fontname (use monospaced fonts for better videos)
+% ftn = 'Arial';
 clb_fmt = '%+ 6.1f'; % colorbar ticklabel format
+% clb_fmt = '%+ 2.2f';
 clb_exp = 0; % force no colorbar exponents
 ctr_lc = 'k'; % contour plot linecolor
 ctr_lw = 0.3; % contour plot linewidth
