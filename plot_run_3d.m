@@ -11,6 +11,8 @@ arguments
     opts.plot_type (1,1) int8 = 1
 end
 
+doAnnotate = true;
+
 % assertions
 plot_options = ["all","fluxtubes"];
 for p = plots
@@ -32,12 +34,17 @@ p_scl = 1e-6; units.p = 'MW';
 x_scl = 1e-3; units.x = 'km';
 
 zmin = 80e3;
-xlims = [-1,1]*1050e3;
+% xlims = [-1,1]*1050e3;
+xlims = [-1,1]*1300e3;
 ylims = [-190,360]*1e3;
+ylims2 = [-120,290]*1e3;
+% ylims2 = ylims;
 zlims = [zmin,alt_ref*1.05];
 qnt = 0.99; % quantile value used to set data ranges
-fts = 17; % fontsize
-clb_fmt = '%+ 5.1f'; % colorbar ticklabel format
+fts = 20; %17 % fontsize
+ftn = 'Arial';
+% clb_fmt = '%+ 5.1f'; % colorbar ticklabel format
+clb_fmt = '%5.1f';
 clb_exp = 0; % force no colorbar exponents
 
 %% loading grid data
@@ -121,6 +128,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     xlims_p = xlims*x_scl;
     ylims_p = ylims*x_scl;
+    ylims2_p = ylims2*x_scl;
     zlims_p = zlims*x_scl;
     lon_ref_p = lon_ref*x_scl;
     alt_ref_p = alt_ref*x_scl;
@@ -135,7 +143,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         if opts.plot_type == 1
             ntubes = 3;
-            p0 = [[lon_ref_p,40,300];[lon_ref_p,110,300];[lon_ref_p,180,300]]*1e3*x_scl;
+            p0 = [[lon_ref_p,40,alt_ref_p];[lon_ref_p,110,alt_ref_p];[lon_ref_p,180,alt_ref_p]]*1e3*x_scl;
             v0 = repmat([1,0,0],ntubes,1);
             v1 = repmat([0,1,0],ntubes,1);
             r0 = ones(1,ntubes)*200e3*x_scl;
@@ -157,7 +165,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             colors = [...
                 [1.0, 0.5, 0.0];...
                 [0.2, 0.2, 0.8];...
-                [1.0, 0.0, 0.0]...
+                [0.0, 0.0, 0.0]...
                 ];
             res = [64,64,32];
             rev = ones(1,ntubes);
@@ -188,11 +196,55 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 ];
             res = [64,64,64];
             rev = ones(1,ntubes);
+        elseif opts.plot_type == 5
+            ntubes = 3;
+            p0 = [[lon_ref_p,40+50,300];[lon_ref_p,110+50,300];[lon_ref_p,180+50,300]]*1e3*x_scl;
+            v0 = repmat([1,0,0],ntubes,1);
+            v1 = repmat([0,1,0],ntubes,1);
+            r0 = ones(1,ntubes)*200e3*x_scl;
+            r1 = ones(1,ntubes)*20e3*x_scl;
+            colors = [...
+                [1.0, 0.5, 0.0];...
+                [0.2, 0.2, 0.8];...
+                [0.0, 0.5, 0.0];...
+                ];
+            res = [64,64,64];
+            rev = ones(1,ntubes);
+        elseif opts.plot_type == 6
+            ntubes = 3;
+            p0 = [[lon_ref_p,40,alt_ref/1e3];[lon_ref_p,110,alt_ref/1e3];[lon_ref_p,180,alt_ref/1e3]]*1e3*x_scl;
+            v0 = repmat([1,0,0],ntubes,1);
+            v1 = repmat([0,1,0],ntubes,1);
+            r0 = ones(1,ntubes)*200e3*x_scl;
+            r1 = ones(1,ntubes)*20e3*x_scl;
+            colors = [...
+                [1.0, 0.5, 0.0];...
+                [0.2, 0.2, 0.8];...
+                [0.0, 0.5, 0.0];...
+                ];
+            res = [64,64,64];
+            rev = ones(1,ntubes);
+        elseif opts.plot_type == 7
+            ntubes = 3;
+            p0 = [[lon_ref_p,40,alt_ref/1e3];[lon_ref_p,100,alt_ref/1e3];[lon_ref_p,195,alt_ref/1e3]]*1e3*x_scl;
+            v0 = repmat([1,0,0],ntubes,1);
+            v1 = repmat([0,1,0],ntubes,1);
+            r0 = ones(1,ntubes)*200e3*x_scl;
+            r1 = ones(1,ntubes)*20e3*x_scl;
+            colors = [...
+                [1.0, 0.5, 0.0];...
+                [0.2, 0.2, 0.8];...
+                [0.0, 0.5, 0.0];...
+                ];
+            res = [64,64,64];
+            rev = ones(1,ntubes);
         end
 
         views = [[30,45];[90,0];[0,90]];
         dviews = [[10*2*(UTsec0-UTsec+tdur/2)/tdur,0];[0,0];[0,0]];
-        paper_w = [8,11,9.5];
+%         dviews = [[10*2*(UTsec0-36000+150/2)/150,0];[0,0];[0,0]];
+%         paper_w = [8,11,9.5];
+        paper_w = [14,5.3,5.7];
         fluxes = zeros(2,ntubes);
         joule_heatings = zeros(1,ntubes);
 
@@ -207,7 +259,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             vv = views(v,:)+dviews(v,:);
 
             figure(v)
-            set(gcf,'PaperUnits','inches','PaperPosition',[0,0,paper_w(v),6])
+            set(gcf,'PaperUnits','inches','PaperPosition',[0,0,paper_w(v),6.5])
             title([runname,' at ',title_time,' UT'],'FontSize',fts*2,'FontWeight','bold','Interpreter','none')
             t = tiledlayout(1,1,'TileSpacing','compact');
             axj = axes(t); %#ok<LAXES>
@@ -216,6 +268,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             axa = [axj,axn,axt];
 
             set(axa,'FontSize',fts)
+            set(axa,'FontName',ftn)
             set(axj,'XColor','none','YColor','none','ZColor','none','ZTick',alt_ref_p)
             set(axn,'Color','none','XColor','none','YColor','none','ZColor','none','XTick',lon_ref_p)
             set(axt,'Color','none','XGrid','on','YGrid','on','ZGrid','on')
@@ -223,12 +276,16 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             xlim(axj,xlims_p)
             xlim(axn,xlims_p + (lon_ref_p-xlims_p(1)))
             xlim(axt,xlims_p)
-            ylim(axa,ylims_p)
+            if v==2
+                ylim(axa,ylims2_p)
+            else
+                ylim(axa,ylims_p)
+            end
             zlim(axj,zlims_p + (alt_ref-zmin)*x_scl)
             zlim(axn,zlims_p)
             zlim(axt,zlims_p)
             view(axa,vv)
-            ar = [0.4*range(xlims_p),range(ylims_p),2*range(zlims_p)];
+            ar = [0.4*range(xlims_p)*0.7,range(ylims_p),2*range(zlims_p)];
             pbaspect(axj,ar)
             pbaspect(axn,ar)
             pbaspect(axt,ar)
@@ -238,26 +295,26 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             colormap(axj,colorcet(clm.j))
             shading(axj,'flat')
             clim(axj,j1_range_p)
-            if v == 2
+%             if v == 1%2
                 clb = colorbar(axj);
                 clb.Label.String = ['j_{||} [',units.j,']'];
                 clb.FontSize = fts;
                 clb.Position = [0.87,0.07,0.015,0.44];
                 clb.Ruler.TickLabelFormat = clb_fmt;
                 clb.Ruler.Exponent = clb_exp;
-            end
+%             end
 
             slice(axn,Xm_p,Ym_p,Zm_p,permute(log10(ne_p),[2,1,3]),lon_ref_p,[],[]);
             colormap(axn,colorcet(clm.n))
             shading(axn,'flat')
-            if v == 2
+%             if v == 1%2
                 clb = colorbar(axn);
                 clb.Label.String = ['n_e [',units.n,']'];
                 clb.FontSize = fts;
                 clb.Position = [0.87,0.55,0.015,0.44];
                 clb.Ruler.TickLabelFormat = clb_fmt;
                 clb.Ruler.Exponent = clb_exp;
-            end
+%             end
 
             for n = 1:ntubes
                 color = colors(n,:);
@@ -293,26 +350,26 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 set(stl,'Color',[color,0.5],'LineWidth',1)
             end
 
-            xlabel(['East [',units.x,']'],'FontSize',fts)
-            ylabel(['North [',units.x,']'],'FontSize',fts)
-            zlabel(['Up [',units.x,']'],'FontSize',fts)
+            xlabel(['east [',units.x,']'],'FontSize',fts)
+            ylabel(['north [',units.x,']'],'FontSize',fts)
+            zlabel(['up [',units.x,']'],'FontSize',fts)
 
             flux_strings = cell(2,ntubes);
             heat_strings = cell(1,ntubes);
             for n = 1:ntubes
                 flux_strings{1,n} = ['\color[rgb]{',num2str(colors(n,:)),'}'...
-                    ,num2str(fluxes(1,n),3),' ',units.f,'  ','\color{black}'];
+                    ,num2str(fluxes(1,n),'%3.1f'),' ',units.f,'  ','\color{black}'];
                 flux_strings{2,n} = ['\color[rgb]{',num2str(colors(n,:)),'}'...
-                    ,num2str(fluxes(2,n),3),' ',units.f,'  ','\color{black}'];
+                    ,num2str(fluxes(2,n),'%3.1f'),' ',units.f,'  ','\color{black}'];
                 heat_strings{n} = ['\color[rgb]{',num2str(colors(n,:)),'}'...
-                    ,num2str(joule_heatings(n)*p_scl,3),' ',units.p,'  ','\color{black}'];
+                    ,num2str(joule_heatings(n)*p_scl,'%3.1f'),' ',units.p,'  ','\color{black}'];
             end
-            if v == 1
-                annotation('textbox',[0.53,0.97,0.01,0.01],'String',[...
+            if v == 1 && doAnnotate
+                annotation('textbox',[0.52,0.97,0.01,0.01],'String',[...
                     'Current In:  ',cell2mat(flux_strings(1,:)),newline,...
                     'Current Out:  ',cell2mat(flux_strings(2,:)),newline,...
-                    'Joule Heating:  ',cell2mat(heat_strings),...
-                    ],'FitBoxToText','on','EdgeColor','none','BackgroundColor','none','FontSize',0.6*fts)
+%                     'Joule Heating:  ',cell2mat(heat_strings),...
+                    ],'FitBoxToText','on','EdgeColor','none','BackgroundColor','none','FontSize',18,'FontName',ftn)
             end
 
             full_folder = [folder,'_',cell2mat(folder_suffix(v))];
