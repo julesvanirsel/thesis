@@ -1,0 +1,126 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      4175,        118]
+NotebookOptionsPosition[      3571,         99]
+NotebookOutlinePosition[      4003,        116]
+CellTagsIndexPosition[      3960,        113]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"p0", "=", 
+    RowBox[{"{", 
+     RowBox[{"800", ",", "80", ",", "300"}], "}"}]}], ";"}], 
+  "\[IndentingNewLine]", 
+  RowBox[{"(*", 
+   RowBox[{
+    RowBox[{"p0", "=", 
+     RowBox[{"{", 
+      RowBox[{"800", ",", "240", ",", "300"}], "}"}]}], ";"}], 
+   "*)"}]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"r0", "=", "200."}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"r1", "=", "20."}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"v0", "=", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "0", ",", "0"}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"v1", "=", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "1", ",", "0"}], "}"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"c0", "=", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{"p0", "+", 
+      RowBox[{"r0", " ", 
+       RowBox[{"Cos", "[", 
+        RowBox[{"2", "\[Pi]", " ", "t"}], "]"}], "v0"}], "+", 
+      RowBox[{"r1", " ", 
+       RowBox[{"Sin", "[", 
+        RowBox[{"2", "\[Pi]", " ", "t"}], "]"}], "v1"}]}], ",", 
+     RowBox[{"{", 
+      RowBox[{"t", ",", "0", ",", "1", ",", 
+       RowBox[{"1", "/", "31"}]}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Length", "[", "c0", "]"}], "\[IndentingNewLine]", 
+ RowBox[{"Export", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"NotebookDirectory", "[", "]"}], "<>", "\"\<curve1.txt\>\""}], 
+   ",", "c0", ",", "\"\<Table\>\"", ",", 
+   RowBox[{"\"\<FieldSeparators\>\"", "\[Rule]", "\"\< \>\""}]}], 
+  "]"}]}], "Input",
+ CellChangeTimes->{{3.8986993662146835`*^9, 3.8986993883453712`*^9}, {
+  3.8986994601394076`*^9, 3.8986997295893936`*^9}, {3.8987008219409904`*^9, 
+  3.898700832665554*^9}, {3.8987008931487637`*^9, 3.8987008937827706`*^9}, {
+  3.898700942420493*^9, 3.898700942485494*^9}, {3.8987009887360616`*^9, 
+  3.898700988937024*^9}, {3.8987010703452563`*^9, 3.898701088412133*^9}, {
+  3.8987012018237095`*^9, 3.8987012068541346`*^9}, {3.8987013021831694`*^9, 
+  3.898701302552174*^9}, {3.901892073158376*^9, 3.901892107537345*^9}, {
+  3.9018922044124804`*^9, 3.901892204502437*^9}},
+ CellLabel->
+  "In[234]:=",ExpressionUUID->"0670a46e-0e56-43d1-ba4e-bb8a9de1fadc"],
+
+Cell[BoxData["32"], "Output",
+ CellChangeTimes->{
+  3.8987008960646434`*^9, 3.898700942946492*^9, 3.898700989784114*^9, 
+   3.8987010889181337`*^9, 3.8987012072772274`*^9, 3.8987013031351347`*^9, {
+   3.9018920740444407`*^9, 3.9018921085566196`*^9}, 3.9018922051964993`*^9},
+ CellLabel->
+  "Out[240]=",ExpressionUUID->"51463a60-4a31-42f8-9294-27f74e5e256c"],
+
+Cell[BoxData["\<\"D:\\\\Files\\\\research\\\\thesis\\\\notebooks\\\\curve1.\
+txt\"\>"], "Output",
+ CellChangeTimes->{
+  3.8987008960646434`*^9, 3.898700942946492*^9, 3.898700989784114*^9, 
+   3.8987010889181337`*^9, 3.8987012072772274`*^9, 3.8987013031351347`*^9, {
+   3.9018920740444407`*^9, 3.9018921085566196`*^9}, 3.901892205252267*^9},
+ CellLabel->
+  "Out[241]=",ExpressionUUID->"b82a8e1e-4a1f-4f71-804e-3d80a3bb09cb"]
+}, Open  ]]
+},
+WindowSize->{1920, 989},
+WindowMargins->{{Automatic, 1912}, {Automatic, -8}},
+Magnification:>1.8 Inherited,
+FrontEndVersion->"12.1 for Microsoft Windows (64-bit) (March 18, 2020)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"759a85d0-8346-4462-b132-3117fad29064"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 2189, 57, 323, "Input",ExpressionUUID->"0670a46e-0e56-43d1-ba4e-bb8a9de1fadc"],
+Cell[2772, 81, 357, 6, 58, "Output",ExpressionUUID->"51463a60-4a31-42f8-9294-27f74e5e256c"],
+Cell[3132, 89, 423, 7, 58, "Output",ExpressionUUID->"b82a8e1e-4a1f-4f71-804e-3d80a3bb09cb"]
+}, Open  ]]
+}
+]
+*)
+
