@@ -160,7 +160,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     %% formatting simulation data
     phi = dat.Phitop;
-    [sigP,sigH,SIGP,SIGH] = load_conductances(direc,time,dat,cfg,xg);
+    [sigP,sigH,SIGP,SIGH] = tools.load_conductances(direc,time,dat,cfg,xg);
 
     % rescale simulation data
     j1 = dat.J1;

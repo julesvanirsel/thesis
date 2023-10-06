@@ -219,6 +219,7 @@ if options.plot
     zlim(zlims)
     ar = [0.4*range(xlims),range(ylims),2*range(zlims)]; %%%CHANGE
     %     ar = [0.2*range(xlims),range(ylims),range(zlims)]; %%%CHANGE
+    ar = [range(xlims),range(ylims),range(zlims)];
     pbaspect(ar)
     xlabel(['East [',options.units,']'],'FontSize',sized)
     ylabel(['North [',options.units,']'],'FontSize',sized)
