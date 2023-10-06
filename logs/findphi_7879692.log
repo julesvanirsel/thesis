@@ -1,0 +1,121 @@
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2022 The MathWorks, Inc.
+             R2022a Update 3 (9.12.0.1975300) 64-bit (glnxa64)
+                                June 2, 2022
+
+ 
+To get started, type doc.
+For product information, visit www.mathworks.com.
+ 
+Uniform x2 grid
+Uniform x3 grid
+cartesian grid:  168 x 128 x 256
+Particle data datetime: 02-Mar-2017 07:52:43
+Rocket data datetime: 02-Mar-2017 07:52:43
+Starting parallel pool (parpool) using the 'local' profile ...
+Connected to the parallel pool (number of workers: 16).
+
+ans = 
+
+ ProcessPool with properties: 
+
+            Connected: true
+           NumWorkers: 16
+                 Busy: false
+              Cluster: local
+        AttachedFiles: {}
+    AutoAddClientPath: true
+            FileStore: [1x1 parallel.FileStore]
+           ValueStore: [1x1 parallel.ValueStore]
+          IdleTimeout: 1440 minutes (1440 minutes remaining)
+          SpmdEnabled: true
+
+Current eastward decimation = 32
+Regularized electric field range = [ -17.22 -- 72.11 ]
+Regularized position gradient range = [ 0.49 -- 62.99 ]
+Current number of fitting elements 1024
+
+                                        First-Order                    Norm of 
+ Iteration  Func-count    Residual       optimality      Lambda           step
+     0        1025     1.14108e+06             190         0.01
+     1        2050          499038            6.07        0.001        4072.18
+     2        3075          125500            0.88       0.0001        9530.86
+     3        4100         29796.8          0.0645        1e-05        10312.6
+     4        5125         28081.3         0.00105        1e-06        1745.37
+     5        6150         28080.5        3.11e-06        1e-07        62.1157
+     6        7175         28080.5        2.22e-07        1e-08       0.451243
+
+Local minimum possible.
+
+lsqcurvefit stopped because the final change in the sum of squares relative to 
+its initial value is less than the value of the function tolerance.
+
+Reconstruction time = 26.73 seconds
+Current eastward decimation = 16
+Regularized electric field range = [ -17.27 -- 72.11 ]
+Regularized position gradient range = [ 0.49 -- 31.50 ]
+Current number of fitting elements 2048
+
+                                        First-Order                    Norm of 
+ Iteration  Func-count    Residual       optimality      Lambda           step
+     0        2049          194861            48.9         0.01
+     1        4098         55099.2            1.95        0.001        1210.43
+     2        6147         41947.8          0.0968       0.0001        1576.51
+     3        8196         40208.2         0.00601        1e-05        1251.54
+     4       10245         40177.4        0.000128        1e-06        327.826
+     5       12294         40177.3        7.39e-07        1e-07        19.7547
+
+Local minimum possible.
+
+lsqcurvefit stopped because the final change in the sum of squares relative to 
+its initial value is less than the value of the function tolerance.
+
+Reconstruction time = 68.88 seconds
+Current eastward decimation = 8
+Regularized electric field range = [ -18.54 -- 72.11 ]
+Regularized position gradient range = [ 0.49 -- 15.75 ]
+Current number of fitting elements 4096
+
+                                        First-Order                    Norm of 
+ Iteration  Func-count    Residual       optimality      Lambda           step
+     0        4097          193601            57.7         0.01
+     1        8194         79973.5            1.14        0.001        775.424
+     2       12291           76288          0.0412       0.0001        729.022
+     3       16388           76016         0.00206        1e-05          468.2
+     4       20485         76012.8        3.37e-05        1e-06         84.169
+     5       24582         76012.8        8.88e-07        1e-07         3.8345
+
+Local minimum possible.
+
+lsqcurvefit stopped because the final change in the sum of squares relative to 
+its initial value is less than the value of the function tolerance.
+
+Reconstruction time = 314.46 seconds
+Current eastward decimation = 4
+Regularized electric field range = [ -19.27 -- 72.11 ]
+Regularized position gradient range = [ 0.49 -- 7.87 ]
+Current number of fitting elements 8192
+
+                                        First-Order                    Norm of 
+ Iteration  Func-count    Residual       optimality      Lambda           step
+     0        8193          249697            56.4         0.01
+     1       16386          153718           0.456        0.001        451.889
+     2       24579          152951          0.0158       0.0001        329.494
+     3       32772          152871        0.000938        1e-05         277.53
+     4       40965          152869        1.09e-05        1e-06        43.1763
+
+Local minimum possible.
+
+lsqcurvefit stopped because the final change in the sum of squares relative to 
+its initial value is less than the value of the function tolerance.
+
+Reconstruction time = 1502.35 seconds
+Current eastward decimation = 2
+Regularized electric field range = [ -19.27 -- 72.11 ]
+Regularized position gradient range = [ 0.49 -- 3.94 ]
+Current number of fitting elements 16384
+
+                                        First-Order                    Norm of 
+ Iteration  Func-count    Residual       optimality      Lambda           step
+     0       16385          397474              57         0.01
