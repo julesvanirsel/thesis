@@ -5,9 +5,9 @@ arguments
     options.cad (1,1) double {mustBeNonempty} = -1
     options.stop (1,1) double {mustBeNonempty} = -1
     options.mlon_ref (1,1) double {mustBeNonempty} = -1
-    options.plot (1,1) logical {mustBeNonempty} = 1
-    options.video (1,1) logical {mustBeNonempty} = 1
-    options.vtk (1,1) logical {mustBeNonempty} = 0
+    options.plot (1,1) logical {mustBeNonempty} = true
+    options.video (1,1) logical {mustBeNonempty} = true
+    options.vtk (1,1) logical {mustBeNonempty} = false
 end
 
 tic

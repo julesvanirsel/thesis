@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# name of job
+#SBATCH -J findphi
+
+# output file
+#SBATCH -o logs/findphi_%j.log
+
+# error file
+#SBATCH -e logs/findphi_%j.err
+
+# mail to me
+#SBATCH --mail-type=END,FAIL
+
+# time limit in minutes
+#SBATCH --time=600
+
+# number of nodes
+#SBATCH --nodes=1
+
+# number of tasks per node
+#SBATCH --ntasks-per-node=32
+
+# number of CPUs per task
+# #SBATCH --cpus-per-task=0
+
+matlab -nodisplay -nodesktop -r "init; replication_IG; exit"

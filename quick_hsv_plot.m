@@ -14,7 +14,7 @@ qnt=0.99;
 j1_range = buf*[-1,1]*quantile(abs(jpar(:)),qnt);
 
 [hsv_map_clb,hsv_mlon,hsv_mlon_map,hsv_alt,hsv_alt_map] =...
-    hsv_params(v2,v3,X3,X2,X1,300,0,700);
+    tools.hsv_params(v2,v3,X3,X2,X1,300,0,700);
 
 %%
 clm.j = 'D1A';

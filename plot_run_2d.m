@@ -64,16 +64,16 @@ if any(direc(end)=='/\')
 end
 
 %% hard coded parameters
-c_scl = 1e-3; units.c = 'keV';    clm.c = 'L17';
-e_scl = 1e+3; units.e = 'mV/m';   clm.e = 'D13';
-j_scl = 1e+6; units.j = 'uA/m^2'; clm.j = 'D1A';
-n_scl = 1e+0; units.n = 'm^{-3}'; clm.n = 'L9';
-s_scl = 1e+3; units.s = 'mS/m';   clm.s = 'L18';
-S_scl = 1e+0; units.S = 'S';      clm.S = 'L18';
-t_scl = 1/1.16e4; units.t = 'eV';     clm.t = 'L3';
-U_scl = 1e+3; units.U = 'mW/m^2'; clm.U = 'L19';
-v_scl = 1e-3; units.v = 'km/s';   clm.v = 'D2';
-x_scl = 1e-3; units.x = 'km';
+c_scl = 1e-3;       units.c = 'keV';    clm.c = 'L17';
+e_scl = 1e+3;       units.e = 'mV/m';   clm.e = 'D13';
+j_scl = 1e+6;       units.j = 'uA/m^2'; clm.j = 'D1A';
+n_scl = 1e+0;       units.n = 'm^{-3}'; clm.n = 'L9';
+s_scl = 1e+3;       units.s = 'mS/m';   clm.s = 'L18';
+S_scl = 1e+0;       units.S = 'S';      clm.S = 'L18';
+t_scl = 1/1.16e4;   units.t = 'eV';     clm.t = 'L3';
+U_scl = 1e+3;       units.U = 'mW/m^2'; clm.U = 'L19';
+v_scl = 1e-3;       units.v = 'km/s';   clm.v = 'D2';
+x_scl = 1e-3;       units.x = 'km';
 
 fts = 8*0+17; % fontsize
 % ftn = 'Consolas'; % fontname (use monospaced fonts for better videos)
@@ -161,7 +161,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     %% formatting simulation data
     phi = dat.Phitop;
-    [sigP,sigH,SIGP,SIGH] = load_conductances(direc,time,dat,cfg,xg);
+    [sigP,sigH,SIGP,SIGH] = tools.load_conductances(direc,time,dat,cfg,xg);
 
     % rescale simulation data
     j1 = dat.J1;

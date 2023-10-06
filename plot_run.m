@@ -55,7 +55,7 @@ end
 %% assertions
 plot_options = ["all","closure","conductance","continuity","contour","density","fccp","joule","multi","temp"];
 for plt = plots
-    assert(ismember(plt,plot_options),"'"+ plt + "' is not one of the plotting options.")
+    assert(ismember(plt,plot_options),sprintf("'%s' is not one of the plotting options.",plt))
 end
 if ismember('all',plots)
     plots = plot_options;
@@ -71,7 +71,7 @@ j_scl = 1e+6; units.j = 'uA/m^2'; clm.j = 'D1A';
 n_scl = 1e+0; units.n = 'm^{-3}'; clm.n = 'L9';
 p_scl = 1e-3; units.p = 'kV';     clm.p = 'D10';
 s_scl = 1e+0; units.s = 'S';      clm.s = 'L18';
-t_scl = 1/1.16e4; units.t = 'eV'; clm.t = 'L3';
+t_scl = 8.62e-5; units.t = 'eV';  clm.t = 'L3';
 u_scl = 1e+6; units.u = 'uW/m^3'; clm.u = 'L19';
 U_scl = 1e+3; units.U = 'mW/m^2'; clm.U = 'L19';
 v_scl = 1e-3; units.v = 'km/s';   clm.v = 'D2';
@@ -80,7 +80,8 @@ x_scl = 1e-3; units.x = 'km';
 fts = 8; % fontsize
 ftn = 'Consolas'; % fontname (use monospaced fonts for better videos)
 % ftn = 'Arial';
-clb_fmt = '%+ 6.1f'; % colorbar ticklabel format
+% clb_fmt = '%+ 6.1f'; % colorbar ticklabel format
+clb_fmt = '%+ 6.2f';
 % clb_fmt = '%+ 2.2f';
 clb_exp = 0; % force no colorbar exponents
 ctr_lc = 'k'; % contour plot linecolor
@@ -138,6 +139,7 @@ ymd = cfg.ymd;
 UTsec0 = cfg.UTsec0;
 tdur = cfg.tdur;
 dtout = cfg.dtout;
+dtprec = cfg.dtprec;
 
 %% setting time boundaries
 if options.start < 0
@@ -158,7 +160,7 @@ end
 
 %% main loop
 for UTsec = UTsec0+start:cad:UTsec0+stop
-    disp(pad([' UTsec = ',num2str(UTsec),' s '],80,'both','-'))
+    fprintf([pad(sprintf(' UTsec = %i s ',UTsec),80,'both','-'),'\n'])
 
     %% loading simulation data
     time = datetime(ymd) + seconds(UTsec);
@@ -172,7 +174,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     phi = dat.Phitop;
     [E1,E2,E3] = gemscr.postprocess.pot2field(xg,phi);
     [jP_3,jH_3,~] = gemscr.postprocess.current_decompose(xg,dat);
-    [sigP,sigH,SIGP,SIGH] = load_conductances(direc,time,dat,cfg,xg);
+    [sigP,sigH,SIGP,SIGH] = tools.load_conductances(direc,time,dat,cfg,xg);
+
+    % add background electric fields
+    E2 = E2 + cfg.ap_ExBg;
+    E3 = E3 + cfg.ap_EyBg;
 
     % rescale simulation data
     E1 = E1(lb1:ub1,lb2:ub2,lb3:ub3);
@@ -217,10 +223,14 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % hsv plot variables
     [hsv_map_clb,hsv_mlon,hsv_mlon_map,hsv_alt,hsv_alt_map] =...
-        hsv_params(v2,v3,MLAT,MLON,ALT,alt_ref,mlon_ref,hsv_sat);
+        tools.hsv_params(v2,v3,MLAT,MLON,ALT,alt_ref,mlon_ref,hsv_sat);
 
     % precipitation variables
-    [~,precip_fn,~] = fileparts(dat.filename);
+%     [~,precip_fn,~] = fileparts(dat.filename);
+    precip_UTsecs = UTsec0 + (0:dtprec:tdur);
+    [~,precip_i] = min(abs(precip_UTsecs-UTsec));
+    precip_time = datetime(ymd) + seconds(precip_UTsecs(precip_i));
+    precip_fn = gemini3d.datelab(precip_time);
     precip = dir(fullfile(direc,'*particles',[char(precip_fn),'.*']));
     if isempty(precip)
         precip = dir(fullfile(direc,'*','*particles',[char(precip_fn),'.*']));
@@ -386,7 +396,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-        disp(['Saving: ',filename])
+        fprintf('Saving: %s\n',filename)
         saveas(gcf,filename)
         close all
     end
@@ -427,7 +437,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-        disp(['Saving: ',filename])
+        fprintf('Saving: %s\n',filename)
         saveas(gcf,filename)
         close all
     end
@@ -520,7 +530,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-        disp(['Saving: ',filename])
+        fprintf('Saving: %s\n',filename)
         saveas(gcf,filename)
         close all
     end
@@ -658,7 +668,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 mkdir(direc,fullfile('plots',folder));
             end
             filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-            disp(['Saving: ',filename])
+            fprintf('Saving: %s\n',filename)
             saveas(gcf,filename)
             close all
         end
@@ -728,7 +738,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-        disp(['Saving: ',filename])
+        fprintf('Saving: %s\n',filename)
         saveas(gcf,filename)
         close all
     end
@@ -841,7 +851,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-        disp(['Saving: ',filename])
+        fprintf('Saving: %s\n',filename)
         saveas(gcf,filename)
         close all
     end
@@ -964,7 +974,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-        disp(['Saving: ',filename])
+        fprintf('Saving: %s\n',filename)
         saveas(gcf,filename)
         close all
     end
@@ -1119,7 +1129,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 mkdir(direc,fullfile('plots',folder));
             end
             filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-            disp(['Saving: ',filename])
+            fprintf('Saving: %s\n',filename)
             saveas(gcf,filename)
             close all
         end
@@ -1217,7 +1227,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             mkdir(direc,fullfile('plots',folder));
         end
         filename = fullfile(direc,'plots',folder,[filename_prefix,'_',suffix,'.png']);
-        disp(['Saving: ',filename])
+        fprintf('Saving: %s\n',filename)
         saveas(gcf,filename)
         close all
     end

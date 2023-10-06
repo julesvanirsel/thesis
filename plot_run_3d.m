@@ -12,6 +12,7 @@ arguments
 end
 
 doAnnotate = true;
+paper_w = [9,9,10];
 
 % assertions
 plot_options = ["all","fluxtubes"];
@@ -41,7 +42,7 @@ ylims2 = [-120,290]*1e3;
 % ylims2 = ylims;
 zlims = [zmin,alt_ref*1.05];
 qnt = 0.99; % quantile value used to set data ranges
-fts = 20; %17 % fontsize
+fts = 30; %17 % fontsize
 ftn = 'Arial';
 % clb_fmt = '%+ 5.1f'; % colorbar ticklabel format
 clb_fmt = '%5.1f';
@@ -244,7 +245,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         dviews = [[10*2*(UTsec0-UTsec+tdur/2)/tdur,0];[0,0];[0,0]];
 %         dviews = [[10*2*(UTsec0-36000+150/2)/150,0];[0,0];[0,0]];
 %         paper_w = [8,11,9.5];
-        paper_w = [14,5.3,5.7];
+%         paper_w = [14,5.3,5.7];
         fluxes = zeros(2,ntubes);
         joule_heatings = zeros(1,ntubes);
 
@@ -259,7 +260,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             vv = views(v,:)+dviews(v,:);
 
             figure(v)
-            set(gcf,'PaperUnits','inches','PaperPosition',[0,0,paper_w(v),6.5])
+            set(gcf,'PaperUnits','inches','PaperPosition',2*[0,0,paper_w(v),6.5])
             title([runname,' at ',title_time,' UT'],'FontSize',fts*2,'FontWeight','bold','Interpreter','none')
             t = tiledlayout(1,1,'TileSpacing','compact');
             axj = axes(t); %#ok<LAXES>
