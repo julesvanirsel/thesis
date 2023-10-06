@@ -13,16 +13,26 @@
 % end
 % fclose all;
 
-nE0 = 5;
-nQ = 5;
-[E0g,Qg] = ndgrid(10.^linspace(2.001,4,nE0),10.^linspace(-1,2,nQ));
+nE0 = 4;
+nQ = 4;
+[E0g,Qg] = ndgrid(10.^linspace(log10(500),log10(5e4),nE0),10.^linspace(-1,2,nQ));
 
 for i = 1:nE0
     for j = 1:nQ
         E0_tmp = E0g(i,j);
         Q_tmp = Qg(i,j);
-        runname = ['pt_',num2str(E0_tmp,'%1.2e'),'_',num2str(Q_tmp,'%1.2e')];
-        run_series('runs\preciptest_fang2010\aurora_preciptest_base\',runname,["W0BG","PhiWBG"],[E0_tmp;Q_tmp])
+        runname = ['pt_',num2str(E0_tmp,'%1.2e'),'_',num2str(Q_tmp,'%1.2e'),'_2008'];
+        run_series('runs\preciptest_fang2010\aurora_preciptest_base\',runname,["W0BG","PhiWBG","flag_fang"],[E0_tmp;Q_tmp;2008],run=true)
+    end
+end
+fclose all;
+
+for i = 1:nE0
+    for j = 1:nQ
+        E0_tmp = E0g(i,j);
+        Q_tmp = Qg(i,j);
+        runname = ['pt_',num2str(E0_tmp,'%1.2e'),'_',num2str(Q_tmp,'%1.2e'),'_2010'];
+        run_series('runs\preciptest_fang2010\aurora_preciptest_base\',runname,["W0BG","PhiWBG","flag_fang"],[E0_tmp;Q_tmp;-1],run=true)
     end
 end
 fclose all;

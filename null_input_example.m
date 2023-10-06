@@ -1,5 +1,6 @@
-direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\aurora_bent_03\';
+% direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\aurora_bent_03\';
 % direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\aurora_null_02\';
+direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\evans_comparison_evans-2keV-800eV';
 dat = gemini3d.read.frame(direc,'time',datetime(2015,2,1,0,0,36000));
 xg = gemini3d.read.grid(direc);
 
@@ -23,71 +24,75 @@ clm.j = 'D1A';
 units.U = 'mW/m^2';
 units.c = 'keV';
 units.j = 'uA/m^2';
-clb_fmt = '%+ 4.1f';
+clb_fmt = '%+ 2.0f';
+% clb_fmt = '%+ 4.2f';
 clb_exp = 0;
-ftn = 'Consolas';
-fts = 11;
+% ftn = 'Consolas';
+ftn = 'Arial';
+fts = 18;
 % ar = [1,10,1];
+ar = [(1+sqrt(5))/2,1,1];
 
 reset(0)
 set(0,'defaultFigurePaperUnits','inches')
 set(0,'defaultTiledlayoutPadding','tight')
 set(0,'defaultTiledlayoutTileSpacing','tight')
-% setall(0,'FontName',ftn)
+setall(0,'FontName',ftn)
 setall(0,'FontSize',fts)
 setall(0,'Multiplier',1)
 set(0,'defaultAxesFontSizeMode','manual')
 set(0,'defaultSurfaceEdgeColor','flat')
 
 figure
-set(gcf,'PaperPosition',[0,0,2.25,4])
+set(gcf,'PaperPosition',[0,0,5,6])
 tlo = tiledlayout(3,1);
 
 nexttile
 pcolor(X2,X3,Q*1e3)
 % title('Precip. Energy Flux')
 xlabel('')
-% ylabel('North [km]')
-yticks([])
+ylabel('North [km]')
+% yticks([])
 colormap(gca,colorcet(clm.U))
 clb = colorbar;
-clb.Label.String = ['Q [',units.U,']'];
+clb.Label.String = ['Q_0 (',units.U,')'];
 clim([-0.2,3.2])
-% clb.Ruler.TickLabelFormat = clb_fmt;
-% clb.Ruler.Exponent = clb_exp;
+clb.Ruler.TickLabelFormat = clb_fmt;
+clb.Ruler.Exponent = clb_exp;
 Qlims = get(clb,'Limits');
-% pbaspect(ar)
+pbaspect(ar)
 
 nexttile
 pcolor(X2,X3,E0/1e3)
 % title('Char. Energy')
 xlabel('')
-% ylabel('North [km]')
-yticks([])
+ylabel('North [km]')
+% yticks([])
 colormap(gca,colorcet(clm.c))
 clb = colorbar;
-clb.Label.String = ['E_0 [',units.c,']'];
+clb.Label.String = ['E_0 (',units.c,')'];
 clim([-0.2,3.2])
-% clb.Ruler.TickLabelFormat = clb_fmt;
-% clb.Ruler.Exponent = clb_exp;
+clb.Ruler.TickLabelFormat = clb_fmt;
+clb.Ruler.Exponent = clb_exp;
 E0lims = get(clb,'Limits');
-% pbaspect(ar)
+pbaspect(ar)
 
 nexttile
 pcolor(X2,X3,jpar*1e6)
 % title('FAC')
-xlabel('East [km]')% ylabel('North [km]')
-yticks([])
+xlabel('East [km]')
+ylabel('North [km]')
+% yticks([])
 colormap(gca,colorcet(clm.j))
 clb = colorbar;
-clb.Label.String = ['j_{||} [',units.j,']'];
-% clb.Ruler.TickLabelFormat = clb_fmt;
-% clb.Ruler.Exponent = clb_exp;
+clb.Label.String = ['j_{||} (',units.j,')'];
+clb.Ruler.TickLabelFormat = clb_fmt;
+clb.Ruler.Exponent = clb_exp;
 clim([-2.1,2.1])
 jlims = get(clb,'Limits');
-% pbaspect(ar)
+pbaspect(ar)
 
-saveas(gcf,'../FINESST/bent_input_example_a.png')
+saveas(gcf,'../CEDAR 2023/figures/evans-input-example.png')
 close all
 
 %%
