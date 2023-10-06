@@ -70,15 +70,16 @@ j_scl = 1e+6; units.j = 'uA/m^2'; clm.j = 'D1A';
 n_scl = 1e+0; units.n = 'm^{-3}'; clm.n = 'L9';
 s_scl = 1e+3; units.s = 'mS/m';   clm.s = 'L18';
 S_scl = 1e+0; units.S = 'S';      clm.S = 'L18';
-t_scl = 1e-3; units.t = 'kK';     clm.t = 'L3';
+t_scl = 1/1.16e4; units.t = 'eV';     clm.t = 'L3';
 U_scl = 1e+3; units.U = 'mW/m^2'; clm.U = 'L19';
 v_scl = 1e-3; units.v = 'km/s';   clm.v = 'D2';
 x_scl = 1e-3; units.x = 'km';
 
 fts = 8*0+17; % fontsize
-ftn = 'Consolas'; % fontname (use monospaced fonts for better videos)
-clb_fmt = '%+ 6.1f'; % colorbar ticklabel format
-% clb_fmt = '%+ 3.0f';
+% ftn = 'Consolas'; % fontname (use monospaced fonts for better videos)
+ftn = 'Arial';
+% clb_fmt = '%+ 6.1f'; % colorbar ticklabel format
+clb_fmt = '%+ 2.1f';
 clb_exp = 0; % force no colorbar exponents
 ctr_lc = 'k'; % contour plot linecolor
 ctr_lw = 0.3; % contour plot linewidth
@@ -224,12 +225,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % set data plotting ranges
     buf = 1.05;
-    j1_range_p = buf*[-1,1]*quantile(abs(j1_p(:)),qnt);
-    n_range_p = buf*[quantile(ne_p(:),1-qnt),quantile(ne_p(:),qnt)];
-    Te_range_p = buf*[quantile(Te_p(:),1-qnt),quantile(Te_p(:),qnt)];
-    Ti_range_p = buf*[quantile(Ti_p(:),1-qnt),quantile(Ti_p(:),qnt)];
-    v2_range_p = buf*[-1,1]*quantile(abs(v2_p(:)),qnt);
-    v3_range_p = buf*[-1,1]*quantile(abs(v3_p(:)),qnt);
+    j1_range_p = buf*[-1,1]*quantile(abs(j1_p(:)),qnt) + [0,1e-10];
+    n_range_p = buf*[quantile(ne_p(:),1-qnt),quantile(ne_p(:),qnt)] + [0,1e-6];
+    Te_range_p = buf*[quantile(Te_p(:),1-qnt),quantile(Te_p(:),qnt)] + [0,1e-6];
+    Ti_range_p = buf*[quantile(Ti_p(:),1-qnt),quantile(Ti_p(:),qnt)] + [0,1e-6];
+    v2_range_p = buf*[-1,1]*quantile(abs(v2_p(:)),qnt) + [0,1e-6];
+    v3_range_p = buf*[-1,1]*quantile(abs(v3_p(:)),qnt) + [0,1e-6];
 
     %     j_range_hard_p = j_range_hard*j_scl;
     %     n_range_hard_p = n_range_hard*n_scl;
@@ -283,6 +284,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(log10(n_range_p))
+        ylim(x1_range_p)
 
         nexttile
         pcolor(MLAT,ALT_p,-j1_p)
@@ -295,6 +297,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
+        ylim(x1_range_p)
 
         nexttile
         pcolor(MLAT,ALT_p,j2_p)
@@ -306,19 +309,21 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Label.String = ['j_E [',units.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
-        clim(j1_range_p)
+        clim(j1_range_p*4)
+        ylim(x1_range_p)
 
         nexttile
         pcolor(MLAT,ALT_p,j3_p)
         title('N-S Current')
         %         xlabel(mlat_label)
-        %         ylabel(alt_label)
+%                 ylabel(alt_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
         clb.Label.String = ['j_N [',units.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
-        clim(j1_range_p)
+        clim(j1_range_p*4)
+        ylim(x1_range_p)
 
         nexttile
         pcolor(MLAT,ALT_p,v2_p)
@@ -331,6 +336,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(v2_range_p)
+        ylim(x1_range_p)
 
         nexttile
         pcolor(MLAT,ALT_p,v3_p)
@@ -343,6 +349,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(v3_range_p)
+        ylim(x1_range_p)
 
         nexttile
         pcolor(MLAT,ALT_p,sigP_p)
@@ -354,6 +361,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Label.String = ['\sigma_P [',units.s,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
+        ylim(x1_range_p)
 
         nexttile
         pcolor(MLAT,ALT_p,sigH_p)
@@ -365,6 +373,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Label.String = ['\sigma_H [',units.s,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
+        ylim(x1_range_p)
 
         nexttile
         pcolor(MLAT,ALT_p,Te_p)
@@ -377,6 +386,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Te_range_p)
+        ylim(x1_range_p)
 
         nexttile
         pcolor(MLAT,ALT_p,Ti_p)
@@ -389,6 +399,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Ti_range_p)
+        ylim(x1_range_p)
 
         if ~exist(fullfile(direc,'plots',folder),'dir')
             mkdir(direc,fullfile('plots',folder));
