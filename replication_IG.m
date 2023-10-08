@@ -22,7 +22,8 @@ plotting = false;
 %#ok<*UNRCH>
 
 %% unpack grid and configuration data
-direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_05';
+direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_05_A';
+direc = fullfile(direc);
 cfg = gemini3d.read.config(direc);
 xg = gemini3d.grid.cartesian(cfg);
 MLAT = 90-squeeze(xg.theta(end,:,:))*180/pi;
@@ -346,7 +347,10 @@ else
 end
 
 %% generate potential map - option C
-load('forjewelz_threwee.mat')
+load('data/forjewelz_threwee.mat')
+% G2 = fft(E2,128,1);
+% G3 = fft(E3,256,2);
+
 
 %% plot potentials A and B
 if plotting || true
@@ -517,9 +521,18 @@ fprintf('Saving file:c %s\n',filename)
 saveas(gcf,filename)
 
 %% happy?
-% load('data\phitopA_1_1_v7.mat')
-% phi = phitopA;
-% save(fullfile(direc,'ext','potential_map_01.mat'),'phi','E2_bg','E3_bg') 
+% happy = input('Happy? (y/n) ','s');
+% if strcmp(happy,'y')
+%     fprintf("I'm glad you're happy.\n")
+% 
+%     direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\isinglass_05_A';
+%     phi = phitopA;
+%     save(fullfile(direc,'ext','potential_map.mat'),'phi','E2_bg','E3_bg','dec')
+%     
+%     direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\isinglass_05_B';
+%     phi = phitopB;
+%     save(fullfile(direc,'ext','potential_map.mat'),'phi','E2_bg','E3_bg','ns') 
+% end
 
 %% gather up isinglass flow data
 % load('../../public_html/Gemini3D/isinglass_05/latlonggeoandgeomfootpoint.mat')
