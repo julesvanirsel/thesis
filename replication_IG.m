@@ -18,11 +18,15 @@ lbl.vy = ['Northward flow (',unt.v,')'];
 sc1 = 10;
 sc2 = 1.5;
 
-plotting = false;
+do_plot = false;
+save_plot = false;
+do_A = false;
+do_B = false;
+do_C = true;
 %#ok<*UNRCH>
 
 %% unpack grid and configuration data
-direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_05_A';
+direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_06';
 direc = fullfile(direc);
 cfg = gemini3d.read.config(direc);
 xg = gemini3d.grid.cartesian(cfg);
@@ -64,7 +68,7 @@ bound_b = griddedInterpolant(bounds_x2,bounds_x3(2,:));
 angle = griddedInterpolant(bounds_x2(1:end-1), ...
     atan2(diff(bounds_x3(1,:)),diff(bounds_x2)));
 
-if plotting
+if do_plot
     close all
     figure(1)
     pts_bound = -155e3:5e3:155e3;
@@ -87,14 +91,17 @@ end
 clear('glon','glat','mlon','mlat','Qit','E0it','outputdate')
 
 %% replicate rocket data
+do_scale = false;
+do_rotate = false;
 it_isin = 15;
 v2_bg = 0;
 v3_bg = -500; % chi-by-eye constant background flow removal
+
 load(fullfile(direc,'ext','flow_data.mat'))
 x2_isin = mlon_to_x2(mlon);
 x3_isin = mlat_to_x3(mlat);
-v2_isin = v_geom_east - v2_bg;
-v3_isin = v_geom_north - v3_bg;
+v2_isin = smoothdata(v_geom_east - v2_bg,'gaussian',8);
+v3_isin = smoothdata(v_geom_north - v3_bg,'gaussian',8);
 datetime_isin = datetimes(it_isin);
 
 fprintf('Particle data datetime: %s\n', datetime_part)
@@ -131,29 +138,39 @@ for i = 1:length(dxs)
     y1b = traj1(x1b);
     width1 = sqrt((x1b-x1a)^2+(y1b-y1a)^2);
 
-    % rotate about p1a by beta
-    x2_isin_rot = cos(beta)*(x2_isin_tra - x1a) ...
-        - sin(beta)*(x3_isin_tra - y1a) + x1a;
-    x3_isin_rot = sin(beta)*(x2_isin_tra - x1a) ...
-        + cos(beta)*(x3_isin_tra - y1a) + y1a;
+    if do_scale
+        % rotate about p1a by beta
+        x2_isin_rot = cos(beta)*(x2_isin_tra - x1a) ...
+            - sin(beta)*(x3_isin_tra - y1a) + x1a;
+        x3_isin_rot = sin(beta)*(x2_isin_tra - x1a) ...
+            + cos(beta)*(x3_isin_tra - y1a) + y1a;
+    
+        % scale about p1a
+        scale = width1/width0;
+        x2_isin_scl = x2_isin_rot;
+        x3_isin_scl = scale*(x3_isin_rot - y1a) + y1a;
+    
+        % rotate back
+        x2_isin_rep(i,:) = cos(-beta)*(x2_isin_scl - x1a) ...
+            - sin(-beta)*(x3_isin_scl - y1a) + x1a;
+        x3_isin_rep(i,:) = sin(-beta)*(x2_isin_scl - x1a) ...
+            + cos(-beta)*(x3_isin_scl - y1a) + y1a;
+    else
+        x2_isin_rep(i,:) = x2_isin_tra;
+        x3_isin_rep(i,:) = x3_isin_tra;
+    end
+    
+    if do_rotate
+        % rotate flows to be tangent to bound_a
+        alpha = angle(x1a);
+        v2_isin_rep(i,:) = cos(alpha)*v2_isin - sin(alpha)*v3_isin;
+        v3_isin_rep(i,:) = sin(alpha)*v2_isin + cos(alpha)*v3_isin;
+    else
+        v2_isin_rep(i,:) = v2_isin;
+        v3_isin_rep(i,:) = v3_isin;
+    end
 
-    % scale about p1a
-    scale = width1/width0;
-    x2_isin_scl = x2_isin_rot;
-    x3_isin_scl = scale*(x3_isin_rot - y1a) + y1a;
-
-    % rotate back
-    x2_isin_rep(i,:) = cos(-beta)*(x2_isin_scl - x1a) ...
-        - sin(-beta)*(x3_isin_scl - y1a) + x1a;
-    x3_isin_rep(i,:) = sin(-beta)*(x2_isin_scl - x1a) ...
-        + cos(-beta)*(x3_isin_scl - y1a) + y1a;
-
-    % rotate flows to be tangent to bound_a
-    alpha = angle(x1a);
-    v2_isin_rep(i,:) = cos(alpha)*v2_isin - sin(alpha)*v3_isin;
-    v3_isin_rep(i,:) = sin(alpha)*v2_isin + cos(alpha)*v3_isin;
-
-    if i==50 && plotting
+    if i==50 && do_plot
         close all
         figure(1)
         hold on
@@ -180,7 +197,7 @@ for i = 1:length(dxs)
     end
 end
 
-if plotting
+if do_plot
     figure(2)
     hold on
     pcolor(X2_part*scl.x,X3_part*scl.x,Q_map_part); shading flat
@@ -195,6 +212,16 @@ if plotting
     xlabel(lbl.x)
     ylabel(lbl.y)
     pbaspect([1,1,1])
+
+    figure(3)
+    hold on
+    plot(time,v_geom_east - v2_bg,'Color',[1,0.4,0.4])
+    plot(time,v_geom_north - v3_bg,'Color',[0.4,0.4,1])
+    plot(time,v2_isin,'r')
+    plot(time,v3_isin,'b')
+    xlabel('Flight time (s)')
+    ylabel('Flow (m/s)')
+    legend('east','east smoothed','north','north smoothed')
 end
 
 clear('lon_100km','lat_100km','mlon','mlat', ...
@@ -206,12 +233,12 @@ fv2 = scatteredInterpolant(x2_isin_rep(:),x3_isin_rep(:),v2_isin_rep(:));
 fv3 = scatteredInterpolant(x2_isin_rep(:),x3_isin_rep(:),v3_isin_rep(:));
 v2_map = fv2(X2,X3);
 v3_map = fv3(X2,X3);
-E2 =  v3_map*Bmag; % v = ExB/B^2
-E3 = -v2_map*Bmag;
+E2_map =  v3_map*Bmag; % v = ExB/B^2
+E3_map = -v2_map*Bmag;
 E2_bg =  v3_bg*Bmag;
 E3_bg = -v2_bg*Bmag;
 
-if plotting
+if do_plot
     close all
     figure(1)
     hold on
@@ -237,147 +264,241 @@ if plotting
 end
 
 %% generate potential map - option A
-pseudo_basis = false;
-usepar = false;
-look_for_file = true;
-suf = 'v7';
-dec = [1,1];
-numf = 64;
-
-if pseudo_basis
-    bag_x2 = X2(1:dec(1):end,1:dec(2):end);
-    bag_x3 = X3(1:dec(1):end,1:dec(2):end);
-    bag_v2 = v2_map(1:dec(1):end,1:dec(2):end);
-    bag_v3 = v3_map(1:dec(1):end,1:dec(2):end);
-    bag_x = [bag_x2(:),bag_x3(:)];
-    bag_v = [bag_v2(:),bag_v3(:)];
-    boundary = [bounds_x2;bounds_x3(1,:)]';
-
-    if plotting
-        close all
-
-        figure(1)
-        hold on
-        pcolor(X2*scl.x,X3*scl.x,v2_map*scl.v); shading flat
-        colorbar; colormap(clm.v); clim(lim.v)
-        quiver(bag_x2*scl.x,bag_x3*scl.x,bag_v2*scl.v,bag_v3*scl.v,0,'.-k')
-
-        cont = input('Looks good? (y/n) ',"s");
+if do_A
+    pseudo_basis = false;
+    usepar = false;
+    look_for_file = true;
+    suf = 'v7';
+    dec = [1,1];
+    numf = 64;
+    
+    if pseudo_basis
+        bag_x2 = X2(1:dec(1):end,1:dec(2):end);
+        bag_x3 = X3(1:dec(1):end,1:dec(2):end);
+        bag_v2 = v2_map(1:dec(1):end,1:dec(2):end);
+        bag_v3 = v3_map(1:dec(1):end,1:dec(2):end);
+        bag_x = [bag_x2(:),bag_x3(:)];
+        bag_v = [bag_v2(:),bag_v3(:)];
+        boundary = [bounds_x2;bounds_x3(1,:)]';
+    
+        if do_plot
+            close all
+    
+            figure(1)
+            hold on
+            pcolor(X2*scl.x,X3*scl.x,v2_map*scl.v); shading flat
+            colorbar; colormap(clm.v); clim(lim.v)
+            quiver(bag_x2*scl.x,bag_x3*scl.x,bag_v2*scl.v,bag_v3*scl.v,0,'.-k')
+    
+            cont = input('Looks good? (y/n) ',"s");
+        else
+            cont = 'y'
+        end
+    
+        mat_fn = sprintf('phitopA_%i_%i_%i_%s.mat',dec(1),dec(2),numf,suf);
+        mat_fn = fullfile('data',mat_fn);
+        if strcmp(cont,'y')
+            if exist(mat_fn,'file') == 2 && look_for_file
+                fprintf('File found: %s\n',mat_fn)
+                load(mat_fn)
+            else
+                phitopA = tools.reconstruct(bag_x,bag_v,boundary,xg,numf=numf, ...
+                    usepar=usepar);
+                save(mat_fn,'phitopA')
+            end
+        end
     else
-        cont = 'y'
-    end
-
-    mat_fn = sprintf('phitopA_%i_%i_%i_%s.mat',dec(1),dec(2),numf,suf);
-    mat_fn = fullfile('data',mat_fn);
-    if strcmp(cont,'y')
+        mat_fn = sprintf('phitopA_%i_%i_%s.mat',dec(1),dec(2),suf);
+        mat_fn = fullfile('data',mat_fn);
         if exist(mat_fn,'file') == 2 && look_for_file
             fprintf('File found: %s\n',mat_fn)
             load(mat_fn)
         else
-            phitopA = tools.reconstruct(bag_x,bag_v,boundary,xg,numf=numf, ...
-                usepar=usepar);
-            save(mat_fn,'phitopA')
+    %         phi_0 = zeros(size(E2));
+    %         for ix2 = 1:lx2
+    %             for ix3 = 1:lx3
+    %                 phi_0(ix2,ix3) = -( ...
+    %                     dot(E2(1:ix2,1), dx2(1:ix2)) + ...
+    %                     dot(E3(ix2,1:ix3), dx3(1:ix3)) ...
+    %                     );
+    %             end
+    %         end
+    %         phi_0 = phi_0 - mean(phi_0,'all');
+    
+            phitopA = tools.basic_reconstruct(v2_map,v3_map,xg ...
+                ,usepar=usepar,decimation=dec,ic_iteration=true);
+            save(mat_fn,'phitopA','dec','usepar')
         end
     end
-else
-    mat_fn = sprintf('phitopA_%i_%i_%s.mat',dec(1),dec(2),suf);
+end
+%% generate potential map - option B
+if do_B
+    look_for_file = true;
+    suf = 'v1';
+    ns = [4,256];
+    
+    [s2s,s3s] = ndgrid(round(linspace(1,lx2,ns(1))),round(linspace(1,lx3,ns(2))));
+    mat_fn = sprintf('phitopB_%i_%i_%s.mat',ns(1),ns(2),suf);
     mat_fn = fullfile('data',mat_fn);
     if exist(mat_fn,'file') == 2 && look_for_file
         fprintf('File found: %s\n',mat_fn)
         load(mat_fn)
     else
-%         phi_0 = zeros(size(E2));
-%         for ix2 = 1:lx2
-%             for ix3 = 1:lx3
-%                 phi_0(ix2,ix3) = -( ...
-%                     dot(E2(1:ix2,1), dx2(1:ix2)) + ...
-%                     dot(E3(ix2,1:ix3), dx3(1:ix3)) ...
-%                     );
-%             end
-%         end
-%         phi_0 = phi_0 - mean(phi_0,'all');
-
-        phitopA = tools.basic_reconstruct(v2_map,v3_map,xg ...
-            ,usepar=usepar,decimation=dec,ic_iteration=true);
-        save(mat_fn,'phitopA','dec','usepar')
-    end
-end
-
-%% generate potential map - option B
-look_for_file = true;
-suf = 'v1';
-ns = [4,256];
-
-[s2s,s3s] = ndgrid(round(linspace(1,lx2,ns(1))),round(linspace(1,lx3,ns(2))));
-mat_fn = sprintf('phitopB_%i_%i_%s.mat',ns(1),ns(2),suf);
-mat_fn = fullfile('data',mat_fn);
-if exist(mat_fn,'file') == 2 && look_for_file
-    fprintf('File found: %s\n',mat_fn)
-    load(mat_fn)
-else
-    phitopB = zeros([size(E2),prod(ns)]);
-    for n = 1:ns(1)*ns(2)
-        s2 = s2s(n);
-        s3 = s3s(n);
-        for ix2 = 1:lx2
-            if ix2 < s2
-                d2 = -1;
-            else
-                d2 = 1;
-            end
-            for ix3 = 1:lx3
-                if ix3 < s3
-                    d3 = -1;
+        phitopB = zeros([size(E2_map),prod(ns)]);
+        for n = 1:ns(1)*ns(2)
+            s2 = s2s(n);
+            s3 = s3s(n);
+            for ix2 = 1:lx2
+                if ix2 < s2
+                    d2 = -1;
                 else
-                    d3 = 1;
+                    d2 = 1;
                 end
-                phitopB(ix2,ix3,n) = -( ...
-                    dot(E2(s2:d2:ix2,s3), dx2(s2:d2:ix2)*d2) ...
-                    + dot(E3(ix2,s3:d3:ix3), dx3(s3:d3:ix3)*d3) ...
-                    );
+                for ix3 = 1:lx3
+                    if ix3 < s3
+                        d3 = -1;
+                    else
+                        d3 = 1;
+                    end
+                    phitopB(ix2,ix3,n) = -( ...
+                        dot(E2_map(s2:d2:ix2,s3), dx2(s2:d2:ix2)*d2) ...
+                        + dot(E3_map(ix2,s3:d3:ix3), dx3(s3:d3:ix3)*d3) ...
+                        );
+                end
             end
+            %     figure(i)
+            %     hold on
+            %     pcolor(X2,X3,phitopB); shading flat
         end
-        %     figure(i)
-        %     hold on
-        %     pcolor(X2,X3,phitopB); shading flat
+        phitopB = mean(phitopB,3);
+        phitopB = phitopB - mean(phitopB,'all');
+        save(mat_fn,'phitopB','ns')
     end
-    phitopB = mean(phitopB,3);
-    phitopB = phitopB - mean(phitopB,'all');
-    save(mat_fn,'phitopB','ns')
 end
 
 %% generate potential map - option C
-load('data/forjewelz_threwee.mat')
-% G2 = fft(E2,128,1);
-% G3 = fft(E3,256,2);
+% translated from Alex Mule's python code Oct 9, 2023
 
-
-%% plot potentials A and B
-if plotting || true
-    close all
-    figure(1)
-    tiledlayout(1,2)
-    nexttile
-    pcolor(X2,X3,phitopA); shading flat; colorbar
-    nexttile
-    pcolor(X2,X3,phitopB); shading flat; colorbar
+if do_C
+    % extrapolate data to avoid edge effects with fourier transforms
+    nfill = 16;
+    x2_ext = [x2(1)+dx2(1)*(-nfill:-1),x2,x2(end)+dx2(end)*(1:nfill)];
+    x3ext = [x3(1)+dx3(1)*(-nfill:-1),x3,x3(end)+dx3(end)*(1:nfill)];
+    [X2_ext,X3_ext] = ndgrid(x2_ext,x3ext);
+    fE2_map = griddedInterpolant(X2,X3,E2_map,'linear','nearest');
+    fE3_map = griddedInterpolant(X2,X3,E3_map,'linear','nearest');
+    E2_map_ext = fE2_map(X2_ext,X3_ext);
+    E3_map_ext = fE3_map(X2_ext,X3_ext);
+    
+    % wave vector convention: 2 pi ( -f_Ny : +f_Ny )
+    k2_Ny = 2*pi/(2*mean(dx2));
+    k3_Ny = 2*pi/(2*mean(dx3));
+    k2 = linspace(-k2_Ny,k2_Ny,lx2+2*nfill);
+    k3 = linspace(-k3_Ny,k3_Ny,lx3+2*nfill);
+    [K2,K3] = ndgrid(k2,k3);
+    Khat2 = K2./sqrt(K2.^2 + K3.^2);
+    Khat3 = K3./sqrt(K2.^2 + K3.^2);
+    
+    % testing matlab fft2 and wave-vector convention
+    % k2_target = 4.2*2*pi/5e4;
+    % k3_target = 5.4*2*pi/5e4;
+    % test_image = cos(X2*k2_target) + cos(X3*k3_target);
+    % test_fft = fftshift(fft2(test_image));
+    % 
+    % [~,i2] = max(abs(test_fft(:,end/2+1)));
+    % [~,i3] = max(abs(test_fft(end/2+1,:)));
+    % k2_fft = abs(k2(i2));
+    % k3_fft = abs(k3(i3));
+    % error2 = 100*(1-k2_fft/k2_target);
+    % error3 = 100*(1-k3_fft/k3_target);
+    % fprintf('%% error in finding k2_target = %.5f\n',error2)
+    % fprintf('%% error in finding k3_target = %.5f\n',error3)
+    % 
+    % if plotting
+    %     figure(1)
+    %     hold on
+    %     pcolor(X2-mean(diff(x2)),X3-mean(diff(x3)),test_image); shading flat
+    %     quiver(0,0,2*pi/k2_target,0,'r')
+    %     quiver(0,0,0,2*pi/k3_target,'r')
+    %     
+    %     figure(2)
+    %     hold on
+    %     pcolor(K2-mean(diff(k2)),K3-mean(diff(k3)),abs(test_fft)); shading flat
+    %     xlim([-1,1]*1e-3)
+    %     ylim([-1,1]*1e-3)
+    %     scatter(k2_target,0,1e3,'xr')
+    %     scatter(k2_fft,0,1e3,'xg')
+    %     scatter(0,k3_target,1e3,'xr')
+    %     scatter(0,k3_fft,1e3,'xg')
+    % end
+    
+    % Fourier transform of electric field
+    G2 = fftshift(fft2(E2_map_ext));
+    G3 = fftshift(fft2(E3_map_ext));
+    
+    % Fourier transform of phi
+    Gphi = 1i*(K2.*G2+K3.*G3)./(K2.^2+K3.^2);
+    
+    % inverse Fourier transform of Gphi + resampling onto working grid
+    phi0 = real(ifft2(ifftshift(Gphi)));
+    phi0 = phi0(nfill+1:end-nfill,nfill+1:end-nfill);
+    
+    % determine average electric field of phi0
+    if range(dx2) < 1e-3
+        [E20,E30] = gradient(-phi0',mean(dx2),mean(dx3));
+    else
+        [E20,E30] = gradient(-phi0',dx2,dx3);
+    end
+    E20 = E20';
+    E30 = E30';
+    
+    % make average electric field match
+    phitopC = phi0 - mean(E2_map-E20,'all').*X2 - mean(E3_map-E30,'all').*X3;
+    phitopC = phitopC - mean(phitopC,'all');
 end
 
-%% plot interpolated flow against options A and B
+%% plot potentials A, B, and C
+if do_plot || true
+    close all
+    figure(1)
+    tiledlayout(1,3)
+    nexttile
+    if do_A
+        pcolor(X2,X3,phitopA); shading flat; colorbar; clim([-1,1]*2e3)
+    end
+    nexttile
+    if do_B
+        pcolor(X2,X3,phitopB); shading flat; colorbar; clim([-1,1]*2e3)
+    end
+    nexttile
+    if do_C
+        pcolor(X2,X3,phitopC); shading flat; colorbar; clim([-1,1]*2e3)
+    end
+end
+
+%% plot interpolated flow against options A, B, and C
 add_bg = 1;
 suff = 'v1';
 
+if ~do_A; phitopA = zeros(size(X2)); end
+if ~do_B; phitopB = zeros(size(X2)); end
+if ~do_C; phitopC = zeros(size(X2)); end
+
 if range(dx2) < 1e-3
-    [E2_new_A,E3_new_A] = gradient(-phitopA',mean(dx2),mean(dx3));
-    [E2_new_B,E3_new_B] = gradient(-phitopB',mean(dx2),mean(dx3));
+    [E2_map_A,E3_map_A] = gradient(-phitopA',mean(dx2),mean(dx3));
+    [E2_map_B,E3_map_B] = gradient(-phitopB',mean(dx2),mean(dx3));
+    [E2_map_C,E3_map_C] = gradient(-phitopC',mean(dx2),mean(dx3));
 else
-    [E2_new_A,E3_new_A] = gradient(-phitopA',dx2,dx3);
-    [E2_new_B,E3_new_B] = gradient(-phitopB',dx2,dx3);
+    [E2_map_A,E3_map_A] = gradient(-phitopA',dx2,dx3);
+    [E2_map_B,E3_map_B] = gradient(-phitopB',dx2,dx3);
+    [E2_map_C,E3_map_C] = gradient(-phitopC',dx2,dx3);
 end
-v2_new_A = -E3_new_A'/Bmag;
-v2_new_B = -E3_new_B'/Bmag;
-v3_new_A =  E2_new_A'/Bmag;
-v3_new_B =  E2_new_B'/Bmag;
+v2_map_A = -E3_map_A'/Bmag;
+v2_map_B = -E3_map_B'/Bmag;
+v2_map_C = -E3_map_C'/Bmag;
+v3_map_A =  E2_map_A'/Bmag;
+v3_map_B =  E2_map_B'/Bmag;
+v3_map_C =  E2_map_C'/Bmag;
 
 dv2dx2 = diff(v2_map(:,2:end),1,1)./DX2(2:end,2:end);
 dv3dx3 = diff(v3_map(2:end,:),1,2)./DX3(2:end,2:end);
@@ -406,7 +527,7 @@ title('Interpolated')
 
 nexttile
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v2_new_A+add_bg*v2_bg)*scl.v)
+pcolor(X2*scl.x,X3*scl.x,(v2_map_A+add_bg*v2_bg)*scl.v)
 quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
 colormap(clm.v); clim(lim.v)
 xlim(lim.x); ylim(lim.y)
@@ -415,7 +536,7 @@ title('Potential fit')
 
 nexttile
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v2_new_B+add_bg*v2_bg)*scl.v)
+pcolor(X2*scl.x,X3*scl.x,(v2_map_B+add_bg*v2_bg)*scl.v)
 quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
 colormap(clm.v); clim(lim.v)
 xlim(lim.x); ylim(lim.y)
@@ -424,7 +545,7 @@ title('Averaged path-integrated')
 
 nexttile
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v2_map_sol+add_bg*v2_bg)*scl.v)
+pcolor(X2*scl.x,X3*scl.x,(v2_map_C+add_bg*v2_bg)*scl.v)
 quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
 colormap(clm.v); clim(lim.v)
 clb = colorbar; clb.Label.String = lbl.vx;
@@ -444,7 +565,7 @@ xticks([])
 
 nexttile
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_new_A+add_bg*v3_bg)*scl.v)
+pcolor(X2*scl.x,X3*scl.x,(v3_map_A+add_bg*v3_bg)*scl.v)
 quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
 colormap(clm.v); clim(lim.v)
 xlim(lim.x); ylim(lim.y)
@@ -452,7 +573,7 @@ xticks([]); yticks([])
 
 nexttile
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_new_B+add_bg*v3_bg)*scl.v)
+pcolor(X2*scl.x,X3*scl.x,(v3_map_B+add_bg*v3_bg)*scl.v)
 quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
 colormap(clm.v); clim(lim.v)
 xlim(lim.x); ylim(lim.y)
@@ -461,7 +582,7 @@ xticks([]); yticks([])
 
 nexttile
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_map_sol+add_bg*v3_bg)*scl.v)
+pcolor(X2*scl.x,X3*scl.x,(v3_map_C+add_bg*v3_bg)*scl.v)
 quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
 colormap(clm.v); clim(lim.v)
 clb = colorbar; clb.Label.String = lbl.vy;
@@ -477,10 +598,12 @@ clb = colorbar('southoutside'); clb.Label.String = '\nabla\cdot v (s^{-1})';
 xlabel(lbl.x); ylabel(lbl.y)
 xlim(lim.x); ylim(lim.y)
 title('Divergence of Interp.')
+clim_tmp = get(gca,'CLim');
+clim([-1,1]*max(clim_tmp)   )
 
 nexttile
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_map-v3_new_A)*scl.v)
+pcolor(X2*scl.x,X3*scl.x,(v3_map-v3_map_A)*scl.v)
 quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
 colormap(clm.v); clim(lim.verr)
 clb = colorbar('southoutside'); clb.Label.String = ['\Delta ',lbl.vy];
@@ -491,7 +614,7 @@ title('Interp. − Pot. fit')
 
 nexttile
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_new_A-v3_new_B)*scl.v)
+pcolor(X2*scl.x,X3*scl.x,(v3_map_A-v3_map_B)*scl.v)
 quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
 colormap(clm.v); clim(lim.verr)
 clb = colorbar('southoutside'); clb.Label.String = ['\Delta ',lbl.vy];
@@ -502,7 +625,7 @@ title('Pot. fit − Avg. path int.')
 
 nexttile
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_new_A-v3_map_sol)*scl.v)
+pcolor(X2*scl.x,X3*scl.x,(v3_map_A-v3_map_C)*scl.v)
 quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
 colormap(clm.v); clim(lim.verr)
 clb = colorbar('southoutside'); clb.Label.String = ['\Delta ',lbl.vy];
@@ -511,28 +634,40 @@ xlim(lim.x); ylim(lim.y)
 yticks([])
 title('Pot. fit − Helmholtz dec.')
 
-if pseudo_basis
-    filename = sprintf('phitopA_%i_%i_%i_%s.png',dec(1),dec(2),numf,suf);
+if do_A
+    if pseudo_basis
+        filename = sprintf('phitopA_%i_%i_%i_%s.png',dec(1),dec(2),numf,suf);
+    else
+        filename = sprintf('phitopA_%i_%i_%s.png',dec(1),dec(2),suf);
+    end
+    filename = fullfile('plots',filename);
 else
-    filename = sprintf('phitopA_%i_%i_%s.png',dec(1),dec(2),suf);
+    filename = fullfile('plot','phitop.png');
 end
-filename = fullfile('plots',filename);
-fprintf('Saving file:c %s\n',filename)
-saveas(gcf,filename)
+if save_plot
+    fprintf('Saving file:c %s\n',filename)
+    saveas(gcf,filename)
+end
 
 %% happy?
-% happy = input('Happy? (y/n) ','s');
-% if strcmp(happy,'y')
-%     fprintf("I'm glad you're happy.\n")
-% 
+happy = input('Happy? (y/n) ','s');
+if strcmp(happy,'y')
+    fprintf("I'm glad you're happy.\n")
+
 %     direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\isinglass_05_A';
 %     phi = phitopA;
 %     save(fullfile(direc,'ext','potential_map.mat'),'phi','E2_bg','E3_bg','dec')
-%     
+    
 %     direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\isinglass_05_B';
 %     phi = phitopB;
 %     save(fullfile(direc,'ext','potential_map.mat'),'phi','E2_bg','E3_bg','ns') 
-% end
+    
+    direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\isinglass_06_nosc_noro';
+    phi = phitopC;
+    save(fullfile(direc,'ext','potential_map.mat'),'phi','E2_bg','E3_bg')
+else
+    fprintf('aww\n')
+end
 
 %% gather up isinglass flow data
 % load('../../public_html/Gemini3D/isinglass_05/latlonggeoandgeomfootpoint.mat')
