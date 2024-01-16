@@ -4,7 +4,7 @@
 %   "joule", "multi", or "all" for plotting every option.
 %
 % Example usage:
-%   plot_run('..\public_html\Gemini3D\maeve_4',["continuity","fccp"],300e3)
+%   plot_run('..\public_html\Gemini3D\<sim_name>',["continuity","fccp"],300e3)
 %
 % Arguments:
 %   direc                     gemini run directory
@@ -24,32 +24,32 @@
 %
 % Dependencies:
 %   matlab R2022a or higher
-%   gemini3d
-%   gemscr
-%   load_conductances
-%   hsv_params
+%   gemini3d (github.com/gemini3d/mat_gemini)
+%   gemscr (github.com/gemini3d/mat_gemini-scripts)
+%   tools.load_conductances
+%   tools.hsv_params
 %   Statistics and Machine Learning Toolbox
-%   colorcet
+%   colorcet (colorcet.holoviz.org)
 %
 % Contact:
 %   jules.van.irsel.gr@dartmouth.edu
 
-function plot_run(direc,plots,alt_ref,options)
+function plot_run(direc,plots,alt_ref,opts)
 arguments
     direc (1,:) char {mustBeFolder}
     plots (1,:) string
     alt_ref (1,1) double {mustBePositive}
-    options.start (1,1) double {mustBeNonempty} = -1
-    options.cad (1,1) double {mustBeNonempty} = -1
-    options.stop (1,1) double {mustBeNonempty} = -1
-    options.mlon_ref (1,1) double {mustBeNonempty} = -1
-    options.hsv_sat (1,1) double {mustBeNonempty} = 1e3
-    options.j_range (1,2) double {mustBeNonempty} = [-2e-6,2e-6]
-    options.n_range (1,2) double {mustBeNonempty} = [1e9,1e12]
-    options.p_range (1,2) double {mustBeNonempty} = [-3e3,3e3]
-    options.alt_max (1,1) double {mustBeNonempty} = 400e3
-    options.alt_hsv (1,1) double {mustBeNonempty} = 150e3
-    options.alt_cls (1,1) double {mustBeNonempty} = 120e3
+    opts.start (1,1) double {mustBeNonempty} = -1
+    opts.cad (1,1) double {mustBeNonempty} = -1
+    opts.stop (1,1) double {mustBeNonempty} = -1
+    opts.mlon_ref (1,1) double {mustBeNonempty} = -1
+    opts.hsv_sat (1,1) double {mustBeNonempty} = 1e3
+    opts.j_range (1,2) double {mustBeNonempty} = [-2e-6,2e-6]
+    opts.n_range (1,2) double {mustBeNonempty} = [1e9,1e12]
+    opts.p_range (1,2) double {mustBeNonempty} = [-3e3,3e3]
+    opts.alt_max (1,1) double {mustBeNonempty} = 400e3
+    opts.alt_hsv (1,1) double {mustBeNonempty} = 150e3
+    opts.alt_cls (1,1) double {mustBeNonempty} = 120e3
 end
 
 %% assertions
@@ -65,36 +65,33 @@ if any(direc(end)=='/\')
 end
 
 %% hard coded parameters
-c_scl = 1e-3; units.c = 'keV';    clm.c = 'L17';
-e_scl = 1e+3; units.e = 'mV/m';   clm.e = 'D13';
-j_scl = 1e+6; units.j = 'uA/m^2'; clm.j = 'D1A';
-n_scl = 1e+0; units.n = 'm^{-3}'; clm.n = 'L9';
-p_scl = 1e-3; units.p = 'kV';     clm.p = 'D10';
-s_scl = 1e+0; units.s = 'S';      clm.s = 'L18';
-t_scl = 8.62e-5; units.t = 'eV';  clm.t = 'L3';
-u_scl = 1e+6; units.u = 'uW/m^3'; clm.u = 'L19';
-U_scl = 1e+3; units.U = 'mW/m^2'; clm.U = 'L19';
-v_scl = 1e-3; units.v = 'km/s';   clm.v = 'D2';
-x_scl = 1e-3; units.x = 'km';
+scl.c = 1e-3; unt.c = 'keV';    clm.c = 'L17';
+scl.e = 1e+3; unt.e = 'mV/m';   clm.e = 'D13';
+scl.j = 1e+6; unt.j = 'uA/m^2'; clm.j = 'D1A';
+scl.n = 1e+0; unt.n = 'm^{-3}'; clm.n = 'L9';
+scl.p = 1e-3; unt.p = 'kV';     clm.p = 'D10';
+scl.s = 1e+0; unt.s = 'S';      clm.s = 'L18';
+scl.t = 8.62e-5; unt.t = 'eV';  clm.t = 'L3';
+scl.u = 1e+6; unt.u = 'uW/m^3'; clm.u = 'L19';
+scl.U = 1e+3; unt.U = 'mW/m^2'; clm.U = 'L19';
+scl.v = 1e-3; unt.v = 'km/s';   clm.v = 'D2';
+scl.x = 1e-3; unt.x = 'km';
 
 fts = 8; % fontsize
 ftn = 'Consolas'; % fontname (use monospaced fonts for better videos)
-% ftn = 'Arial';
-% clb_fmt = '%+ 6.1f'; % colorbar ticklabel format
 clb_fmt = '%+ 6.2f';
-% clb_fmt = '%+ 2.2f';
 clb_exp = 0; % force no colorbar exponents
 ctr_lc = 'k'; % contour plot linecolor
 ctr_lw = 0.3; % contour plot linewidth
 
-hsv_sat = options.hsv_sat;
-j_range_hard = options.j_range;
-n_range_hard = options.n_range;
-p_range_hard = options.p_range;
+hsv_sat = opts.hsv_sat;
+j_range_hard = opts.j_range;
+n_range_hard = opts.n_range;
+p_range_hard = opts.p_range;
 v_range_hard = [-1,1]*hsv_sat;
-alt_max = options.alt_max;
-alt_hsv = options.alt_hsv;
-alt_cls = options.alt_cls;
+alt_max = opts.alt_max;
+alt_hsv = opts.alt_hsv;
+alt_cls = opts.alt_cls;
 qnt = 0.99; % quantile value used to set data ranges
 
 %% loading grid data
@@ -107,10 +104,10 @@ x3 = xg.x3(3:end-2);
 [X2,X3] = ndgrid(x2,x3);
 lx2 = xg.lx(2); lx3 = xg.lx(3);
 dx1 = xg.dx1h;
-if options.mlon_ref<0
+if opts.mlon_ref<0
     mlon_ref = mean(MLON(:));
 else
-    mlon_ref = options.mlon_ref;
+    mlon_ref = opts.mlon_ref;
 end
 
 %% determining grid reference altitudes and boundaries
@@ -140,22 +137,23 @@ UTsec0 = cfg.UTsec0;
 tdur = cfg.tdur;
 dtout = cfg.dtout;
 dtprec = cfg.dtprec;
+dtE0 = cfg.dtE0;
 
 %% setting time boundaries
-if options.start < 0
+if opts.start < 0
     start = 0;
 else
-    start = options.start;
+    start = opts.start;
 end
-if options.cad <= 0
+if opts.cad <= 0
     cad = dtout;
 else
-    cad = options.cad;
+    cad = opts.cad;
 end
-if options.stop < start
+if opts.stop < start
     stop = tdur;
 else
-    stop = options.stop;
+    stop = opts.stop;
 end
 
 %% main loop
@@ -175,10 +173,16 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     [E1,E2,E3] = gemscr.postprocess.pot2field(xg,phi);
     [jP_3,jH_3,~] = gemscr.postprocess.current_decompose(xg,dat);
     [sigP,sigH,SIGP,SIGH] = tools.load_conductances(direc,time,dat,cfg,xg);
-
+    
     % add background electric fields
-    E2 = E2 + cfg.ap_ExBg;
-    E3 = E3 + cfg.ap_EyBg;
+    E0_UTsecs = UTsec0 + (0:dtE0:tdur);
+    [~,E0_i] = min(abs(E0_UTsecs-UTsec));
+    E0_time = datetime(ymd) + seconds(E0_UTsecs(E0_i));
+    E0_fn = fullfile(direc,cfg.E0_dir,[char(gemini3d.datelab(E0_time)),'.h5']);
+    E2_BG = mean(h5read(E0_fn,'/Exit'),'all');
+    E3_BG = mean(h5read(E0_fn,'/Eyit'),'all');
+    E2 = E2 + E2_BG;
+    E3 = E3 + E3_BG;
 
     % rescale simulation data
     E1 = E1(lb1:ub1,lb2:ub2,lb3:ub3);
@@ -226,17 +230,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         tools.hsv_params(v2,v3,MLAT,MLON,ALT,alt_ref,mlon_ref,hsv_sat);
 
     % precipitation variables
-%     [~,precip_fn,~] = fileparts(dat.filename);
-    precip_UTsecs = UTsec0 + (0:dtprec:tdur);
-    [~,precip_i] = min(abs(precip_UTsecs-UTsec));
-    precip_time = datetime(ymd) + seconds(precip_UTsecs(precip_i));
-    precip_fn = gemini3d.datelab(precip_time);
-    precip = dir(fullfile(direc,'*particles',[char(precip_fn),'.*']));
-    if isempty(precip)
-        precip = dir(fullfile(direc,'*','*particles',[char(precip_fn),'.*']));
-    end
-    Q = h5read(fullfile(precip.folder,precip.name),'/Qp')/1e3; % Q defaults with mW/m^2 units
-    E0 = h5read(fullfile(precip.folder,precip.name),'/E0p'); % eV
+    prec_UTsecs = UTsec0 + (0:dtprec:tdur);
+    [~,prec_i] = min(abs(prec_UTsecs-UTsec));
+    prec_time = datetime(ymd) + seconds(prec_UTsecs(prec_i));
+    prec_fn = fullfile(direc,cfg.prec_dir,[char(gemini3d.datelab(prec_time)),'.h5']);
+    Q = h5read(prec_fn,'/Qp')/1e3; % Q defaults with mW/m^2 units
+    E0 = h5read(prec_fn,'/E0p'); % eV
     Q = Q(lb2:ub2,lb3:ub3);
     E0 = E0(lb2:ub2,lb3:ub3);
     QM = contour(squeeze(MLON(1,:,:)),squeeze(MLAT(1,:,:)),Q,1);
@@ -246,24 +245,24 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     %% plotting routines
     % scale simulation data for plotting
-    E0_p = E0*c_scl; Q_p = Q*U_scl;
-    E2_p = E2*e_scl; E3_p = E3*e_scl;
-    j1_p = j1*j_scl; jP_p = jP*j_scl; jH_p = jH*j_scl;
-    jP_2_p = jP_2*j_scl; jH_2_p = jH_2*j_scl; jP_3_p = jP_3*j_scl; jH_3_p = jH_3*j_scl;
-    jA_p = jA*j_scl; jB_p = jB*j_scl; jC_p = jC*j_scl;
-    ne_p = ne*n_scl;
-    phi_p = phi*p_scl;
-    SIGP_p = SIGP*s_scl; SIGH_p = SIGH*s_scl;
-    Te_p = Te*t_scl; Ti_p = Ti*t_scl;
-    joule_p = joule*u_scl;
-    joule_int_p = joule_int*U_scl; joule_int_2_p = joule_int_2*U_scl;
-    v2_p = v2*v_scl; v3_p = v3*v_scl;
-    hsv_sat_p = hsv_sat*v_scl;
+    E0_p = E0*scl.c; Q_p = Q*scl.U;
+    E2_p = E2*scl.e; E3_p = E3*scl.e;
+    j1_p = j1*scl.j; jP_p = jP*scl.j; jH_p = jH*scl.j;
+    jP_2_p = jP_2*scl.j; jH_2_p = jH_2*scl.j; jP_3_p = jP_3*scl.j; jH_3_p = jH_3*scl.j;
+    jA_p = jA*scl.j; jB_p = jB*scl.j; jC_p = jC*scl.j;
+    ne_p = ne*scl.n;
+    phi_p = phi*scl.p;
+    SIGP_p = SIGP*scl.s; SIGH_p = SIGH*scl.s;
+    Te_p = Te*scl.t; Ti_p = Ti*scl.t;
+    joule_p = joule*scl.u;
+    joule_int_p = joule_int*scl.U; joule_int_2_p = joule_int_2*scl.U;
+    v2_p = v2*scl.v; v3_p = v3*scl.v;
+    hsv_sat_p = hsv_sat*scl.v;
 
-    ALT_p = ALT*x_scl;
-    alt_hsv_p = alt_hsv*x_scl;
-    alt_rac_p = round(alt_rac*x_scl);
-    alt_cac_p = round(alt_cac*x_scl);
+    ALT_p = ALT*scl.x;
+    alt_hsv_p = alt_hsv*scl.x;
+    alt_rac_p = round(alt_rac*scl.x);
+    alt_cac_p = round(alt_cac*scl.x);
     mlon_rac_p = round(mlon_rac);
 
     % set data plotting ranges
@@ -281,16 +280,16 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     u_range_int_p = buf*[quantile(joule_int_p(:),1-qnt),quantile(joule_int_p(:),qnt)];
     p_range_p = buf*[-1,1]*quantile(abs(phi_p(:)),qnt);
 
-    j_range_hard_p = j_range_hard*j_scl;
-    n_range_hard_p = n_range_hard*n_scl;
-    p_range_hard_p = p_range_hard*p_scl;
-    v_range_hard_p = v_range_hard*v_scl;
+    j_range_hard_p = j_range_hard*scl.j;
+    n_range_hard_p = n_range_hard*scl.n;
+    p_range_hard_p = p_range_hard*scl.p;
+    v_range_hard_p = v_range_hard*scl.v;
 
     % common plot titles and labels
     plot_title = [runname,' at ',title_time,' UT'];
     mlon_label = 'Mag. Lon.';
     mlat_label = 'Mag. Lat.';
-    alt_label = ['Alt. [',units.x,']'];
+    alt_label = ['Alt. [',unt.x,']'];
 
     reset(0)
     set(0,'defaultFigurePaperUnits','inches')
@@ -321,7 +320,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['j_P [',units.j,']'];
+        clb.Label.String = ['j_P [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(jP_range_p)
@@ -334,7 +333,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['j_P [',units.j,']'];
+        clb.Label.String = ['j_P [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(jH_range_p)
@@ -347,7 +346,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['j_P [',units.j,']'];
+        clb.Label.String = ['j_P [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(jP_range_p)
@@ -360,7 +359,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['j_P [',units.j,']'];
+        clb.Label.String = ['j_P [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(jH_range_p)
@@ -373,7 +372,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['j_P [',units.j,']'];
+        clb.Label.String = ['j_P [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(jP_range_p)
@@ -386,7 +385,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['j_P [',units.j,']'];
+        clb.Label.String = ['j_P [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(jH_range_p)
@@ -418,7 +417,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.s))
         clb = colorbar;
-        clb.Label.String = ['\int_{||} |\sigma_P| [',units.s,']'];
+        clb.Label.String = ['\int_{||} |\sigma_P| [',unt.s,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
 
@@ -429,7 +428,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.s))
         clb = colorbar;
-        clb.Label.String = ['\int_{||} |\sigma_H| [',units.s,']'];
+        clb.Label.String = ['\int_{||} |\sigma_H| [',unt.s,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
 
@@ -459,7 +458,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['\Sigma_P \nabla\cdot E_\perp [',units.j,']'];
+        clb.Label.String = ['\Sigma_P \nabla\cdot E_\perp [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
@@ -471,7 +470,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['j_{||} [',units.j,']'];
+        clb.Label.String = ['j_{||} [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
@@ -483,7 +482,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['\nabla\Sigma_P\cdot E_\perp [',units.j,']'];
+        clb.Label.String = ['\nabla\Sigma_P\cdot E_\perp [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
@@ -495,7 +494,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['j_{||} [',units.j,']'];
+        clb.Label.String = ['j_{||} [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
@@ -507,7 +506,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['\nabla\Sigma_H\cdot b\times E_\perp [',units.j,']'];
+        clb.Label.String = ['\nabla\Sigma_H\cdot b\times E_\perp [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
@@ -521,7 +520,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['\Delta j_{||} [',units.j,']'];
+        clb.Label.String = ['\Delta j_{||} [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
@@ -556,7 +555,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             hold on
             pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),hsv_alt);
             contour(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),Q_p,1)
-            title(['Ion Flow (',num2str(alt_rac_p),' ',units.x,')'])
+            title(['Ion Flow (',num2str(alt_rac_p),' ',unt.x,')'])
             xlabel(mlon_label)
             ylabel(mlat_label)
             colormap(gca,hsv_alt_map)
@@ -565,7 +564,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             clb.Limits = [0,1];
             clb.Ticks = [0,1/4,1/2,3/4,1];
             clb.TickLabels = {'W','S','E','N','W'};
-            clb.Label.String = ['Sat. at ',num2str(hsv_sat_p),' ',units.v];
+            clb.Label.String = ['Sat. at ',num2str(hsv_sat_p),' ',unt.v];
             clim([0,1])
             xline(mlon_rac_p,'r--')
 
@@ -578,7 +577,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ylabel(mlat_label)
             colormap(gca,colorcet(clm.p))
             clb = colorbar;
-            clb.Label.String = ['\phi_{top} [',units.p,']'];
+            clb.Label.String = ['\phi_{top} [',unt.p,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -591,12 +590,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             hold on
             pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(-j1_p(alt_rid,:,:)))
             contour(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),Q_p,1)
-            title(['FAC (',num2str(alt_rac_p),' ',units.x,')'])
+            title(['FAC (',num2str(alt_rac_p),' ',unt.x,')'])
             xlabel(mlon_label)
             ylabel(mlat_label)
             colormap(gca,colorcet(clm.j))
             clb = colorbar;
-            clb.Label.String = ['J_{||} [',units.j,']'];
+            clb.Label.String = ['J_{||} [',unt.j,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -617,7 +616,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             clb.Limits = [0,1];
             clb.Ticks = [0,1/4,1/2,3/4,1];
             clb.TickLabels = {'W','S','E','N','W'};
-            clb.Label.String = ['Sat. at ',num2str(hsv_sat_p),' ',units.v];
+            clb.Label.String = ['Sat. at ',num2str(hsv_sat_p),' ',unt.v];
             clim([0,1])
             ylim([min(ALT_p(:)),alt_hsv_p])
             if ~isempty(Q_xlines)
@@ -632,7 +631,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ylabel(alt_label)
             colormap(gca,colorcet(clm.n))
             clb = colorbar;
-            clb.Label.String = ['log_{10} n_e [',units.n,']'];
+            clb.Label.String = ['log_{10} n_e [',unt.n,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -651,7 +650,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ylabel(alt_label)
             colormap(gca,colorcet(clm.j))
             clb = colorbar;
-            clb.Label.String = ['j_{||} [',units.j,']'];
+            clb.Label.String = ['j_{||} [',unt.j,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -686,12 +685,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(log10(ne_p(alt_rid,:,:))))
-        title(['Density (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['Density (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.n))
         clb = colorbar;
-        clb.Label.String = ['log_{10} n_e [',units.n,']'];
+        clb.Label.String = ['log_{10} n_e [',unt.n,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(log10(n_range_p))
@@ -704,7 +703,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.n))
         clb = colorbar;
-        clb.Label.String = ['log_{10} n_e [',units.n,']'];
+        clb.Label.String = ['log_{10} n_e [',unt.n,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(log10(n_range_p))
@@ -712,24 +711,24 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(-j1_p(alt_rid,:,:)))
-        title(['FAC (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['FAC (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['j_{||} [',units.j,']'];
+        clb.Label.String = ['j_{||} [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(v2_p(alt_rid,:,:)))
-        title(['Ion Flow (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['Ion Flow (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.v))
         clb = colorbar;
-        clb.Label.String = ['v_E [',units.v,']'];
+        clb.Label.String = ['v_E [',unt.v,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(v2_range_p)
@@ -755,31 +754,31 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(v2_p(alt_rid,:,:)))
-        title(['E-W Ion Flow (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['E-W Ion Flow (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.v))
         clb = colorbar;
-        clb.Label.String = ['v_E [',units.v,']'];
+        clb.Label.String = ['v_E [',unt.v,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(v2_range_p)
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(v3_p(alt_rid,:,:)))
-        title(['N-S Ion Flow (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['N-S Ion Flow (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.v))
         clb = colorbar;
-        clb.Label.String = ['v_N [',units.v,']'];
+        clb.Label.String = ['v_N [',unt.v,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(v3_range_p)
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),hsv_alt);
-        title(['Ion Flow (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['Ion Flow (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,hsv_alt_map)
@@ -788,17 +787,17 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         clb.Limits = [0,1];
         clb.Ticks = [0,1/4,1/2,3/4,1];
         clb.TickLabels = {'W','S','E','N','W'};
-        clb.Label.String = ['Sat. at ',num2str(hsv_sat_p),' ',units.v];
+        clb.Label.String = ['Sat. at ',num2str(hsv_sat_p),' ',unt.v];
         clim([0,1])
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(-j1_p(alt_rid,:,:)))
-        title(['FAC (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['FAC (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['J_{||} [',units.j,']'];
+        clb.Label.String = ['J_{||} [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
@@ -810,7 +809,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.s))
         clb = colorbar;
-        clb.Label.String = ['\int_{||} |\sigma_P| [',units.s,']'];
+        clb.Label.String = ['\int_{||} |\sigma_P| [',unt.s,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
 
@@ -821,7 +820,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.s))
         clb = colorbar;
-        clb.Label.String = ['\int_{||} |\sigma_H| [',units.s,']'];
+        clb.Label.String = ['\int_{||} |\sigma_H| [',unt.s,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
 
@@ -832,18 +831,18 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.U))
         clb = colorbar;
-        clb.Label.String = ['Q [',units.U,']'];
+        clb.Label.String = ['Q [',unt.U,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
 
         nexttile
         pcolor(squeeze(MLON(end,:,:)),squeeze(MLAT(end,:,:)),E0_p)
-        title('Charactaristic Energy')
+        title('Characteristic Energy')
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.c))
         clb = colorbar;
-        clb.Label.String = ['E_0 [',units.c,']'];
+        clb.Label.String = ['E_0 [',unt.c,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
 
@@ -868,36 +867,36 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(E2_p(alt_rid,:,:)))
-        title(['E-W Elec. Field (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['E-W Elec. Field (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.e))
         clb = colorbar;
-        clb.Label.String = ['E_E [',units.e,']'];
+        clb.Label.String = ['E_E [',unt.e,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(e_range_p)
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(E3_p(alt_rid,:,:)))
-        title(['N-S Elec. Field (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['N-S Elec. Field (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.e))
         clb = colorbar;
-        clb.Label.String = ['E_N [',units.e,']'];
+        clb.Label.String = ['E_N [',unt.e,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(e_range_p)
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(-j1_p(alt_rid,:,:)))
-        title(['FAC (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['FAC (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['J_{||} [',units.j,']'];
+        clb.Label.String = ['J_{||} [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
@@ -910,7 +909,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.j))
         clb = colorbar;
-        clb.Label.String = ['J_{||} [',units.j,']'];
+        clb.Label.String = ['J_{||} [',unt.j,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(j1_range_p)
@@ -918,12 +917,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         nexttile
         pcolor(squeeze(MLON(alt_cid,:,:)),squeeze(MLAT(alt_cid,:,:)),squeeze(joule_p(alt_cid,:,:)))
-        title(['Joule Heating (',num2str(alt_cac_p),' ',units.x,')'])
+        title(['Joule Heating (',num2str(alt_cac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.u))
         clb = colorbar;
-        clb.Label.String = ['J\cdot E [',units.u,']'];
+        clb.Label.String = ['J\cdot E [',unt.u,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(u_range_p)
@@ -936,7 +935,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.u))
         clb = colorbar;
-        clb.Label.String = ['J\cdot E [',units.u,']'];
+        clb.Label.String = ['J\cdot E [',unt.u,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(u_range_p)
@@ -949,7 +948,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.U))
         clb = colorbar;
-        clb.Label.String = ['\int_{||} J\cdot E [',units.U,']'];
+        clb.Label.String = ['\int_{||} J\cdot E [',unt.U,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(u_range_int_p)
@@ -1003,7 +1002,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ylabel(alt_label)
             colormap(gca,colorcet(clm.v))
             clb = colorbar;
-            clb.Label.String = ['v_N [',units.v,']'];
+            clb.Label.String = ['v_N [',unt.v,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -1014,12 +1013,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
             nexttile(2,[2,1])
             pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(log10(ne_p(alt_rid,:,:))))
-            title(['Density (',num2str(alt_rac_p),' ',units.x,')'])
+            title(['Density (',num2str(alt_rac_p),' ',unt.x,')'])
             xlabel(mlon_label)
             ylabel(mlat_label)
             colormap(gca,colorcet(clm.n))
             clb = colorbar;
-            clb.Label.String = ['log_{10} n_e [',units.n,']'];
+            clb.Label.String = ['log_{10} n_e [',unt.n,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -1036,7 +1035,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ylabel(alt_label)
             colormap(gca,colorcet(clm.j))
             clb = colorbar;
-            clb.Label.String = ['j_P [',units.j,']'];
+            clb.Label.String = ['j_P [',unt.j,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -1052,7 +1051,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ylabel(alt_label)
             colormap(gca,colorcet(clm.v))
             clb = colorbar;
-            clb.Label.String = ['v_E [',units.v,']'];
+            clb.Label.String = ['v_E [',unt.v,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -1068,7 +1067,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ylabel(alt_label)
             colormap(gca,colorcet(clm.j))
             clb = colorbar;
-            clb.Label.String = ['j_H [',units.j,']'];
+            clb.Label.String = ['j_H [',unt.j,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -1088,7 +1087,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             clb.Limits = [0,1];
             clb.Ticks = [0,1/4,1/2,3/4,1];
             clb.TickLabels = {'W','S','E','N','W'};
-            clb.Label.String = ['Sat. at ',num2str(hsv_sat_p),' ',units.v];
+            clb.Label.String = ['Sat. at ',num2str(hsv_sat_p),' ',unt.v];
             clim([0,1])
             ylim([min(ALT_p(:)),alt_hsv_p])
 
@@ -1099,7 +1098,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ylabel(alt_label)
             colormap(gca,colorcet(clm.n))
             clb = colorbar;
-            clb.Label.String = ['log_{10} n_e [',units.n,']'];
+            clb.Label.String = ['log_{10} n_e [',unt.n,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -1116,7 +1115,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ylabel(alt_label)
             colormap(gca,colorcet(clm.j))
             clb = colorbar;
-            clb.Label.String = ['j_{||} [',units.j,']'];
+            clb.Label.String = ['j_{||} [',unt.j,']'];
             clb.Ruler.TickLabelFormat = clb_fmt;
             clb.Ruler.Exponent = clb_exp;
             if isauto
@@ -1152,7 +1151,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.t))
         clb = colorbar;
-        clb.Label.String = ['T_e [',units.t,']'];
+        clb.Label.String = ['T_e [',unt.t,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Te_range_p)
@@ -1160,12 +1159,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(Te_p(alt_rid,:,:)))
-        title(['Electron Temp. (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['Electron Temp. (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.t))
         clb = colorbar;
-        clb.Label.String = ['T_e [',units.t,']'];
+        clb.Label.String = ['T_e [',unt.t,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Te_range_p)
@@ -1178,7 +1177,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.t))
         clb = colorbar;
-        clb.Label.String = ['T_i [',units.t,']'];
+        clb.Label.String = ['T_i [',unt.t,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Ti_range_p)
@@ -1186,12 +1185,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         nexttile
         pcolor(squeeze(MLON(alt_rid,:,:)),squeeze(MLAT(alt_rid,:,:)),squeeze(Ti_p(alt_rid,:,:)))
-        title(['Ion Temp. (',num2str(alt_rac_p),' ',units.x,')'])
+        title(['Ion Temp. (',num2str(alt_rac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.t))
         clb = colorbar;
-        clb.Label.String = ['T_i [',units.t,']'];
+        clb.Label.String = ['T_i [',unt.t,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(Ti_range_p)
@@ -1204,7 +1203,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         ylabel(alt_label)
         colormap(gca,colorcet(clm.u))
         clb = colorbar;
-        clb.Label.String = ['J\cdot E [',units.u,']'];
+        clb.Label.String = ['J\cdot E [',unt.u,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(u_range_p)
@@ -1212,12 +1211,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         nexttile
         pcolor(squeeze(MLON(alt_cid,:,:)),squeeze(MLAT(alt_cid,:,:)),squeeze(joule_p(alt_cid,:,:)))
-        title(['Joule Heating (',num2str(alt_cac_p),' ',units.x,')'])
+        title(['Joule Heating (',num2str(alt_cac_p),' ',unt.x,')'])
         xlabel(mlon_label)
         ylabel(mlat_label)
         colormap(gca,colorcet(clm.u))
         clb = colorbar;
-        clb.Label.String = ['J\cdot E [',units.u,']'];
+        clb.Label.String = ['J\cdot E [',unt.u,']'];
         clb.Ruler.TickLabelFormat = clb_fmt;
         clb.Ruler.Exponent = clb_exp;
         clim(u_range_p)

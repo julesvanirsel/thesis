@@ -1,7 +1,7 @@
 function [peaks,ids] = peak_detect(list,options)
     arguments
         list (1,:) {mustBeNumeric}
-        options.num (1,1) int32 {mustBeNonnegative} = 0
+        options.num (1,1) int32 {mustBeNonnegative} = 1
         options.threshold (1,1) {mustBeNumeric} = -inf
         options.smoothness (1,1) {mustBeNumeric} = 0
     end

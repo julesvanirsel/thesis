@@ -99,7 +99,7 @@ for d2 = d2s
         ,min(DX(:)),max(DX(:)))
 
     % optimize
-    phi_0 = fphi(X2(1:d2:end,1:d3:end),X3(1:d2:end,1:d3:end));
+    phi_0 = double(fphi(X2(1:d2:end,1:d3:end),X3(1:d2:end,1:d3:end)));
     clear('fphi','phi') % free up memory
     fprintf('Current number of fitting elements %i\n',numel(phi_0))
     lb = -inf(size(phi_0));
