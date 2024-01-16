@@ -2,3 +2,9 @@
 *.docx
 **\runs\
 **/runs/
+*.db
+*.db
+**\plots\
+**/plots/
+**\data\
+**/data/

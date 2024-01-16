@@ -71,7 +71,8 @@ z = z(1:ubz);
 dx = double(xg.dx2h*x_scl);
 dy = double(xg.dx3h*x_scl);
 dz = double(xg.dx1h(1:ubz)*x_scl);
-dmin = min([dx;dy;dz]);
+% dmin = min([dx,dy,dz]);
+dmin = min(dz);
 lx = length(x); ly = length(y); lz = length(z);
 xlims = options.xlims;
 ylims = options.ylims;
@@ -185,7 +186,8 @@ if options.plot
     shadow = nan(size(in0));
     shadow(in0) = 0;
     shadow(in1) = 0;
-
+    
+    % close all
     figure(1)
     set(gcf,'units','normalized','outerposition',[0 0 1 1])
     hold on
@@ -203,12 +205,15 @@ if options.plot
         set(pl0_test,'Color','r','LineWidth',2)
         set(stl_test,'Color','r','LineWidth',0.5)
     end
+    line([xlims(1),xlims(2),],[ylims(1),ylims(2)],[80,80])
     hold off
-    set(shd,'FaceAlpha',0.5)
+    set(shd,'FaceAlpha',1)
     shading flat
     clb = colorbar;
     clb.Label.String = ['Vz (',num2str(alt_ref),' ',options.units,')'];
     clb.FontSize = sized;
+    clim([-1,1]*quantile(abs(Vz(:)),0.99))
+    colormap(gca,colorcet('D1A',reverse=true))
     set(pl0,'Color',options.color,'LineWidth',2)
     set(pl1,'Color',options.color,'LineWidth',2)
     set(stl,'Color',options.color,'LineWidth',0.5)
@@ -217,13 +222,15 @@ if options.plot
     xlim(xlims)
     ylim(ylims)
     zlim(zlims)
-    ar = [0.4*range(xlims),range(ylims),2*range(zlims)]; %%%CHANGE
+    % ar = [0.4*range(xlims),range(ylims),2*range(zlims)]; %%%CHANGE
     %     ar = [0.2*range(xlims),range(ylims),range(zlims)]; %%%CHANGE
-    ar = [range(xlims),range(ylims),range(zlims)];
+    ar = [range(xlims)/2.5,range(ylims),range(zlims)];
+    % ar = [1,1,1];
     pbaspect(ar)
     xlabel(['East [',options.units,']'],'FontSize',sized)
     ylabel(['North [',options.units,']'],'FontSize',sized)
     zlabel(['Up [',options.units,']'],'FontSize',sized)
+    title(sprintf('Flux in / flux out = %f',flux0/flux1))
     if options.show_flux
         text(c0(1,1)-6e2,c0(1,2)+0e2,1.05*alt_ref,[num2str(flux0,3),'<V> ',options.units,'^2'],'Color',options.color,'FontSize',0.8*sized)
         text(c1(1,1)+1e2,c1(1,2)+1e2,1.05*alt_ref,[num2str(flux1,3),'<V> ',options.units,'^2'],'Color',options.color,'FontSize',0.8*sized)

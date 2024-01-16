@@ -34,9 +34,9 @@
 
 function [recon_phi,recon_v2,recon_v3,P,xg] = reconstructor(direc,outdir,orbitfn,recon_start,recon_dur,options)
     arguments
-        direc (1,1) char {mustBeFolder}
-        outdir (1,1) char
-        orbitfn (1,1) char {mustBeFile}
+        direc (1,:) char {mustBeFolder}
+        outdir (1,:) char
+        orbitfn (1,:) char {mustBeFile}
         recon_start (1,1) double
         recon_dur (1,1) double
         options.high_cad (1,1) int16 = 1
@@ -52,7 +52,7 @@ function [recon_phi,recon_v2,recon_v3,P,xg] = reconstructor(direc,outdir,orbitfn
         options.x2inc_lim (1,1) double = Inf
         options.scen1 (1,1) logical = true
     end
-    global boundaryc Bmag Nm BAD
+    global boundaryc Bmag Nm BAD %#ok<GVMIS> 
     %% basic plotting parameters
     qs = 25; % quiver plot set scale
     fz = 16; % fontsize
@@ -70,16 +70,17 @@ function [recon_phi,recon_v2,recon_v3,P,xg] = reconstructor(direc,outdir,orbitfn
 %     ssynth.Volume = 100;
     
     %% grid + config metadata + loading track
-    fprintf('Loading grid, configuration, and scraped data from ' + direc + '...\n')
+    fprintf('Loading grid, configuration, and scraped data from %s...\n',direc)
     xg = gemini3d.read.grid(direc);
     cfg = gemini3d.read.config(direc);
     ymd0 = cfg.ymd;
     UTsec0 = cfg.UTsec0;
     lx2 = xg.lx(2); lx3 = xg.lx(3);
+    track_fn = fullfile(direc,[orbitfn(1:end-3),'_track.mat']);
     try
-        track = load(fullfile(direc,orbitfn(1:end-3) + '_track.mat'));
+        track = load(track_fn);
     catch
-        error('TRACK DATA NOT FOUND')
+        error('TRACK DATA NOT FOUND IN %s',track_fn)
     end
     
     %% reconstruction parameters
@@ -127,7 +128,7 @@ function [recon_phi,recon_v2,recon_v3,P,xg] = reconstructor(direc,outdir,orbitfn
     scen1 = options.scen1;
     if scen1 % Qp data available
         [pth,datfn,ext] = fileparts(dat.filename);
-        dirs = dir(direc + filesep + 'inputs');
+        dirs = dir(fullfile(direc,'inputs'));
         precipfn = dirs(endsWith(string({dirs.name}),'particles')).name;
         precipfn = fullfile(pth,'inputs',precipfn,datfn + ext);
         disp(precipfn)
@@ -171,7 +172,7 @@ function [recon_phi,recon_v2,recon_v3,P,xg] = reconstructor(direc,outdir,orbitfn
             for dbj = 2:size(db_x2,2)-1
                 if ~isnan(db_x2(dbi,dbj)) % grab non-nan points only
                     if sum(isnan(db_x2(dbi,dbj+[-1 1]))) || sum(isnan(db_x2(dbi+[-1 1],dbj))) % if any adjacent point is nan, point is edge
-                        edgepoints = [edgepoints; [p_x2(dbi,dbj) p_x3(dbi,dbj)]];
+                        edgepoints = [edgepoints; [p_x2(dbi,dbj) p_x3(dbi,dbj)]]; %#ok<AGROW> 
                     end
                 end
             end

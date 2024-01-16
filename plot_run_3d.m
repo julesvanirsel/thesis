@@ -12,7 +12,8 @@ arguments
 end
 
 doAnnotate = true;
-paper_w = [9,9,10];
+paper_w = [14.7,9.5,6.5];
+paper_h = [9.5,6.5,4.5];
 
 % assertions
 plot_options = ["all","fluxtubes"];
@@ -36,16 +37,20 @@ x_scl = 1e-3; units.x = 'km';
 
 zmin = 80e3;
 % xlims = [-1,1]*1050e3;
-xlims = [-1,1]*1300e3;
-ylims = [-190,360]*1e3;
-ylims2 = [-120,290]*1e3;
+% xlims = [-1,1]*1300e3;
+xlims = [-1,1]*100e3;
+ylims = [-57,0]*1e3;
+ylims2 = ylims;
+% ylims = [-190,360]*1e3;
+% ylims2 = [-120,290]*1e3;
 % ylims2 = ylims;
 zlims = [zmin,alt_ref*1.05];
-qnt = 0.99; % quantile value used to set data ranges
-fts = 30; %17 % fontsize
+% qnt = 0.99; % quantile value used to set data ranges
+qnt = 0.95;
+fts = 20; %17 % fontsize
 ftn = 'Arial';
 % clb_fmt = '%+ 5.1f'; % colorbar ticklabel format
-clb_fmt = '%5.1f';
+% clb_fmt = '%3.0f';
 clb_exp = 0; % force no colorbar exponents
 
 %% loading grid data
@@ -239,9 +244,26 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 ];
             res = [64,64,64];
             rev = ones(1,ntubes);
+        elseif opts.plot_type == 8
+            ntubes = 3;
+            p0 = [[57,-22,alt_ref/1e3];[15,-43,alt_ref/1e3];[-55,-31,alt_ref/1e3]]*1e3*x_scl;
+            v0 = [[4,1,0];[15,1,0];[-15,1,0]];
+            v1 = repmat([0,1,0],ntubes,1);
+            r0 = [20,20,20]*1e3*x_scl;
+            r1 = [3,3,3]*1e3*x_scl;
+            colors = [...
+                [1.0, 0.5, 0.0];...
+                [0.0, 0.5, 0.0];...
+                [1.0, 0.0, 0.0];...
+%                 [0.2, 0.2, 0.8];...
+                ];
+            res = [100,100,100];
+            rev = [1,0,1];
         end
 
-        views = [[30,45];[90,0];[0,90]];
+%         views = [[30,45];[90,0];[0,90]];
+        views = [[225-10,30];[90,0];[0,90]];
+%         views = [[-110,-30];[90,0];[0,90]];
         dviews = [[10*2*(UTsec0-UTsec+tdur/2)/tdur,0];[0,0];[0,0]];
 %         dviews = [[10*2*(UTsec0-36000+150/2)/150,0];[0,0];[0,0]];
 %         paper_w = [8,11,9.5];
@@ -260,7 +282,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             vv = views(v,:)+dviews(v,:);
 
             figure(v)
-            set(gcf,'PaperUnits','inches','PaperPosition',2*[0,0,paper_w(v),6.5])
+            set(gcf,'PaperUnits','inches','PaperPosition',[0,0,paper_w(v),paper_h(v)])
             title([runname,' at ',title_time,' UT'],'FontSize',fts*2,'FontWeight','bold','Interpreter','none')
             t = tiledlayout(1,1,'TileSpacing','compact');
             axj = axes(t); %#ok<LAXES>
@@ -275,7 +297,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             set(axt,'Color','none','XGrid','on','YGrid','on','ZGrid','on')
 
             xlim(axj,xlims_p)
-            xlim(axn,xlims_p + (lon_ref_p-xlims_p(1)))
+            xlim(axn,xlims_p + (lon_ref_p+xlims_p(1)))
             xlim(axt,xlims_p)
             if v==2
                 ylim(axa,ylims2_p)
@@ -286,7 +308,8 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             zlim(axn,zlims_p)
             zlim(axt,zlims_p)
             view(axa,vv)
-            ar = [0.4*range(xlims_p)*0.7,range(ylims_p),2*range(zlims_p)];
+%             ar = [0.4*range(xlims_p)*0.7,range(ylims_p),2*range(zlims_p)];
+            ar = [range(xlims_p),range(ylims_p)*2,range(zlims_p)];
             pbaspect(axj,ar)
             pbaspect(axn,ar)
             pbaspect(axt,ar)
@@ -296,26 +319,27 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             colormap(axj,colorcet(clm.j))
             shading(axj,'flat')
             clim(axj,j1_range_p)
-%             if v == 1%2
+            if v == 1%2
                 clb = colorbar(axj);
-                clb.Label.String = ['j_{||} [',units.j,']'];
+                clb.Label.String = ['j_{||} (',units.j,')'];
                 clb.FontSize = fts;
-                clb.Position = [0.87,0.07,0.015,0.44];
-                clb.Ruler.TickLabelFormat = clb_fmt;
-                clb.Ruler.Exponent = clb_exp;
-%             end
+                clb.Position = [0.89,0.07,0.015,0.44];
+                % clb.Ruler.TickLabelFormat = clb_fmt;
+                % clb.Ruler.Exponent = clb_exp;
+            end
 
             slice(axn,Xm_p,Ym_p,Zm_p,permute(log10(ne_p),[2,1,3]),lon_ref_p,[],[]);
             colormap(axn,colorcet(clm.n))
+            clim(axn,[9.8,11.9])
             shading(axn,'flat')
-%             if v == 1%2
+            if v == 1%2
                 clb = colorbar(axn);
-                clb.Label.String = ['n_e [',units.n,']'];
+                clb.Label.String = ['log n_e (',units.n,')'];
                 clb.FontSize = fts;
-                clb.Position = [0.87,0.55,0.015,0.44];
-                clb.Ruler.TickLabelFormat = clb_fmt;
+                clb.Position = [0.89,0.55,0.015,0.44];
+%                 clb.Ruler.TickLabelFormat = clb_fmt;
                 clb.Ruler.Exponent = clb_exp;
-%             end
+            end
 
             for n = 1:ntubes
                 color = colors(n,:);
@@ -341,19 +365,19 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 if any(not(isnan(shadow)),'all')
                     shd = slice(axj,Xm_p,Ym_p,Zm_p,permute(shadow,[2,1,3]),[],[],alt_ref_p);
                 end
-                plot3(axt,[1,1,1]*lon_ref_p,[ylims_p,ylims_p(2)],[zlims_p(1),zlims_p],'--','Color',[0,1,0]);
-                plot3(axt,[xlims_p(1),xlims_p],[ylims_p,ylims_p(2)],[1,1,1]*alt_ref_p,'--','Color',[0,0,1]);
+%                 plot3(axt,[1,1,1]*lon_ref_p,[ylims_p,ylims_p(2)],[zlims_p(1),zlims_p],'--','Color',[0,1,0]);
+%                 plot3(axt,[xlims_p(1),xlims_p],[ylims_p,ylims_p(2)],[1,1,1]*alt_ref_p,'--','Color',[0,0,1]);
 
                 shading(axj,'flat')
-                set(pl0,'Color','k','LineWidth',1)
-                set(pl1,'Color',color,'LineWidth',1)
+                set(pl0,'Color','k','LineWidth',2)
+                set(pl1,'Color','b','LineWidth',2)
                 set(shd,'FaceAlpha',0.5)
-                set(stl,'Color',[color,0.5],'LineWidth',1)
+                set(stl,'Color',[color,0.5],'LineWidth',0.5)
             end
 
-            xlabel(['east [',units.x,']'],'FontSize',fts)
-            ylabel(['north [',units.x,']'],'FontSize',fts)
-            zlabel(['up [',units.x,']'],'FontSize',fts)
+            xlabel(['East (',units.x,')'],'FontSize',fts)
+            ylabel(['North (',units.x,')'],'FontSize',fts)
+            zlabel(['Up (',units.x,')'],'FontSize',fts)
 
             flux_strings = cell(2,ntubes);
             heat_strings = cell(1,ntubes);

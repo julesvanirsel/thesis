@@ -1,32 +1,172 @@
+%%
+direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_74';
+cfg = gemini3d.read.config(direc);
+direc_rep = fullfile(direc,'/ext');
+cfg_rep = gemini3d.read.config(direc_rep);
+xg_rep = gemini3d.grid.cartesian(cfg_rep);
+load('data\replicate_data_isinglass.mat','in_situ','image')
+
+%%
+[phi,mlon,mlat,E2_bg,E3_bg] = tools.replicate(in_situ,image,xg_rep, ...
+    flow_smoothing_window = 16, ...
+    boundary_smoothing_window = 64, ...
+    show_plots = false, ...
+    save_plots = [0 0 1], ...
+    direc = 'plots\paper0', ...
+    suffix = '', ...
+    starting_letter = 'A', ...
+    add_phi_background = false, ...
+    fit_harmonic = true, ...
+    num_replications = 512, ... %32 or 512
+    arc_definition = "conductance", ...
+    edge_method = "contour", ...
+    do_rotate = true, ...
+    do_scale = true, ...
+    harmonic_mask = [8,8,20]*1e3 ...
+    );
+phi_old = phi;
+
+% mlat = mlat';
+% E2_bg = 0;
+% E3_bg = 0;
+% close all
+% 
+% do_plot = false;
+% lx3 = xg.lx(3);
+% li = 32;
+% phi_new = phi_old;
+% w_max = 512;
+% p = 4;
+% for i=1:li
+%     w = 1+(w_max-1)*(i^p-1)/(li^p-1);
+%     phi_line_1 = phi(:,li+1-i);
+%     phi_line_2 = phi(:,lx3-li+i);
+%     smooth_phi_line_1 = smoothdata(phi_line_1,"gaussian",w);
+%     smooth_phi_line_2 = smoothdata(phi_line_2,"gaussian",w);
+%     if do_plot
+%         figure(i)
+%         hold on
+% %         plot(phi_line_1,'b--')
+% %         plot(smooth_phi_line_1,'b')
+%         plot(phi_line_2,'r--')
+%         plot(smooth_phi_line_2,'r')
+%     end
+%     phi_new(:,li+1-i) = smooth_phi_line_1;
+%     phi_new(:,lx3-li+i) = smooth_phi_line_2;
+% end
+% figure(99)
+% tiledlayout(1,2)
+% nexttile
+% surf(phi_old); shading faceted; view([45,45])
+% nexttile
+% surf(phi_new); shading faceted; view([45,45])
+
+% phi = phi_new;
+
+%%
+% phi_new = smoothdata(phi_old,1,"gaussian",4);
+% phi_new = smoothdata(phi_new,2,"gaussian",4);
+% 
+% 
+% p1 = diff(phi_old,2,2);
+% p2 = diff(phi_new,2,2);
+% 
+% hold on
+% plot(p1(64,:))
+% plot(p2(64,:))
+% 
+% phi = phi_new;
+% close all
+% d1phi = diff(phi,1,2);
+% d2phi = diff(phi,2,2);
+% figure
+% surface(d1phi)
+% figure
+% surface(10*d2phi)
+
+%%
+[X2_rep,X3_rep] = ndgrid(xg_rep.x2(3:end-2),xg_rep.x3(3:end-2));
+x3_rep = xg_rep.x3(3:end-2);
+clear('xg_rep')
+
+clear('xg')
+xg = gemini3d.grid.cartesian(cfg);
+[X2,X3] = ndgrid(xg.x2(3:end-2),xg.x3(3:end-2));
+
+fphi = griddedInterpolant(X2_rep,X3_rep,phi,'spline');
+phi = fphi(X2,X3);
+
+%%
+close all
+hold on
+plot(x3_rep,phi_old(64,:))
+plot(xg.x3(3:end-2),phi(64,:))
+
+%%
+% E2_bg = 0;
+% E3_bg = 0;
+save(fullfile(direc,'ext','potential_map.mat'),'phi','E2_bg','E3_bg')
+
+%%
+dat = gemini3d.read.frame(direc,'time',cfg.times(2));
+
+%%
+ll=5;
+[X2,X3] = ndgrid(xg.x2(3+ll:end-2-ll),xg.x3(3+ll:end-2-ll));
+[dX2,dX3] = ndgrid(xg.dx2h(ll+1:end-ll),xg.dx3h(ll+1:end-ll));
+dA = dX2.*dX3;
+FAC = -squeeze(dat.J1(end,ll+1:end-ll,ll+1:end-ll))*1e6;
+sum(FAC.*dA,'all')
+mean(FAC(:))
+median(FAC(:))
+pcolor(X2,X3,FAC); colorbar; clim([-1,1]*quantile(FAC(:),0.99)); colormap(gca,colorcet('D1A'))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% *** old ***
 %% init
-scl.x = 1e-3;
-scl.v = 1e-3;
-unt.x = 'km';
-unt.v = 'km/s';
-unt.q = 'mW/m^2';
-lim.x = [-1,1]*120;
-lim.y = [-1,1]*60;
-lim.v = [-1,1]*1.3;
-lim.verr = lim.v/2;
-clm.v = colorcet('D2');
-clm.divv = colorcet('CBTD1');
-clm.Q = colorcet('L19');
-lbl.x = ['Magnetic east (',unt.x,')'];
-lbl.y = ['Magnetic north (',unt.x,')'];
-lbl.vx = ['Eastward flow (',unt.v,')'];
-lbl.vy = ['Northward flow (',unt.v,')'];
 sc1 = 10;
 sc2 = 1.5;
 
-do_plot = false;
-save_plot = false;
-do_A = false;
-do_B = false;
+do_plot = true;
+save_plot = true;
+auto_lim = true;
+do_A = true;
+do_B = true;
 do_C = true;
 %#ok<*UNRCH>
 
+ftn = 'Arial';
+fts = 10*2;
+lw = 1.4;
+
+close all
+reset(0)
+set(0,'defaultFigurePaperUnits','inches')
+set(0,'defaultTiledlayoutPadding','tight')
+set(0,'defaultTiledlayoutTileSpacing','tight')
+set(0,'defaultSurfaceEdgeColor','flat')
+set(0,'defaultLineLineWidth',lw)
+set(0,'defaultScatterLineWidth',lw)
+set(0,'defaultQuiverLineWidth',lw*0.7)
+tools.setall(0,'FontName',ftn)
+tools.setall(0,'FontSize',fts)
+tools.setall(0,'Multiplier',1)
+
+scl.x = 1e-3; scl.v = 1e-3; scl.dv = 1e0; scl.p = 1e-3;
+unt.x = 'km'; unt.v = 'km/s'; unt.dv = 'Hz'; unt.p = 'kV'; unt.q = 'mW/m^2';
+clm.v = 'D2'; clm.dv = 'CBD1'; clm.p = 'D10'; clm.q = 'L19';
+lim.x = [-1,1]*125; lim.y = [-1,1]*59;  lim.v = [-1,1]*1.3; lim.dv = [-1,1]*0.1;
+
+lbl.x = sprintf('M. east (%s)',unt.x);
+lbl.y = sprintf('M. north (%s)',unt.x);
+lbl.vx = sprintf('v_{east} (%s)',unt.v);
+lbl.vy = sprintf('v_{north} (%s)',unt.v);
+
 %% unpack grid and configuration data
-direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_06';
+direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_05';
 direc = fullfile(direc);
 cfg = gemini3d.read.config(direc);
 xg = gemini3d.grid.cartesian(cfg);
@@ -42,6 +182,7 @@ lx2 = xg.lx(2); lx3 = xg.lx(3);
 Bmag = abs(mean(xg.Bmag,'all'));
 mlon_to_x2 = griddedInterpolant(MLON(:,1),xg.x2(3:end-2));
 mlat_to_x3 = griddedInterpolant(MLAT(1,:),xg.x3(3:end-2));
+ar = [range(x2),range(x3),range(x3)];
 
 %% determine arc boundaries
 it_part = 4; % datetime = 2017 3 2 7 52 40 + it_part-1
@@ -70,7 +211,7 @@ angle = griddedInterpolant(bounds_x2(1:end-1), ...
 
 if do_plot
     close all
-    figure(1)
+    figure
     pts_bound = -155e3:5e3:155e3;
     hold on
     pcolor(X2_part*scl.x, X3_part*scl.x, Q_map_part)
@@ -81,34 +222,35 @@ if do_plot
     shading flat
     clb = colorbar;
     clb.Label.String = ['Total precipitating energy flux (',unt.q,')'];
-    colormap(clm.Q)
+    colormap(gca,colorcet(clm.q))
     xlim(lim.x)
     ylim(lim.y)
     xlabel(lbl.x)
     ylabel(lbl.y)
+    pbaspect(ar)
 end
 
 clear('glon','glat','mlon','mlat','Qit','E0it','outputdate')
 
 %% replicate rocket data
-do_scale = false;
-do_rotate = false;
+do_scale = true;
+do_rotate = true;
 it_isin = 15;
 v2_bg = 0;
 v3_bg = -500; % chi-by-eye constant background flow removal
 
 load(fullfile(direc,'ext','flow_data.mat'))
-x2_isin = mlon_to_x2(mlon);
-x3_isin = mlat_to_x3(mlat);
-v2_isin = smoothdata(v_geom_east - v2_bg,'gaussian',8);
-v3_isin = smoothdata(v_geom_north - v3_bg,'gaussian',8);
+x2_traj = mlon_to_x2(mlon);
+x3_traj = mlat_to_x3(mlat);
+v2_traj = smoothdata(v_geom_east - v2_bg,'gaussian',1);
+v3_traj = smoothdata(v_geom_north - v3_bg,'gaussian',1);
 datetime_isin = datetimes(it_isin);
 
 fprintf('Particle data datetime: %s\n', datetime_part)
 fprintf('Rocket data datetime: %s\n', datetime_isin)
 
 % 0 = original, 1 = replicated, a = primary bound, b = secondary bound
-traj0 = griddedInterpolant(flip(x2_isin),flip(x3_isin));
+traj0 = griddedInterpolant(flip(x2_traj),flip(x3_traj));
 x0a = fzero(@(x)(traj0(x)-bound_a(x)),0);
 x0b = fzero(@(x)(traj0(x)-bound_b(x)),0);
 y0a = traj0(x0a);
@@ -118,20 +260,20 @@ beta = atan2(x0b-x0a,y0b-y0a); % angle b/w bound-traj inters. and vertical
 
 num_reps = 256;
 dxs = linspace(-120e3,190e3,num_reps); % eastward displacements
-x2_isin_rep = nan(length(dxs),length(x2_isin));
-x3_isin_rep = nan(length(dxs),length(x3_isin));
-v2_isin_rep = nan(length(dxs),length(v2_isin));
-v3_isin_rep = nan(length(dxs),length(v3_isin));
+x2_traj_rep = nan(length(dxs),length(x2_traj));
+x3_traj_rep = nan(length(dxs),length(x3_traj));
+v2_traj_rep = nan(length(dxs),length(v2_traj));
+v3_traj_rep = nan(length(dxs),length(v3_traj));
 for i = 1:length(dxs)
     % translate
     dx = dxs(i);
     dy = bound_a(x0a+dx)-y0a;
 
-    x2_isin_tra = x2_isin + dx;
-    x3_isin_tra = x3_isin + dy;
+    x2_traj_tra = x2_traj + dx;
+    x3_traj_tra = x3_traj + dy;
 
     % determine width at position 1
-    traj1 = griddedInterpolant(flip(x2_isin_tra),flip(x3_isin_tra));
+    traj1 = griddedInterpolant(flip(x2_traj_tra),flip(x3_traj_tra));
     x1a = fzero(@(x)(traj1(x)-bound_a(x)),0);
     x1b = fzero(@(x)(traj1(x)-bound_b(x)),0);
     y1a = traj1(x1a);
@@ -140,88 +282,89 @@ for i = 1:length(dxs)
 
     if do_scale
         % rotate about p1a by beta
-        x2_isin_rot = cos(beta)*(x2_isin_tra - x1a) ...
-            - sin(beta)*(x3_isin_tra - y1a) + x1a;
-        x3_isin_rot = sin(beta)*(x2_isin_tra - x1a) ...
-            + cos(beta)*(x3_isin_tra - y1a) + y1a;
+        x2_traj_rot = cos(beta)*(x2_traj_tra - x1a) ...
+            - sin(beta)*(x3_traj_tra - y1a) + x1a;
+        x3_traj_rot = sin(beta)*(x2_traj_tra - x1a) ...
+            + cos(beta)*(x3_traj_tra - y1a) + y1a;
     
         % scale about p1a
         scale = width1/width0;
-        x2_isin_scl = x2_isin_rot;
-        x3_isin_scl = scale*(x3_isin_rot - y1a) + y1a;
+        x2_traj_scl = x2_traj_rot;
+        x3_traj_scl = scale*(x3_traj_rot - y1a) + y1a;
     
         % rotate back
-        x2_isin_rep(i,:) = cos(-beta)*(x2_isin_scl - x1a) ...
-            - sin(-beta)*(x3_isin_scl - y1a) + x1a;
-        x3_isin_rep(i,:) = sin(-beta)*(x2_isin_scl - x1a) ...
-            + cos(-beta)*(x3_isin_scl - y1a) + y1a;
+        x2_traj_rep(i,:) = cos(-beta)*(x2_traj_scl - x1a) ...
+            - sin(-beta)*(x3_traj_scl - y1a) + x1a;
+        x3_traj_rep(i,:) = sin(-beta)*(x2_traj_scl - x1a) ...
+            + cos(-beta)*(x3_traj_scl - y1a) + y1a;
     else
-        x2_isin_rep(i,:) = x2_isin_tra;
-        x3_isin_rep(i,:) = x3_isin_tra;
+        x2_traj_rep(i,:) = x2_traj_tra;
+        x3_traj_rep(i,:) = x3_traj_tra;
     end
     
     if do_rotate
         % rotate flows to be tangent to bound_a
         alpha = angle(x1a);
-        v2_isin_rep(i,:) = cos(alpha)*v2_isin - sin(alpha)*v3_isin;
-        v3_isin_rep(i,:) = sin(alpha)*v2_isin + cos(alpha)*v3_isin;
+        v2_traj_rep(i,:) = cos(alpha)*v2_traj - sin(alpha)*v3_traj;
+        v3_traj_rep(i,:) = sin(alpha)*v2_traj + cos(alpha)*v3_traj;
     else
-        v2_isin_rep(i,:) = v2_isin;
-        v3_isin_rep(i,:) = v3_isin;
+        v2_traj_rep(i,:) = v2_traj;
+        v3_traj_rep(i,:) = v3_traj;
     end
 
     if i==50 && do_plot
         close all
-        figure(1)
+        figure
         hold on
         pcolor(X2_part*scl.x,X3_part*scl.x,Q_map_part); shading flat
-        colormap("gray")
+        colormap(gca,"gray")
         plot(bounds_x2*scl.x,bounds_x3(1,:)*scl.x,'b')
         plot(bounds_x2*scl.x,bounds_x3(2,:)*scl.x,'b')
         scatter(x0a*scl.x,y0a*scl.x,50,'Filled','y')
         scatter(x0b*scl.x,y0b*scl.x,50,'Filled','y')
         scatter(x1a*scl.x,y1a*scl.x,50,'Filled','y')
         scatter(x1b*scl.x,y1b*scl.x,50,'Filled','y')
-        quiver(x2_isin*scl.x,x3_isin*scl.x, ...
-            v2_isin*scl.v*sc1,v3_isin*scl.v*sc1,0,'.-g')
-        plot(x2_isin_tra*scl.x,x3_isin_tra*scl.x,'b')
-        plot(x2_isin_rot*scl.x,x3_isin_rot*scl.x,'r')
-        plot(x2_isin_scl*scl.x,x3_isin_scl*scl.x,'b--')
-        quiver(x2_isin_rep(i,:)*scl.x,x3_isin_rep(i,:)*scl.x, ...
-            v2_isin*scl.v*sc1,v3_isin*scl.v*sc1,0,'.-r')
+        quiver(x2_traj*scl.x,x3_traj*scl.x, ...
+            v2_traj*scl.v*sc1,v3_traj*scl.v*sc1,0,'.-g')
+        plot(x2_traj_tra*scl.x,x3_traj_tra*scl.x,'b')
+        plot(x2_traj_rot*scl.x,x3_traj_rot*scl.x,'r')
+        plot(x2_traj_scl*scl.x,x3_traj_scl*scl.x,'b--')
+        quiver(x2_traj_rep(i,:)*scl.x,x3_traj_rep(i,:)*scl.x, ...
+            v2_traj*scl.v*sc1,v3_traj*scl.v*sc1,0,'.-r')
         xlim(lim.x)
         ylim(lim.y)
         xlabel(lbl.x)
         ylabel(lbl.y)
-        pbaspect([1,1,1])
+        pbaspect(ar)
     end
 end
 
 if do_plot
-    figure(2)
+    figure
     hold on
     pcolor(X2_part*scl.x,X3_part*scl.x,Q_map_part); shading flat
-    colormap("gray")
+    colormap(gca,"gray")
     plot(bounds_x2*scl.x,bounds_x3(1,:)*scl.x,'b')
     plot(bounds_x2*scl.x,bounds_x3(2,:)*scl.x,'b')
-    quiver(x2_isin_rep*scl.x,x3_isin_rep*scl.x, ...
-        v2_isin_rep*scl.v,v3_isin_rep*scl.v,0,'.-r')
-    quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,0,'.-g')
+    quiver(x2_traj_rep*scl.x,x3_traj_rep*scl.x, ...
+        v2_traj_rep*scl.v,v3_traj_rep*scl.v,0,'.-r')
+    quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,0,'.-g')
     xlim(lim.x)
     ylim(lim.y)
     xlabel(lbl.x)
     ylabel(lbl.y)
-    pbaspect([1,1,1])
+    pbaspect(ar)
 
-    figure(3)
+    figure
     hold on
     plot(time,v_geom_east - v2_bg,'Color',[1,0.4,0.4])
     plot(time,v_geom_north - v3_bg,'Color',[0.4,0.4,1])
-    plot(time,v2_isin,'r')
-    plot(time,v3_isin,'b')
+    plot(time,v2_traj,'r')
+    plot(time,v3_traj,'b')
     xlabel('Flight time (s)')
     ylabel('Flow (m/s)')
     legend('east','east smoothed','north','north smoothed')
+    pbaspect(ar)
 end
 
 clear('lon_100km','lat_100km','mlon','mlat', ...
@@ -229,38 +372,53 @@ clear('lon_100km','lat_100km','mlon','mlat', ...
     'time','datetimes','comment','note')
 
 %% interpolate replicated flow data
-fv2 = scatteredInterpolant(x2_isin_rep(:),x3_isin_rep(:),v2_isin_rep(:));
-fv3 = scatteredInterpolant(x2_isin_rep(:),x3_isin_rep(:),v3_isin_rep(:));
-v2_map = fv2(X2,X3);
-v3_map = fv3(X2,X3);
-E2_map =  v3_map*Bmag; % v = ExB/B^2
-E3_map = -v2_map*Bmag;
+fv2 = scatteredInterpolant(x2_traj_rep(:),x3_traj_rep(:),v2_traj_rep(:));
+fv3 = scatteredInterpolant(x2_traj_rep(:),x3_traj_rep(:),v3_traj_rep(:));
+v2_int = fv2(X2,X3);
+v3_int = fv3(X2,X3);
+E2_int =  v3_int*Bmag; % v = ExB/B^2
+E3_int = -v2_int*Bmag;
 E2_bg =  v3_bg*Bmag;
 E3_bg = -v2_bg*Bmag;
 
 if do_plot
     close all
-    figure(1)
+    figure
     hold on
-    pcolor(X2*scl.x,X3*scl.x,v2_map*scl.v); shading flat
-    colorbar; colormap(clm.v); clim(lim.v)
-    quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v*sc1,v3_isin*scl.v*sc1,0,'.-k')
+    pcolor(X2*scl.x,X3*scl.x,v2_int*scl.v); shading flat
+    colorbar; colormap(gca,colorcet(clm.v)); clim(lim.v)
+    quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v*sc1,v3_traj*scl.v*sc1,0,'.-k')
     xlim(lim.x)
     ylim(lim.y)
     xlabel(lbl.x)
     ylabel(lbl.y)
-    pbaspect([1,1,1])
+    pbaspect(ar)
 
-    figure(2)
+    figure
     hold on
-    pcolor(X2*scl.x,X3*scl.x,v3_map*scl.v); shading flat
-    colorbar; colormap(clm.v); clim(lim.v)
-    quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v*sc1,v3_isin*scl.v*sc1,0,'.-k')
+    pcolor(X2*scl.x,X3*scl.x,v3_int*scl.v); shading flat
+    colorbar; colormap(gca,colorcet(clm.v)); clim(lim.v)
+    quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v*sc1,v3_traj*scl.v*sc1,0,'.-k')
     xlim(lim.x)
     ylim(lim.y)
     xlabel(lbl.x)
     ylabel(lbl.y)
-    pbaspect([1,1,1])
+    pbaspect(ar)
+
+    figure
+    vs = 2;
+    hold on
+    pcolor(X2_part*scl.x,X3_part*scl.x,Q_map_part); shading flat
+    colormap(gca,colorcet(clm.q))
+    plot(bounds_x2*scl.x,bounds_x3(1,:)*scl.x,'b')
+    plot(bounds_x2*scl.x,bounds_x3(2,:)*scl.x,'b')
+    quiver(X2*scl.x,X3*scl.x,v2_int*scl.v*vs,v3_int*scl.v*vs,0,'.-r')
+    quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v*vs,v3_traj*scl.v*vs,0,'.-g')
+    xlim(lim.x)
+    ylim(lim.y)
+    xlabel(lbl.x)
+    ylabel(lbl.y)
+    pbaspect(ar)
 end
 
 %% generate potential map - option A
@@ -275,8 +433,8 @@ if do_A
     if pseudo_basis
         bag_x2 = X2(1:dec(1):end,1:dec(2):end);
         bag_x3 = X3(1:dec(1):end,1:dec(2):end);
-        bag_v2 = v2_map(1:dec(1):end,1:dec(2):end);
-        bag_v3 = v3_map(1:dec(1):end,1:dec(2):end);
+        bag_v2 = v2_int(1:dec(1):end,1:dec(2):end);
+        bag_v3 = v3_int(1:dec(1):end,1:dec(2):end);
         bag_x = [bag_x2(:),bag_x3(:)];
         bag_v = [bag_v2(:),bag_v3(:)];
         boundary = [bounds_x2;bounds_x3(1,:)]';
@@ -284,12 +442,12 @@ if do_A
         if do_plot
             close all
     
-            figure(1)
+            figure
             hold on
-            pcolor(X2*scl.x,X3*scl.x,v2_map*scl.v); shading flat
-            colorbar; colormap(clm.v); clim(lim.v)
+            pcolor(X2*scl.x,X3*scl.x,v2_int*scl.v); shading flat
+            colorbar; colormap(gca,clm.v); clim(lim.v)
             quiver(bag_x2*scl.x,bag_x3*scl.x,bag_v2*scl.v,bag_v3*scl.v,0,'.-k')
-    
+            pbaspect(ar)
             cont = input('Looks good? (y/n) ',"s");
         else
             cont = 'y'
@@ -325,11 +483,12 @@ if do_A
     %         end
     %         phi_0 = phi_0 - mean(phi_0,'all');
     
-            phitopA = tools.basic_reconstruct(v2_map,v3_map,xg ...
+            phitopA = tools.basic_reconstruct(v2_int,v3_int,xg ...
                 ,usepar=usepar,decimation=dec,ic_iteration=true);
             save(mat_fn,'phitopA','dec','usepar')
         end
     end
+    phitopA = phitopA - mean(phitopA,'all');
 end
 %% generate potential map - option B
 if do_B
@@ -344,7 +503,7 @@ if do_B
         fprintf('File found: %s\n',mat_fn)
         load(mat_fn)
     else
-        phitopB = zeros([size(E2_map),prod(ns)]);
+        phitopB = zeros([size(E2_int),prod(ns)]);
         for n = 1:ns(1)*ns(2)
             s2 = s2s(n);
             s3 = s3s(n);
@@ -361,8 +520,8 @@ if do_B
                         d3 = 1;
                     end
                     phitopB(ix2,ix3,n) = -( ...
-                        dot(E2_map(s2:d2:ix2,s3), dx2(s2:d2:ix2)*d2) ...
-                        + dot(E3_map(ix2,s3:d3:ix3), dx3(s3:d3:ix3)*d3) ...
+                        dot(E2_int(s2:d2:ix2,s3), dx2(s2:d2:ix2)*d2) ...
+                        + dot(E3_int(ix2,s3:d3:ix3), dx3(s3:d3:ix3)*d3) ...
                         );
                 end
             end
@@ -385,8 +544,8 @@ if do_C
     x2_ext = [x2(1)+dx2(1)*(-nfill:-1),x2,x2(end)+dx2(end)*(1:nfill)];
     x3ext = [x3(1)+dx3(1)*(-nfill:-1),x3,x3(end)+dx3(end)*(1:nfill)];
     [X2_ext,X3_ext] = ndgrid(x2_ext,x3ext);
-    fE2_map = griddedInterpolant(X2,X3,E2_map,'linear','nearest');
-    fE3_map = griddedInterpolant(X2,X3,E3_map,'linear','nearest');
+    fE2_map = griddedInterpolant(X2,X3,E2_int,'linear','nearest');
+    fE3_map = griddedInterpolant(X2,X3,E3_int,'linear','nearest');
     E2_map_ext = fE2_map(X2_ext,X3_ext);
     E3_map_ext = fE3_map(X2_ext,X3_ext);
     
@@ -415,13 +574,13 @@ if do_C
     % fprintf('%% error in finding k3_target = %.5f\n',error3)
     % 
     % if plotting
-    %     figure(1)
+    %     figure
     %     hold on
     %     pcolor(X2-mean(diff(x2)),X3-mean(diff(x3)),test_image); shading flat
     %     quiver(0,0,2*pi/k2_target,0,'r')
     %     quiver(0,0,0,2*pi/k3_target,'r')
     %     
-    %     figure(2)
+    %     figure
     %     hold on
     %     pcolor(K2-mean(diff(k2)),K3-mean(diff(k3)),abs(test_fft)); shading flat
     %     xlim([-1,1]*1e-3)
@@ -453,30 +612,41 @@ if do_C
     E30 = E30';
     
     % make average electric field match
-    phitopC = phi0 - mean(E2_map-E20,'all').*X2 - mean(E3_map-E30,'all').*X3;
+    phitopC = phi0 - mean(E2_int-E20,'all').*X2 - mean(E3_int-E30,'all').*X3;
     phitopC = phitopC - mean(phitopC,'all');
 end
 
 %% plot potentials A, B, and C
-if do_plot || true
+if do_plot
     close all
-    figure(1)
-    tiledlayout(1,3)
+    figure
+    tiledlayout(2,2)
     nexttile
     if do_A
         pcolor(X2,X3,phitopA); shading flat; colorbar; clim([-1,1]*2e3)
+        pbaspect(ar)
     end
     nexttile
     if do_B
         pcolor(X2,X3,phitopB); shading flat; colorbar; clim([-1,1]*2e3)
+        pbaspect(ar)
     end
     nexttile
     if do_C
         pcolor(X2,X3,phitopC); shading flat; colorbar; clim([-1,1]*2e3)
+        pbaspect(ar)
+        nexttile
+        delta_phi = phi0-phitopA;
+        surface(X2/1e3,X3/1e3,delta_phi/1e3)
+        xlabel('East (km)'); ylabel('North (km)'); zlabel('Et tu brutus? - Alex (kV)')
+        view(45,45)
+        grid
     end
 end
 
 %% plot interpolated flow against options A, B, and C
+close all
+
 add_bg = 1;
 suff = 'v1';
 
@@ -485,174 +655,426 @@ if ~do_B; phitopB = zeros(size(X2)); end
 if ~do_C; phitopC = zeros(size(X2)); end
 
 if range(dx2) < 1e-3
-    [E2_map_A,E3_map_A] = gradient(-phitopA',mean(dx2),mean(dx3));
-    [E2_map_B,E3_map_B] = gradient(-phitopB',mean(dx2),mean(dx3));
-    [E2_map_C,E3_map_C] = gradient(-phitopC',mean(dx2),mean(dx3));
+    [E2_int_A,E3_int_A] = gradient(-phitopA',mean(dx2),mean(dx3));
+    [E2_int_B,E3_int_B] = gradient(-phitopB',mean(dx2),mean(dx3));
+    [E2_int_C,E3_int_C] = gradient(-phitopC',mean(dx2),mean(dx3));
 else
-    [E2_map_A,E3_map_A] = gradient(-phitopA',dx2,dx3);
-    [E2_map_B,E3_map_B] = gradient(-phitopB',dx2,dx3);
-    [E2_map_C,E3_map_C] = gradient(-phitopC',dx2,dx3);
+    [E2_int_A,E3_int_A] = gradient(-phitopA',dx2,dx3);
+    [E2_int_B,E3_int_B] = gradient(-phitopB',dx2,dx3);
+    [E2_int_C,E3_int_C] = gradient(-phitopC',dx2,dx3);
 end
-v2_map_A = -E3_map_A'/Bmag;
-v2_map_B = -E3_map_B'/Bmag;
-v2_map_C = -E3_map_C'/Bmag;
-v3_map_A =  E2_map_A'/Bmag;
-v3_map_B =  E2_map_B'/Bmag;
-v3_map_C =  E2_map_C'/Bmag;
+v2_A = -E3_int_A'/Bmag;
+v2_B = -E3_int_B'/Bmag;
+v2_C = -E3_int_C'/Bmag;
+v3_A =  E2_int_A'/Bmag;
+v3_B =  E2_int_B'/Bmag;
+v3_C =  E2_int_C'/Bmag;
 
-dv2dx2 = diff(v2_map(:,2:end),1,1)./DX2(2:end,2:end);
-dv3dx3 = diff(v3_map(2:end,:),1,2)./DX3(2:end,2:end);
+if do_plot
+    for c = 'ABC'
+        if c=='A'; v2_tmp = v2_A; v3_tmp = v3_A; end
+        if c=='B'; v2_tmp = v2_B; v3_tmp = v3_B; end
+        if c=='C'; v2_tmp = v2_C; v3_tmp = v3_C; end
+        figure
+        vs = 2;
+        hold on
+        pcolor(X2_part*scl.x,X3_part*scl.x,Q_map_part); shading flat
+        colormap(gca,colorcet(clm.q))
+        plot(bounds_x2*scl.x,bounds_x3(1,:)*scl.x,'b')
+        plot(bounds_x2*scl.x,bounds_x3(2,:)*scl.x,'b')
+        quiver(X2*scl.x,X3*scl.x,v2_tmp*scl.v*vs,v3_tmp*scl.v*vs,0,'.-r')
+        quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v*vs,v3_traj*scl.v*vs,0,'.-g')
+        xlim(lim.x)
+        ylim(lim.y)
+        xlabel(lbl.x)
+        ylabel(lbl.y)
+        pbaspect(ar)
+    end
+end
 
-close all
-reset(0)
-set(0,'defaultFigurePaperUnits','inches')
-set(0,'defaultTiledlayoutPadding','tight')
-set(0,'defaultTiledlayoutTileSpacing','tight')
-set(0,'defaultSurfaceEdgeColor','flat')
+%%
+divv_int = divergence(X3,X2,v3_int,v2_int);
 
-figure(1)
-set(gcf,'PaperPosition',[0,0,9,6.5])
-tlo = tiledlayout(3,4);
+if auto_lim
+    qnt = 0.95;
+    max_v = quantile(abs([v2_int(:)+v2_bg;v3_int(:)+v3_bg]),qnt);
+    max_dv = quantile(abs(divv_int(:)),qnt);
+    max_p = quantile(abs(phitopA(:)),qnt);
+    lim.v = [-1,1]*max_v*scl.v;
+    lim.dv = [-1,1]*max_dv*scl.dv;
+    lim.p = [-1,1]*max_p*scl.p;
+end
+
+figure
+set(gcf,'PaperPosition',[0,0,13.2,8]) %4.3
+tiledlayout(4,3);
+ltr = 65;
 
 % row 1
 nexttile
+title('Interpolated flow')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v2_map+add_bg*v2_bg)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.v)
-ylabel(lbl.y)
-xlim(lim.x); ylim(lim.y)
+pcolor(X2*scl.x,X3*scl.x,(v2_int+v2_bg)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+xlim(lim.x); ylim(lim.y); clim(lim.v)
 xticks([])
-title('Interpolated')
+ylabel(lbl.y)
+pbaspect(ar)
 
 nexttile
+title('Brute force')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v2_map_A+add_bg*v2_bg)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.v)
-xlim(lim.x); ylim(lim.y)
+pcolor(X2*scl.x,X3*scl.x,(v2_A+v2_bg)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+xlim(lim.x); ylim(lim.y); clim(lim.v)
 xticks([]); yticks([])
-title('Potential fit')
+pbaspect(ar)
 
 nexttile
-hold on
-pcolor(X2*scl.x,X3*scl.x,(v2_map_B+add_bg*v2_bg)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.v)
-xlim(lim.x); ylim(lim.y)
-xticks([]); yticks([])
-title('Averaged path-integrated')
-
-nexttile
-hold on
-pcolor(X2*scl.x,X3*scl.x,(v2_map_C+add_bg*v2_bg)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.v)
-clb = colorbar; clb.Label.String = lbl.vx;
-xlim(lim.x); ylim(lim.y)
-xticks([]); yticks([])
 title('Helmholtz decomposition')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
+hold on
+pcolor(X2*scl.x,X3*scl.x,(v2_C+v2_bg)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+clb = colorbar;
+clb.Label.String = lbl.vx;
+xlim(lim.x); ylim(lim.y); clim(lim.v)
+xticks([]); yticks([])
+pbaspect(ar)
 
 % row 2
 nexttile
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_map+add_bg*v3_bg)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.v)
-ylabel(lbl.y)
-xlim(lim.x); ylim(lim.y)
+pcolor(X2*scl.x,X3*scl.x,(v3_int+v3_bg)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+xlim(lim.x); ylim(lim.y); clim(lim.v)
 xticks([])
+ylabel(lbl.y)
+pbaspect(ar)
 
 nexttile
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_map_A+add_bg*v3_bg)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.v)
-xlim(lim.x); ylim(lim.y)
+pcolor(X2*scl.x,X3*scl.x,(v3_A+v3_bg)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+xlim(lim.x); ylim(lim.y); clim(lim.v)
 xticks([]); yticks([])
+pbaspect(ar)
 
 nexttile
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_map_B+add_bg*v3_bg)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.v)
-xlim(lim.x); ylim(lim.y)
-xlim(lim.x); ylim(lim.y)
+pcolor(X2*scl.x,X3*scl.x,(v3_C+v3_bg)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+clb = colorbar;
+clb.Label.String = lbl.vy;
+xlim(lim.x); ylim(lim.y); clim(lim.v)
 xticks([]); yticks([])
-
-nexttile
-hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_map_C+add_bg*v3_bg)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.v)
-clb = colorbar; clb.Label.String = lbl.vy;
-xlim(lim.x); ylim(lim.y)
-xticks([]); yticks([])
+pbaspect(ar)
 
 % row 3
 nexttile
+% title('Divergence & Potential')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
-pcolor(X2(2:end,2:end)*scl.x,X3(2:end,2:end)*scl.x,dv2dx2+dv3dx3)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-clb = colorbar('southoutside'); clb.Label.String = '\nabla\cdot v (s^{-1})';
+pcolor(X2*scl.x,X3*scl.x,divv_int*scl.dv)
+colormap(gca,colorcet(clm.dv))
+clb = colorbar;
+clb.Label.String = sprintf('\\nabla\\cdot\\bfv\\rm (%s)',unt.dv);
+clb.Location = 'westoutside';
+xlim(lim.x); ylim(lim.y); clim(lim.dv)
+xticks([])
+ylabel(lbl.y)
+pbaspect(ar)
+
+nexttile
+% title('Brute force - Interp.')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
+hold on
+pcolor(X2*scl.x,X3*scl.x,(v2_A-v2_int)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+xlim(lim.x); ylim(lim.y); clim(lim.v/3)
+xticks([]); yticks([])
+pbaspect(ar)
+
+nexttile
+% title('Helmholts - Brute force')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
+hold on
+pcolor(X2*scl.x,X3*scl.x,(v2_C - v2_A)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+clb = colorbar;
+clb.Label.String = sprintf('\\Delta %s',lbl.vx);
+xlim(lim.x); ylim(lim.y); clim(lim.v/3)
+xticks([]); yticks([])
+pbaspect(ar)
+
+% row 4
+nexttile
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
+hold on
+pcolor(X2*scl.x,X3*scl.x,100*(phitopA-phitopC)*scl.p/lim.p(2))
+colormap(gca,colorcet(clm.p))
+clb = colorbar;
+clb.Label.String = '\Delta\phi/\phi_{max} (%)';
+clb.Location = 'westoutside';
+xlim(lim.x); ylim(lim.y); %clim([-1,1]*10)
 xlabel(lbl.x); ylabel(lbl.y)
-xlim(lim.x); ylim(lim.y)
-title('Divergence of Interp.')
-clim_tmp = get(gca,'CLim');
-clim([-1,1]*max(clim_tmp)   )
+pbaspect(ar)
 
 nexttile
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_map-v3_map_A)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.verr)
-clb = colorbar('southoutside'); clb.Label.String = ['\Delta ',lbl.vy];
-xlabel(lbl.x)
-xlim(lim.x); ylim(lim.y)
+pcolor(X2*scl.x,X3*scl.x,(v3_A-v3_int)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+xlim(lim.x); ylim(lim.y); clim(lim.v/3)
 yticks([])
-title('Interp. − Pot. fit')
+xlabel(lbl.x);
+pbaspect(ar)
 
 nexttile
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8)
 hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_map_A-v3_map_B)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.verr)
-clb = colorbar('southoutside'); clb.Label.String = ['\Delta ',lbl.vy];
-xlabel(lbl.x)
-xlim(lim.x); ylim(lim.y)
+pcolor(X2*scl.x,X3*scl.x,(v3_C - v3_A)*scl.v)
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+colormap(gca,colorcet(clm.v))
+clb = colorbar;
+clb.Label.String = sprintf('\\Delta %s',lbl.vy);
+xlim(lim.x); ylim(lim.y); clim(lim.v/3)
 yticks([])
-title('Pot. fit − Avg. path int.')
+xlabel(lbl.x);
+pbaspect(ar)
 
-nexttile
-hold on
-pcolor(X2*scl.x,X3*scl.x,(v3_map_A-v3_map_C)*scl.v)
-quiver(x2_isin*scl.x,x3_isin*scl.x,v2_isin*scl.v,v3_isin*scl.v,'.-r');
-colormap(clm.v); clim(lim.verr)
-clb = colorbar('southoutside'); clb.Label.String = ['\Delta ',lbl.vy];
-xlabel(lbl.x)
-xlim(lim.x); ylim(lim.y)
-yticks([])
-title('Pot. fit − Helmholtz dec.')
-
-if do_A
-    if pseudo_basis
-        filename = sprintf('phitopA_%i_%i_%i_%s.png',dec(1),dec(2),numf,suf);
-    else
-        filename = sprintf('phitopA_%i_%i_%s.png',dec(1),dec(2),suf);
-    end
-    filename = fullfile('plots',filename);
-else
-    filename = fullfile('plot','phitop.png');
-end
+% if do_A
+%     if pseudo_basis
+%         filename = sprintf('phitopA_%i_%i_%i_%s.png',dec(1),dec(2),numf,suf);
+%     else
+%         filename = sprintf('phitopA_%i_%i_%s.png',dec(1),dec(2),suf);
+%     end
+%     filename = fullfile('plots',filename);
+% else
+%     filename = fullfile('plots','phitop.png');
+% end
+% filename = sprintf('potential_options_%s.png', ...
+    % datetime(datetime,'Format','MMdd''_''HHmmss'));
+% filename = fullfile('plots',filename);
+filename = fullfile('plots','paper0','potential_options.png');
 if save_plot
     fprintf('Saving file:c %s\n',filename)
     saveas(gcf,filename)
 end
+close all
+
+%%
+close all
+if auto_lim
+    qnt = 0.95;
+    max_v = quantile(abs([v2_int(:)+v2_bg;v3_int(:)+v3_bg]),qnt);
+    max_dv = quantile(abs(divv_int(:)),qnt);
+    max_p = quantile(abs(phitopA(:)),qnt);
+    lim.v = [-1,1]*max_v*scl.v;
+    lim.dv = [-1,1]*max_dv*scl.dv;
+    lim.p = [-1,1]*max_p*scl.p;
+end
+
+% find best fit harmonic function
+xdata = [X2(:),X3(:)];
+Edata = [E2_int(:),E3_int(:)];
+[~,harm1] = tools.find_harmonic(phi0,xdata,Edata,xg);
+
+harmonic_mask = [1,1,2]*10e3;
+mask_A = false(size(X2)); % select data around boundary A
+mask_B = false(size(X2)); % select data around boundary B
+mask_t = false(size(X2)); % select data around trajectory
+for i = 1:lx2
+    b = bound_a(x2(i));
+    db = harmonic_mask(1);
+    mask_A(i,:) = (x3 >= b-db & x3 < b+db);
+end
+for i = 1:lx2
+    b = bound_b(x2(i));
+    db = harmonic_mask(2);
+    mask_B(i,:) = (x3 >= b-db & x3 < b+db);
+end
+for i = 1:lx3
+    b = fzero(@(x) traj0(x)-x3(i),0);
+    db = harmonic_mask(3);
+    mask_t(:,i) = (x2' >= b-db & x2' < b+db);
+end
+mask = mask_A | mask_B | mask_t;
+xdata = [X2(mask),X3(mask)];
+Edata = [E2_int(mask),E3_int(mask)];
+[~,harm2] = tools.find_harmonic(phi0,xdata,Edata,xg);
+
+%%
+close all
+
+figure
+set(gcf,'PaperPosition',[0,0,13.2,4.2]) %4.3
+tiledlayout(1,3);
+ltr = 'A';
+
+nexttile
+lc = 6;
+vw = [130,20];
+title('Brute force - \phi_0(x,y)')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
+hold on
+surface(X2(1:lc:end,1:lc:end)*scl.x,X3(1:lc:end,1:lc:end)*scl.x, ...
+    (phitopA(1:lc:end,1:lc:end)-phi0(1:lc:end,1:lc:end))*scl.p,'EdgeColor','k')
+colormap(gca,colorcet(clm.p))
+xlim(lim.x); ylim(lim.y); zlim(1.4*lim.p); clim(lim.p)
+ylbl = ylabel(lbl.y);
+ylbl.Position = [180,100,-2];
+zlabel(sprintf('Potential (%s)',unt.p))
+pbaspect(ar)
+view(vw)
+grid
+
+nexttile
+title('Harmonic fit')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
+hold on
+surface(X2(1:lc:end,1:lc:end)*scl.x,X3(1:lc:end,1:lc:end)*scl.x, ...
+    harm1(1:lc:end,1:lc:end)*scl.p,'EdgeColor','k')
+colormap(gca,colorcet(clm.p))
+xlim(lim.x); ylim(lim.y); zlim(1.4*lim.p); clim(lim.p)
+set(gca,'ZTickLabel',[])
+pbaspect(ar)
+view(vw)
+grid
+
+nexttile
+harm2_new = harm2;
+harm2_new(not(mask)) = nan;
+title('Harmonic fit (masked)')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8)
+hold on
+surface(X2(1:lc:end,1:lc:end)*scl.x,X3(1:lc:end,1:lc:end)*scl.x, ...
+    harm2(1:lc:end,1:lc:end)*scl.p+2,'EdgeColor','k','FaceAlpha',0.3,'EdgeAlpha',0.3)
+surface(X2(1:lc:end,1:lc:end)*scl.x,X3(1:lc:end,1:lc:end)*scl.x, ...
+    harm2_new(1:lc:end,1:lc:end)*scl.p+2,'EdgeColor','k')
+contour(X2*scl.x,X3*scl.x,double(mask),'r')
+colormap(gca,colorcet(clm.p))
+xlim(lim.x); ylim(lim.y); zlim(1.4*lim.p+2); clim(lim.p+2)
+xlbl = xlabel(lbl.x);
+xlbl.Position = [-30,30,-2];
+set(gca,'ZTickLabel',[])
+pbaspect(ar)
+view(vw)
+grid
+
+filename = fullfile('plots','paper0','harmonic.png');
+if save_plot
+    fprintf('Saving file:c %s\n',filename)
+    saveas(gcf,filename)
+end
+close all
+
+%%
+[E2_int_A,E3_int_A] = gradient(-phitopA',mean(dx2),mean(dx3));
+[E2_int_1,E3_int_1] = gradient(-(phi0+harm1)',mean(dx2),mean(dx3));
+[E2_int_2,E3_int_2] = gradient(-(phi0+harm2)',mean(dx2),mean(dx3));
+
+v2_A = -E3_int_A'/Bmag;
+v2_1 = -E3_int_1'/Bmag;
+v2_2 = -E3_int_2'/Bmag;
+v3_A =  E2_int_A'/Bmag;
+v3_1 =  E2_int_1'/Bmag;
+v3_2 =  E2_int_2'/Bmag;
+
+fv2_int_A = griddedInterpolant(X2,X3,v2_A);
+fv2_int_1 = griddedInterpolant(X2,X3,v2_1);
+fv2_int_2 = griddedInterpolant(X2,X3,v2_2);
+fv3_int_A = griddedInterpolant(X2,X3,v3_A);
+fv3_int_1 = griddedInterpolant(X2,X3,v3_1);
+fv3_int_2 = griddedInterpolant(X2,X3,v3_2);
+
+v2_bnd_A = fv2_int_A(bounds_x2,bounds_x3(1,:));
+v2_bnd_1 = fv2_int_1(bounds_x2,bounds_x3(1,:));
+v2_bnd_2 = fv2_int_2(bounds_x2,bounds_x3(1,:));
+v3_bnd_A = fv3_int_A(bounds_x2,bounds_x3(1,:));
+v3_bnd_1 = fv3_int_1(bounds_x2,bounds_x3(1,:));
+v3_bnd_2 = fv3_int_2(bounds_x2,bounds_x3(1,:));
+
+dangle_A = rad2deg(atan(v3_bnd_A./v2_bnd_A)-angle(bounds_x2));
+dangle_1 = rad2deg(atan(v3_bnd_1./v2_bnd_1)-angle(bounds_x2));
+dangle_2 = rad2deg(atan(v3_bnd_2./v2_bnd_2)-angle(bounds_x2));
+
+disp('----------------')
+disp(quantile(dangle_A,[0.1,0.5,0.9]))
+disp(quantile(dangle_1,[0.1,0.5,0.9]))
+disp(quantile(dangle_2,[0.1,0.5,0.9]))
+
+close all
+
+figure
+hold on
+histogram(dangle_A,32,'FaceColor','k','Normalization','probability')
+histogram(dangle_1,32,'FaceColor','b','Normalization','probability')
+histogram(dangle_2,32,'FaceColor','r','Normalization','probability')
+xlim([-1,1]*5)
+xlabel('flow angle - boundary angle (°)'); ylabel('probability')
+
+% close all
+% 
+% figure
+% hold on
+% % plot(x2*scl.x,rad2deg(angle(x2)),'k')
+% plot(bounds_x2*scl.x,dangle_A,'k')
+% plot(bounds_x2*scl.x,dangle_1,'b')
+% plot(bounds_x2*scl.x,dangle_2,'r')
+% grid
+% legend('Brute force','unmasked harmonic fit','masked harmonic fit')
+% xlabel(lbl.x); ylabel('flow angle - boundary angle (°)')
+
+%%
+close all
+
+figure
+set(gcf,'PaperPosition',[0,0,6.5,2]*2)
+tlo = tiledlayout(1,3);
+xlim_zoom = [60,90];
+ylim_zoom = [-40,-30];
+vs = 2;
+
+nexttile
+hold on
+quiver(X2*scl.x,X3*scl.x,v2_A*scl.v*vs,v3_A*scl.v*vs,0,'.-r')
+plot(bounds_x2*scl.x,bounds_x3(1,:)*scl.x,'b')
+xlim(xlim_zoom); ylim(ylim_zoom)
+pbaspect(ar)
+
+nexttile
+hold on
+quiver(X2*scl.x,X3*scl.x,v2_1*scl.v*vs,v3_1*scl.v*vs,0,'.-r')
+plot(bounds_x2*scl.x,bounds_x3(1,:)*scl.x,'b')
+xlim(xlim_zoom); ylim(ylim_zoom)
+pbaspect(ar)
+
+nexttile
+hold on
+quiver(X2*scl.x,X3*scl.x,v2_2*scl.v*vs,v3_2*scl.v*vs,0,'.-r')
+plot(bounds_x2*scl.x,bounds_x3(1,:)*scl.x,'b')
+xlim(xlim_zoom); ylim(ylim_zoom)
+pbaspect(ar)
 
 %% happy?
-happy = input('Happy? (y/n) ','s');
-if strcmp(happy,'y')
-    fprintf("I'm glad you're happy.\n")
+% happy = input('Happy? (y/n) ','s');
+% if strcmp(happy,'y')
+%     fprintf("I'm glad you're happy.\n")
 
 %     direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\isinglass_05_A';
 %     phi = phitopA;
@@ -662,12 +1084,12 @@ if strcmp(happy,'y')
 %     phi = phitopB;
 %     save(fullfile(direc,'ext','potential_map.mat'),'phi','E2_bg','E3_bg','ns') 
     
-    direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\isinglass_06_nosc_noro';
-    phi = phitopC;
-    save(fullfile(direc,'ext','potential_map.mat'),'phi','E2_bg','E3_bg')
-else
-    fprintf('aww\n')
-end
+%     direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\isinglass_06_nosc_noro';
+%     phi = phitopC;
+%     save(fullfile(direc,'ext','potential_map.mat'),'phi','E2_bg','E3_bg')
+% else
+%     fprintf('aww\n')
+% end
 
 %% gather up isinglass flow data
 % load('../../public_html/Gemini3D/isinglass_05/latlonggeoandgeomfootpoint.mat')
@@ -706,11 +1128,11 @@ end
 % v_geom_east = (E1-E0)/dt;
 % v_geom_north = (N1-N0)/dt;
 %
-% figure(1)
+% figure
 % quiver(E0,N0,v_geom_east,v_geom_north)
 % pbaspect([1,1,1])
 %
-% figure(2)
+% figure
 % hold on
 % plot(v_geom_east.^2+v_geom_north.^2)
 % plot(v_geog_east.^2+v_geog_north.^2)
