@@ -1,4 +1,4 @@
-ig = false;
+ig = true;
 %#ok<*UNRCH>
 
 if ig
@@ -27,7 +27,6 @@ flat = griddedInterpolant(model_mlon,model_mlat,squeeze(model_lat(1,:,:)));
 % Alaska
 shp = shaperead('data/map_data/gadm41_USA_2.shp');
 
-%
 lim.lon = [-170,-141]+360;
 lim.lat = [55,72];
 map_lon = [shp.X]'+360;
@@ -70,7 +69,6 @@ if ig
     [traj_shd_x,traj_shd_y,traj_shd_z] = sph2cart(az,el,RE);
     traj_vlon = smoothdata(v_geog_east,"gaussian",16);
     traj_vlat = smoothdata(v_geog_north,"gaussian",16);
-
 else
     load(fullfile(direc,'arcs_orbit_20210211_track.mat'),'glonsat','glatsat','altsat')
     az = deg2rad(glonsat(1:100:end,4:4:end));
@@ -78,6 +76,8 @@ else
     ra = altsat(1:100:end,4:4:end)/1e3 + RE;
     [traj_x,traj_y,traj_z] = sph2cart(az,el,ra);
     [traj_shd_x,traj_shd_y,traj_shd_z] = sph2cart(az,el,RE);
+    traj_lon = rad2deg(az)+360;
+    traj_lat = rad2deg(el);
 end
 
 %% points
@@ -109,25 +109,27 @@ set(0,'defaultScatterLineWidth',lw)
 set(0,'defaultQuiverLineWidth',lw)
 
 if ig
-    pp = [0,0,13.2,13.2]/2;
     vv = [-30,10];
     cz = 1.5;
+    cp = [0,0];
+    ar = [1,1,1];
     A = [-1000,0,150];
-    B = [0,150,-550];
+    B = [-350,150,-550];
     C = [0,-10,0,-50,-500,80];
-    trajectory = 'Trajectory';
+    trajectory = 'Isinglass trajectory';
 else
-    pp = [0,0,13.2,13.2]/2;
-    vv = [-40,10];
-    cz = 1.5;
-    A = [-1000,0,500];
-    B = [-2000,3500,0];
-    C = [-1500,-50,2400,0,0,50];
-    trajectory = 'Trajectories';
+    vv = [-45,10];
+    cz = 1.8;
+    cp = [0.5,0];
+    ar = [1,1.3,1];
+    A = [-1000,0,400];
+    B = [-1900,-800,0];
+    C = [0,min_x-traj_x(1),0,min_y-traj_y(1),0,min_z-traj_z(1)];
+    trajectory = 'ARCS trajectories';
 end
 
 figure
-set(gcf,'PaperPosition',pp)
+set(gcf,'PaperPosition',[0,0,13.2,13.2]/2)
 
 hold on
 axis off
@@ -154,48 +156,75 @@ if ig
 end
 view(vv)
 camzoom(cz)
-pbaspect([1,1,1])
+campan(cp(1),cp(2))
+pbaspect(ar)
 
 if ig
     saveas(gcf,fullfile('plots','paper0','context_ig.png'))
 else
     saveas(gcf,fullfile('plots','paper0','context_arcs.png'))
 end
-% close all
+close all
 
 %%
-load('data\particles.mat','Qit','E0it','mlat','mlon')
+if ig
+    load('data\particles.mat','Qit','E0it','mlat','mlon')
+    map = Qit(:,:,4);
+else
+    map = h5read(fullfile(direc,'inputs','fields','20150201_36000.000000.h5'),'/Vmaxx1it')*1e6;
+    mlon = h5read(fullfile(direc,'inputs','fields','simgrid.h5'),'/mlon');
+    mlat = h5read(fullfile(direc,'inputs','fields','simgrid.h5'),'/mlat');
+end
 [image_mlon,image_mlat] = ndgrid(mlon,mlat);
 image_lon = flon(image_mlon,image_mlat);
 image_lat = flat(image_mlon,image_mlat);
-Q = Qit(:,:,4);
 
 %%
 close all
 
 figure(2)
-set(gcf,'PaperPosition',[0,0,6.5,6.5])
+set(gcf,'PaperPosition',[0,0,13.2/2,5])
 sc = 3e-4;
-ids = 1:2:length(traj_vlat);
+
+if ig
+    ids = 1:2:length(traj_vlat);
+    xlims = [210.6,216.7];
+    ylims = [65.2,67.3];
+    clims = [1,49];
+    clm = 'kbgyw';
+    clb_lbl = 'Q (mW/m^2)';
+else
+    xlims = [165,240];
+    ylims = [55,77];
+    clims = [-1,1];
+    clm = 'D1A';
+    clb_lbl = 'j_{||} (uA/m^2)';
+end
 
 hold on
-pcolor(image_lon,image_lat,Q)
-colormap(gca,colorcet('kbgyw'))
+pcolor(image_lon,image_lat,map)
+colormap(gca,colorcet(clm))
 % plot(map_lon,map_lat,'k')
 plot(squeeze(model_lon(1,:,1)),squeeze(model_lat(1,:,1)),'Color',[0,0.7,0])
 plot(squeeze(model_lon(1,:,end)),squeeze(model_lat(1,:,end)),'Color',[0,0.7,0])
 plot(squeeze(model_lon(1,1,:)),squeeze(model_lat(1,1,:)),'Color',[0,0.7,0])
 plot(squeeze(model_lon(1,end,:)),squeeze(model_lat(1,end,:)),'Color',[0,0.7,0])
 plot(traj_lon,traj_lat,'r','LineWidth',lw*1.5)
-quiver(traj_lon(ids),traj_lat(ids),traj_vlon(ids)*sc,traj_vlat(ids)*sc+0.05,0,'.-r','LineWidth',lw/2)
+if ig
+    quiver(traj_lon(ids),traj_lat(ids),traj_vlon(ids)*sc,traj_vlat(ids)*sc+0.05,0,'.-r','LineWidth',lw/2)
+end
 pbaspect([1,1,1])
-xlim([210.6,216.7]); ylim([65.2,67.3])
+xlim(xlims); ylim(ylims); clim(clims)
 xlabel('G. longitude (°)'); ylabel('G. latitude (°)')
 grid on
 clb = colorbar;
-clb.Label.String = 'Q (mW/m^2)';
+clb.Label.String = clb_lbl;
 
-saveas(gcf,fullfile('plots','paper0','context2_ig.png'))
+if ig
+    saveas(gcf,fullfile('plots','paper0','context2_ig.png'))
+else
+    saveas(gcf,fullfile('plots','paper0','context2_arcs.png'))
+end
 close all
 
 %%

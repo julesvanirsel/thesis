@@ -870,7 +870,7 @@ pbaspect(ar)
 % filename = sprintf('potential_options_%s.png', ...
     % datetime(datetime,'Format','MMdd''_''HHmmss'));
 % filename = fullfile('plots',filename);
-filename = fullfile('plots','paper0','potential_options.png');
+filename = fullfile('plots','paper0','helmholtz-comparison.png');
 if save_plot
     fprintf('Saving file:c %s\n',filename)
     saveas(gcf,filename)

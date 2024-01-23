@@ -4,44 +4,44 @@
 %   "joule", "multi", or "all" for plotting every option.
 %
 % Example usage:
-%   plot_run('..\public_html\Gemini3D\<sim_name>',["continuity","fccp"],300e3)
+%   jules.plot.run('..\public_html\Gemini3D\<sim_name>')
 %
-% Arguments:
-%   direc                     gemini run directory
-%   plots                     list of one or more plot name strings
-%   alt_ref                   reference altitude
-%   start = -1                (option) plotting start time (-1 = 0)
-%   cad = -1                  (option) plotting cadence (-1 = cfg.dtout)
-%   stop = -1                 (option) plotting stop time (-1 = cfg.tdur)
-%   mlon_ref  = -1            (option) reference magnetic longitude (-1 = mean(MLON(:)))
-%   hsv_sat  = 1e3            (option) hsv saturation magnitude
-%   j_range = [-1e-6,1e-6]    (option) current standard plot range
-%   n_range = [1e9,1e12]      (option) density standard plot range
-%   p_range = [-3e3,3e3]      (option) potential standard plot range
-%   alt_max = 400e3           (option) maximum plotting altitude
-%   alt_hsv = 150e3           (option) maximum hsv plotting altitude
-%   alt_cls = 120e3           (option) current closure altitude
+% Arguments (All options are in gemini units):
+%   direc                   gemini run directory
+%   plots = "all"           (option) list of one or more plot name strings
+%   start = -1              (option) plotting start time (-1 = cfg.dtout)
+%   cad = -1                (option) plotting cadence (-1 = cfg.dtout)
+%   stop = -1               (option) plotting stop time (-1 = cfg.tdur)
+%   alt_ref                 (option) reference altitude
+%   mlon_ref  = -1          (option) reference magnetic longitude (-1 = mean(mlon))
+%   hsv_sat  = 1e3          (option) hsv saturation magnitude
+%   j_range = [-1e-6,1e-6]  (option) current standard plot range
+%   n_range = [1e9,1e12]    (option) density standard plot range
+%   p_range = [-3e3,3e3]    (option) potential standard plot range
+%   alt_max = 400e3         (option) maximum plotting altitude
+%   alt_hsv = 150e3         (option) maximum hsv plotting altitude
+%   alt_cls = 120e3         (option) current closure altitude
 %
 % Dependencies:
 %   matlab R2022a or higher
 %   gemini3d (github.com/gemini3d/mat_gemini)
 %   gemscr (github.com/gemini3d/mat_gemini-scripts)
-%   tools.load_conductances
-%   tools.hsv_params
+%   jules.tools.load_conductances
+%   jules.tools.hsv_params
 %   Statistics and Machine Learning Toolbox
 %   colorcet (colorcet.holoviz.org)
 %
 % Contact:
 %   jules.van.irsel.gr@dartmouth.edu
 
-function plot_run(direc,plots,alt_ref,opts)
+function plot(direc,opts)
 arguments
     direc (1,:) char {mustBeFolder}
-    plots (1,:) string
-    alt_ref (1,1) double {mustBePositive}
+    opts.plots (1,:) string = "all"
     opts.start (1,1) double {mustBeNonempty} = -1
     opts.cad (1,1) double {mustBeNonempty} = -1
     opts.stop (1,1) double {mustBeNonempty} = -1
+    opts.alt_ref (1,1) double {mustBePositive} = 300e3
     opts.mlon_ref (1,1) double {mustBeNonempty} = -1
     opts.hsv_sat (1,1) double {mustBeNonempty} = 1e3
     opts.j_range (1,2) double {mustBeNonempty} = [-2e-6,2e-6]
@@ -53,11 +53,12 @@ arguments
 end
 
 %% assertions
+plots = opts.plots;
 plot_options = ["all","closure","conductance","continuity","contour","density","fccp","joule","multi","temp"];
 for plt = plots
     assert(ismember(plt,plot_options),sprintf("'%s' is not one of the plotting options.",plt))
 end
-if ismember('all',plots)
+if ismember("all",plots)
     plots = plot_options;
 end
 if any(direc(end)=='/\')
@@ -77,6 +78,8 @@ scl.U = 1e+3; unt.U = 'mW/m^2'; clm.U = 'L19';
 scl.v = 1e-3; unt.v = 'km/s';   clm.v = 'D2';
 scl.x = 1e-3; unt.x = 'km';
 
+colorcet = @jules.tools.colorcet;
+
 fts = 8; % fontsize
 ftn = 'Consolas'; % fontname (use monospaced fonts for better videos)
 clb_fmt = '%+ 6.2f';
@@ -89,6 +92,7 @@ j_range_hard = opts.j_range;
 n_range_hard = opts.n_range;
 p_range_hard = opts.p_range;
 v_range_hard = [-1,1]*hsv_sat;
+alt_ref = opts.alt_ref;
 alt_max = opts.alt_max;
 alt_hsv = opts.alt_hsv;
 alt_cls = opts.alt_cls;
@@ -141,7 +145,7 @@ dtE0 = cfg.dtE0;
 
 %% setting time boundaries
 if opts.start < 0
-    start = 0;
+    start = dtout;
 else
     start = opts.start;
 end
@@ -165,14 +169,15 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     time.Format = 'yyyyMMdd''T''HHmmss.SSS';
     dat = gemini3d.read.frame(direc,'time',time);
     title_time = char(dat.time);
-    filename_prefix = [char(time),'UT'];
+    % filename_prefix = [char(time),'UT'];
+    filename_prefix = char(gemini3d.datelab(time));
     [~,runname] = fileparts(direc);
 
     %% formatting simulation data
     phi = dat.Phitop;
     [E1,E2,E3] = gemscr.postprocess.pot2field(xg,phi);
     [jP_3,jH_3,~] = gemscr.postprocess.current_decompose(xg,dat);
-    [sigP,sigH,SIGP,SIGH] = tools.load_conductances(direc,time,dat,cfg,xg);
+    [sigP,sigH,SIGP,SIGH] = jules.tools.load_conductances(direc,time,dat,cfg,xg);
     
     % add background electric fields
     E0_UTsecs = UTsec0 + (0:dtE0:tdur);
@@ -227,7 +232,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
     % hsv plot variables
     [hsv_map_clb,hsv_mlon,hsv_mlon_map,hsv_alt,hsv_alt_map] =...
-        tools.hsv_params(v2,v3,MLAT,MLON,ALT,alt_ref,mlon_ref,hsv_sat);
+        jules.tools.hsv_params(v2,v3,MLAT,MLON,ALT,alt_ref,mlon_ref,hsv_sat);
 
     % precipitation variables
     prec_UTsecs = UTsec0 + (0:dtprec:tdur);

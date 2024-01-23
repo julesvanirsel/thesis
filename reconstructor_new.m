@@ -17,11 +17,10 @@ xg = gemini3d.read.grid(direc);
 x2 = double(xg.x2(3:end-2));
 x3 = double(xg.x3(3:end-2));
 dx2 = double(xg.dx2h);
-dx3 = double(xg.dx3h);  
+dx3 = double(xg.dx3h);
 [X2,X3] = ndgrid(x2,x3);
 lx2 = xg.lx(2);
 Bmag = mean(xg.Bmag,'all');
-ar = [range(x2),range(x3),range(x3)];
 
 %%
 time = datetime(ymd) + seconds(UTsec0 + recon_start);
@@ -62,13 +61,10 @@ bound = [x2_bound,x3_bound(:,2)];
 %%
 
 
-%%
+%% reconstructing
 phi_fit = tools.reconstruct(x_traj,v_traj,bound,xg);
 
-%%
-pcolor(X2,X3,phi_fit); colorbar; shading flat
-
-%%
+%% phi to E to v
 [~,E2_tru,E3_tru] = gemscr.postprocess.pot2field(xg,phi_tru);
 [~,E2_fit,E3_fit] = gemscr.postprocess.pot2field(xg,phi_fit);
 v2_tru = -squeeze(E3_tru(end,:,:))/Bmag;
@@ -132,16 +128,17 @@ lbl.v = sprintf('v (%s)',unt.v);
 lbl.vx = sprintf('v_{east} (%s)',unt.v);
 lbl.vy = sprintf('v_{north} (%s)',unt.v);
 
-lim.x = [min(x_traj(:,1)),max(x_traj(:,1))]*1.3*scl.x;
-lim.y = [min(x_traj(:,2)),max(x_traj(:,2))]*1.3*scl.x;
+lim.x = [min(x_traj(:,1)),max(x_traj(:,1))]*1.1*scl.x;
+lim.y = [min(x_traj(:,2)),max(x_traj(:,2))]*1.4*scl.x;
 lim.p = [min(phi_tru(:)),max(phi_tru(:))]*scl.p;
 lim.vx = [-1,1]*max(abs(v_traj(:,1)))*scl.v;
 lim.vy = [-1,1]*max(abs(v_traj(:,2)))*scl.v;
 
-sc = 50;
+ar = [range(lim.x),range(lim.y),range(lim.y)];
+sc = 70;
 
 figure
-set(gcf,'PaperPosition',[0,0,13.2,5.5])
+set(gcf,'PaperPosition',[0,0,13.2,6])
 tiledlayout(2,3)
 ltr = 65;
 
@@ -233,5 +230,5 @@ xlabel(lbl.x)
 yticks([])
 pbaspect(ar)
 
-saveas(gcf,fullfile('plots','reconstruction.png'))
+saveas(gcf,fullfile('plots','paper0','reconstruction.png'))
 close all

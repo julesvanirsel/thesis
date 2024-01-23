@@ -28,17 +28,19 @@ arguments
     cfg (1,1) struct {mustBeNonempty}
     xg (1,1) struct {mustBeNonempty}
 end
+
 folder = 'conductances';
 if ~exist(fullfile(direc,folder),'dir')
     mkdir(direc,folder);
 end
-filename_prefix = [datestr(time,'yyyymmddTHHMMSS.FFF'),'UT'];
+% filename_prefix = [datestr(time,'yyyymmddTHHMMSS.FFF'),'UT'];
+filename_prefix = char(gemini3d.datelab(time));
 path = fullfile(direc,folder,[filename_prefix,'_sig.mat']);
 if exist(path,'file') == 2
-    disp(['Loading conductances from ',path])
+    fprintf('Loading conductances from %s\n',path)
     load(path,'sigP','sigH','SIGP','SIGH')
 else
-    disp('Calculating conductances...')
+    fprintf('Calculating conductances...\n')
     [sigP,sigH,~,SIGP,SIGH,~,~] = gemscr.postprocess.conductivity_reconstruct(time,dat,cfg,xg);
     save(path,'sigP','sigH','SIGP','SIGH')
 end
