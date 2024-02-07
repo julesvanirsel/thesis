@@ -99,9 +99,9 @@ lw = 1.4;
 
 reset(0)
 set(0,'defaultFigurePaperUnits','inches')
-tools.setall(0,'FontName',ftn)
-tools.setall(0,'FontSize',fts)
-tools.setall(0,'Multiplier',1)
+jules.tools.setall(0,'FontName',ftn)
+jules.tools.setall(0,'FontSize',fts)
+jules.tools.setall(0,'Multiplier',1)
 set(0,'defaultAxesFontSizeMode','manual')
 set(0,'defaultSurfaceEdgeColor','flat')
 set(0,'defaultLineLineWidth',lw)
@@ -171,7 +171,7 @@ if ig
     load('data\particles.mat','Qit','E0it','mlat','mlon')
     map = Qit(:,:,4);
 else
-    map = h5read(fullfile(direc,'inputs','fields','20150201_36000.000000.h5'),'/Vmaxx1it')*1e6;
+    map = h5read(fullfile(direc,'inputs','fields','20150201_36000.000000.h5'),'/Vmaxx1it')*-1e6;
     mlon = h5read(fullfile(direc,'inputs','fields','simgrid.h5'),'/mlon');
     mlat = h5read(fullfile(direc,'inputs','fields','simgrid.h5'),'/mlat');
 end
@@ -181,6 +181,8 @@ image_lat = flat(image_mlon,image_mlat);
 
 %%
 close all
+
+colorcet = @jules.tools.colorcet;
 
 figure(2)
 set(gcf,'PaperPosition',[0,0,13.2/2,5])
@@ -196,7 +198,7 @@ if ig
 else
     xlims = [165,240];
     ylims = [55,77];
-    clims = [-1,1];
+    clims = [-1,1]*2;
     clm = 'D1A';
     clb_lbl = 'j_{||} (uA/m^2)';
 end
@@ -215,7 +217,7 @@ if ig
 end
 pbaspect([1,1,1])
 xlim(xlims); ylim(ylims); clim(clims)
-xlabel('G. longitude (°)'); ylabel('G. latitude (°)')
+xlabel('Geo. longitude (°)'); ylabel('Geo. latitude (°)')
 grid on
 clb = colorbar;
 clb.Label.String = clb_lbl;

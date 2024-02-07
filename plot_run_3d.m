@@ -11,9 +11,9 @@ arguments
     opts.plot_type (1,1) int8 = 1
 end
 
-doAnnotate = true;
-paper_w = [14.7,9.5,6.5];
-paper_h = [9.5,6.5,4.5];
+doAnnotate = false;
+paper_w = [13,5,8];
+paper_h = [9,5,5];
 
 % assertions
 plot_options = ["all","fluxtubes"];
@@ -35,6 +35,8 @@ p_scl = 1e-6; units.p = 'MW';
 % s_scl = 1e+0; units.s = 'S/m';      clm.s = 'L18';
 x_scl = 1e-3; units.x = 'km';
 
+colorcet = @jules.tools.colorcet;
+
 zmin = 80e3;
 % xlims = [-1,1]*1050e3;
 % xlims = [-1,1]*1300e3;
@@ -49,6 +51,11 @@ zlims = [zmin,alt_ref*1.05];
 qnt = 0.95;
 fts = 20; %17 % fontsize
 ftn = 'Arial';
+if ispc
+    lnw = 1;
+else
+    lnw = 0.5;
+end
 % clb_fmt = '%+ 5.1f'; % colorbar ticklabel format
 % clb_fmt = '%3.0f';
 clb_exp = 0; % force no colorbar exponents
@@ -104,7 +111,8 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         dat = opts.dat;
     end
     title_time = char(dat.time);
-    filename_prefix = [char(time),'UT'];
+    % filename_prefix = [char(time),'UT'];
+    filename_prefix = char(gemini3d.datelab(time));
     [~,runname] = fileparts(direc);
 
     %% formatting simulation data
@@ -274,11 +282,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         % call fluxtube prior for speed
         tubes = struct;
         for n = 1:ntubes
-            tubes.(char(64+n)) = fluxtube(xg,dat,alt_ref*x_scl...
+            tubes.(char(64+n)) = jules.tools.fluxtube(xg,dat,alt_ref*x_scl...
                 ,p0(n,:),r0(n),r1(n),v0=v0(n,:),v1=v1(n,:)...
                 ,reverse=rev(n),calculate_hull=0,res=res(n));
         end
-        for v = 1:length(views)
+        for v = 1%1:length(views)
             vv = views(v,:)+dviews(v,:);
 
             figure(v)
@@ -323,7 +331,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 clb = colorbar(axj);
                 clb.Label.String = ['j_{||} (',units.j,')'];
                 clb.FontSize = fts;
-                clb.Position = [0.89,0.07,0.015,0.44];
+                clb.Position = [0.89,0.12,0.015,0.41];
                 % clb.Ruler.TickLabelFormat = clb_fmt;
                 % clb.Ruler.Exponent = clb_exp;
             end
@@ -336,7 +344,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 clb = colorbar(axn);
                 clb.Label.String = ['log n_e (',units.n,')'];
                 clb.FontSize = fts;
-                clb.Position = [0.89,0.55,0.015,0.44];
+                clb.Position = [0.89,0.57,0.015,0.41];
 %                 clb.Ruler.TickLabelFormat = clb_fmt;
                 clb.Ruler.Exponent = clb_exp;
             end
@@ -369,15 +377,15 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 %                 plot3(axt,[xlims_p(1),xlims_p],[ylims_p,ylims_p(2)],[1,1,1]*alt_ref_p,'--','Color',[0,0,1]);
 
                 shading(axj,'flat')
-                set(pl0,'Color','k','LineWidth',2)
-                set(pl1,'Color','b','LineWidth',2)
+                set(pl0,'Color','k','LineWidth',lnw*2)
+                set(pl1,'Color','b','LineWidth',lnw*2)
                 set(shd,'FaceAlpha',0.5)
-                set(stl,'Color',[color,0.5],'LineWidth',0.5)
+                set(stl,'Color',[color,0.5],'LineWidth',lnw)
             end
 
-            xlabel(['East (',units.x,')'],'FontSize',fts)
-            ylabel(['North (',units.x,')'],'FontSize',fts)
-            zlabel(['Up (',units.x,')'],'FontSize',fts)
+            xlabel(['Mag. east (',units.x,')'],'FontSize',fts)
+            ylabel(['Mag. north (',units.x,')'],'FontSize',fts)
+            zlabel(['Mag. up (',units.x,')'],'FontSize',fts)
 
             flux_strings = cell(2,ntubes);
             heat_strings = cell(1,ntubes);
@@ -394,7 +402,20 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                     'Current In:  ',cell2mat(flux_strings(1,:)),newline,...
                     'Current Out:  ',cell2mat(flux_strings(2,:)),newline,...
 %                     'Joule Heating:  ',cell2mat(heat_strings),...
-                    ],'FitBoxToText','on','EdgeColor','none','BackgroundColor','none','FontSize',18,'FontName',ftn)
+                    ],'FitBoxToText','on','EdgeColor','none','BackgroundColor','none','FontSize',18,'FontName',ftn) %#ok<*UNRCH>
+            end
+            if v == 1
+                pan_x = 0.0;
+                pan_y = 0.6; % >0 moves image down
+                if ispc
+                    zoom = 1.1;
+                else
+                    zoom = 1.4;
+                end
+                campan(axj,pan_y,pan_x); campan(axn,pan_y,pan_x); campan(axt,pan_y,pan_x)
+                camzoom(axj,zoom); camzoom(axn,zoom); camzoom(axt,zoom)
+                annotation('textarrow',[0.12,0.075],[0.12,0.04],'String','N', ...
+                    'LineWidth',6*lnw,'HeadLength',16,'HeadWidth',16,'HeadStyle','plain')
             end
 
             full_folder = [folder,'_',cell2mat(folder_suffix(v))];

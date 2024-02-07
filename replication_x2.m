@@ -1,5 +1,5 @@
-if not(all(arrayfun(@exist,["in_situ","image","xg","cfg"])))
-    load('data\replicate_data.mat')
+if not(all(arrayfun(@exist,["in_situ","radar","image","xg","cfg"])))
+    load('data\replicate_data_swop_03.mat')
 end
 
 %%
@@ -15,11 +15,52 @@ x2_to_mlon = griddedInterpolant(x2,MLON(:,1));
 x3_to_mlat = griddedInterpolant(x3,MLAT(1,:));
 Bmag = abs(mean(xg.Bmag,'all'));
 
+sig = 11;
 in_situ_A = in_situ;
-v_bg = [0,-500];
-[~,v2_int_A,v3_int_A] = tools.replicate(in_situ_A,image,xg,flow_bg=v_bg);
-fv2 = griddedInterpolant(X2,X3,v2_int_A);
-fv3 = griddedInterpolant(X2,X3,v3_int_A);
+[~,~,~,E2_bg,E3_bg,v2_int_A,v3_int_A] = jules.tools.replicate(in_situ_A,image,xg ...
+    ,flow_smoothing_window = 1 ...
+    ,boundary_smoothing_window = 30 ...
+    ,show_plots = false ...
+    ,save_plots = false ...
+    ,direc = 'plots\paper0' ...
+    ,suffix = 'in_situ' ...
+    ,add_phi_background = false ...
+    ,fit_harmonic = true ...
+    ,num_replications = 512 ...
+    ,arc_definition = "conductance" ...
+    ,edge_method = "contour" ...
+    ,do_rotate = true ...
+    ,do_scale = true ...
+    ,contour_values = [1,1]*sig ...
+    ,harmonic_mask = [1,0,1]*50e3 ...
+    );
+
+%%
+v2_bg = -E3_bg/Bmag;
+v3_bg =  E2_bg/Bmag;
+
+in_situ_B = radar;
+[~,~,~,~,~,v2_int_B,v3_int_B] = jules.tools.replicate(in_situ_B,image,xg ...
+    ,flow_smoothing_window = 1 ...
+    ,boundary_smoothing_window = 30 ...
+    ,show_plots = false ...
+    ,save_plots = false ...
+    ,direc = 'plots\paper0' ...
+    ,suffix = 'radar' ...
+    ,add_phi_background = false ...
+    ,fit_harmonic = true ...
+    ,num_replications = 512 ...
+    ,arc_definition = "conductance" ...
+    ,edge_method = "contour" ...
+    ,do_rotate = true ...
+    ,do_scale = true ...
+    ,contour_values = [1,1]*sig ...
+    ,harmonic_mask = [1,0,1]*50e3 ...
+    ,flow_bg = [v2_bg,v3_bg] ...
+    );
+
+% fv2 = griddedInterpolant(X2,X3,v2_int_A);
+% fv3 = griddedInterpolant(X2,X3,v3_int_A);
 
 %%
 close all
@@ -29,29 +70,35 @@ x3_A = mlat_to_x3(in_situ_A.pos(:,2));
 v2_A = in_situ_A.flow(:,1);
 v3_A = in_situ_A.flow(:,2);
 
-dx2 = 80e3;
-% dx2 = 20e3;
-dx3 = -10e3;
-psi = deg2rad(-15);
-noise_amp = 50;
-x2_tmp = x2_A + dx2;
-x3_tmp = x3_A + dx3;
-x2_B = cos(psi)*x2_tmp - sin(psi)*x3_tmp;
-x3_B = sin(psi)*x2_tmp + cos(psi)*x3_tmp;
-x2_B = -x2_B;
-v2_B = fv2(x2_B,x3_B) + v_bg(1) + noise_amp*randn(size(x2_B));
-v3_B = fv3(x2_B,x3_B) + v_bg(2) + noise_amp*randn(size(x2_B));
+x2_B = mlon_to_x2(in_situ_B.pos(:,1));
+x3_B = mlat_to_x3(in_situ_B.pos(:,2));
+v2_B = in_situ_B.flow(:,1);
+v3_B = in_situ_B.flow(:,2);
 
-in_situ_B.pos(:,1) = x2_to_mlon(x2_B);
-in_situ_B.pos(:,2) = x3_to_mlat(x3_B);
-in_situ_B.flow(:,1) = v2_B;
-in_situ_B.flow(:,2) = v3_B;
+% dx2 = 80e3;
+% % dx2 = 20e3;
+% dx3 = -10e3;
+% psi = deg2rad(-15);
+% noise_amp = 50;
+% x2_tmp = x2_A + dx2;
+% x3_tmp = x3_A + dx3;
+% x2_B = cos(psi)*x2_tmp - sin(psi)*x3_tmp;
+% x3_B = sin(psi)*x2_tmp + cos(psi)*x3_tmp;
+% x2_B = -x2_B;
+% v2_B = fv2(x2_B,x3_B) + v_bg(1) + noise_amp*randn(size(x2_B));
+% v3_B = fv3(x2_B,x3_B) + v_bg(2) + noise_amp*randn(size(x2_B));
+% 
+% in_situ_B.pos(:,1) = x2_to_mlon(x2_B);
+% in_situ_B.pos(:,2) = x3_to_mlat(x3_B);
+% in_situ_B.flow(:,1) = v2_B;
+% in_situ_B.flow(:,2) = v3_B;
 
+sc = 1e2;
 figure(1)
 hold on
 pcolor(mlon_to_x2(image.pos(:,:,1)),mlat_to_x3(image.pos(:,:,2)),image.flux)
-quiver(x2_A,x3_A,v2_A,v3_A,0,'.-r')
-quiver(x2_B,x3_B,v2_B,v3_B,0,'.-g')
+quiver(x2_A,x3_A,v2_A*sc,v3_A*sc,0,'.-r')
+quiver(x2_B,x3_B,v2_B*sc,v3_B*sc,0,'.-g')
 
 figure(2)
 hold on
@@ -72,8 +119,8 @@ lB = length(x2_B);
 
 [~,sort_ids_A] = sort(x3_A);
 [~,sort_ids_B] = sort(x3_B);
-traj_A = griddedInterpolant(tools.minsmooth(x3_A(sort_ids_A)),x2_A);
-traj_B = griddedInterpolant(tools.minsmooth(x3_B(sort_ids_B)),x2_B);
+traj_A = griddedInterpolant(jules.tools.minsmooth(x3_A(sort_ids_A)),x2_A);
+traj_B = griddedInterpolant(jules.tools.minsmooth(x3_B(sort_ids_B)),x2_B);
 
 distance_A = nan([size(X2),lA]);
 for i=1:lA
@@ -87,9 +134,14 @@ end
 min_dist_A = min(distance_A,[],3);
 min_dist_B = min(distance_B,[],3);
 
-slope = 5e-5;%*0+1;
+slope = 1e-5;%*0+1;
 weight_A = (1 + tanh(slope*(min_dist_B-min_dist_A)))/2;
 weight_B = 1 - weight_A;
+fprintf('max weight = %f\n',max(weight_A(:)))
+
+[~,ids] = min(abs(weight_A-0.5));
+x2_splt = smooth(x2(ids),1e3);
+x3_splt = x3;
 
 % weight_A = ones(size(weight_A));
 % weight_B = zeros(size(weight_B));
@@ -99,12 +151,13 @@ hold on
 pcolor(X2,X3,weight_A)
 plot(x2_A,x3_A)
 plot(x2_B,x3_B)
+plot(x2_splt,x3_splt,'k')
 shading flat
 colorbar
 clim([0,1])
 
 %%
-[~,v2_int_B,v3_int_B] = tools.replicate(in_situ_B,image,xg,flow_bg=v_bg);
+% [~,v2_int_B,v3_int_B] = tools.replicate(in_situ_B,image,xg,flow_bg=v_bg);
 
 %%
 close all
@@ -112,64 +165,108 @@ close all
 v2_int = v2_int_A.*weight_A + v2_int_B.*weight_B;
 v3_int = v3_int_A.*weight_A + v3_int_B.*weight_B;
 
-lim.x = [min(x2),max(x2)];
-lim.y = [min(x3),max(x3)];
-lim.v = [-1,1]*800;
+scl.x = 1e-3; scl.v = 1e-3; scl.qv = 1e-1;
+lim.x = [min(x2),max(x2)]*scl.x;
+lim.y = [min(x3),max(x3)]*scl.x;
+lim.v = [-1,1]*0.45;
+clm.v = 'D2';
 
+v_bg = [0,0];
+
+v2_A_p = (v2_A-v2_bg)*scl.qv;
+v3_A_p = (v3_A-v3_bg)*scl.qv;
+v2_B_p = (v2_B-v2_bg)*scl.qv;
+v3_B_p = (v3_B-v3_bg)*scl.qv;
+
+divv = divergence(X3,X2,v3_int-v3_bg,v2_int-v2_bg);
+
+close all
 figure
-tiledlayout(3,2)
+set(gcf,'Position',[0,60,1920,1080-150]);
+tiledlayout(4,2)
 
 nexttile
 hold on
-pcolor(X2,X3,v2_int_A+v_bg(1))
-% contour(mlon_to_x2(image.pos(:,:,1)),mlat_to_x3(image.pos(:,:,2)),image.flux,1,'r')
-quiver(x2_A,x3_A,v2_A-v_bg(1),v3_A-v_bg(2),1,'.-r')
+pcolor(X2*scl.x,X3*scl.x,v2_int_A*scl.v)
+quiver(x2_A*scl.x,x3_A*scl.x,v2_A_p,v3_A_p,0,'.-r')
 shading flat
-colorbar
+clb = colorbar;
+clb.Label.String = 'v (km/s)';
+colormap(gca,colorcet(clm.v))
 xlim(lim.x); ylim(lim.y); clim(lim.v)
+xlabel('M. east (km)'); ylabel('M. north (km)')
 
 nexttile
 hold on
-pcolor(X2,X3,v3_int_A+v_bg(2))
-quiver(x2_A,x3_A,v2_A-v_bg(1),v3_A-v_bg(2),1,'.-r')
+pcolor(X2*scl.x,X3*scl.x,v2_int_B*scl.v)
+quiver(x2_B*scl.x,x3_B*scl.x,v2_B_p,v3_B_p,0,'.-r')
 shading flat
-colorbar
+clb = colorbar;
+clb.Label.String = 'v (km/s)';
+colormap(gca,colorcet(clm.v))
 xlim(lim.x); ylim(lim.y); clim(lim.v)
+xlabel('M. east (km)'); ylabel('M. north (km)')
 
 nexttile
 hold on
-pcolor(X2,X3,v2_int_B+v_bg(1))
-quiver(x2_B,x3_B,v2_B-v_bg(1),v3_B-v_bg(2),1,'.-r')
+pcolor(X2*scl.x,X3*scl.x,v3_int_A*scl.v)
+quiver(x2_A*scl.x,x3_A*scl.x,v2_A_p,v3_A_p,0,'.-r')
 shading flat
-colorbar
+clb = colorbar;
+clb.Label.String = 'v (km/s)';
+colormap(gca,colorcet(clm.v))
 xlim(lim.x); ylim(lim.y); clim(lim.v)
+xlabel('M. east (km)'); ylabel('M. north (km)')
 
 nexttile
 hold on
-pcolor(X2,X3,v3_int_B+v_bg(2))
-quiver(x2_B,x3_B,v2_B-v_bg(1),v3_B-v_bg(2),1,'.-r')
+pcolor(X2*scl.x,X3*scl.x,v3_int_B*scl.v)
+quiver(x2_B*scl.x,x3_B*scl.x,v2_B_p,v3_B_p,0,'.-r')
 shading flat
-colorbar
+clb = colorbar;
+clb.Label.String = 'v (km/s)';
+colormap(gca,colorcet(clm.v))
 xlim(lim.x); ylim(lim.y); clim(lim.v)
+xlabel('M. east (km)'); ylabel('M. north (km)')
 
 nexttile
 hold on
-pcolor(X2,X3,v2_int+v_bg(1))
-quiver(x2_A,x3_A,v2_A-v_bg(1),v3_A-v_bg(2),1,'.-r')
-quiver(x2_B,x3_B,v2_B-v_bg(1),v3_B-v_bg(2),1,'.-r')
+pcolor(X2*scl.x,X3*scl.x,v2_int*scl.v)
+quiver(x2_A*scl.x,x3_A*scl.x,v2_A_p,v3_A_p,0,'.-r')
+quiver(x2_B*scl.x,x3_B*scl.x,v2_B_p,v3_B_p,0,'.-r')
+plot(x2_splt*scl.x,x3_splt*scl.x,'k','LineWidth',0.5)
 shading flat
-colorbar
+clb = colorbar;
+clb.Label.String = 'v (km/s)';
+colormap(gca,colorcet(clm.v))
 xlim(lim.x); ylim(lim.y); clim(lim.v)
+xlabel('M. east (km)'); ylabel('M. north (km)')
 
 nexttile
 hold on
-pcolor(X2,X3,v3_int+v_bg(2))
-contour(X2,X3,weight_A,[1/2,1/2],':k')
-quiver(x2_A,x3_A,v2_A-v_bg(1),v3_A-v_bg(2),1,'.-r')
-quiver(x2_B,x3_B,v2_B-v_bg(1),v3_B-v_bg(2),1,'.-r')
+pcolor(X2*scl.x,X3*scl.x,v3_int*scl.v)
+quiver(x2_A*scl.x,x3_A*scl.x,v2_A_p,v3_A_p,0,'.-r')
+quiver(x2_B*scl.x,x3_B*scl.x,v2_B_p,v3_B_p,0,'.-r')
+plot(x2_splt*scl.x,x3_splt*scl.x,'k','LineWidth',0.5)
 shading flat
-colorbar
+clb = colorbar;
+clb.Label.String = 'v (km/s)';
+colormap(gca,colorcet(clm.v))
 xlim(lim.x); ylim(lim.y); clim(lim.v)
+xlabel('M. east (km)'); ylabel('M. north (km)')
+
+nexttile
+hold on
+pcolor(X2*scl.x,X3*scl.x,divv*1e3)
+quiver(x2_A*scl.x,x3_A*scl.x,v2_A_p,v3_A_p,0,'.-r')
+quiver(x2_B*scl.x,x3_B*scl.x,v2_B_p,v3_B_p,0,'.-r')
+plot(x2_splt*scl.x,x3_splt*scl.x,'k','LineWidth',0.5)
+shading flat
+clb = colorbar;
+clb.Label.String = 'dv (mHz)';
+% colormap(gca,colorcet(clm.dv))
+xlim(lim.x); ylim(lim.y)
+xlabel('M. east (km)'); ylabel('M. north (km)')
 
 %% generate potential map
 % translated from Alex Mule's python code Oct 9, 2023

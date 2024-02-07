@@ -28,7 +28,7 @@ for i = 1:2
 
     phi = dat.(s).Phitop;
     [~,E2,E3] = gemscr.postprocess.pot2field(xg,phi);
-    [~,~,SIGP,SIGH] = tools.load_conductances(direc.(s),time,dat.(s),cfg.(s),xg);
+    [~,~,SIGP,SIGH] = jules.tools.load_conductances(direc.(s),time,dat.(s),cfg.(s),xg);
     SIGH = -SIGH;
     
     % add background electric fields
@@ -56,10 +56,6 @@ for i = 1:2
     jC(i,:,:) = (dSIGH2.*squeeze(E3(1,:,:))./dX2 - dSIGH3.*squeeze(E2(1,:,:))./dX3); % grad(SIGH).bxE_perp
 end
 
-%% get boundaries
-load('data\boundaries.mat')
-bound_x2 = linspace(lim.x(1),lim.x(2),256)*1e3;
-
 %% plot
 close all
 fts = 20; % fontsize
@@ -71,11 +67,13 @@ set(0,'defaultFigurePaperUnits','inches')
 set(0,'defaultTiledlayoutPadding','tight')
 set(0,'defaultTiledlayoutTileSpacing','tight')
 set(0,'defaultLineLineWidth',lw)
-tools.setall(0,'FontName',ftn)
-tools.setall(0,'FontSize',fts)
-tools.setall(0,'Multiplier',1)
+jules.tools.setall(0,'FontName',ftn)
+jules.tools.setall(0,'FontSize',fts)
+jules.tools.setall(0,'Multiplier',1)
 set(0,'defaultAxesFontSizeMode','manual')
 set(0,'defaultSurfaceEdgeColor','flat')
+
+colorcet = @jules.tools.colorcet;
 
 scl.x = 1e-3; scl.j = 1e6;
 lim.x = [-1,1]*90; lim.y = [-1,1]*58;
@@ -85,11 +83,14 @@ clm.j = 'D1A';
 j1_p = j1*scl.j;
 jA_p = jA*scl.j; jB_p = jB*scl.j; jC_p = jC*scl.j;
 
-lbl.x = 'M. east (km)';
-lbl.y = 'M. north (km)';
+lbl.x = 'Mag. E (km)';
+lbl.y = 'Mag. N (km)';
 j1_range_p = [-1,1]*90;
 
 ar = [range(x2),range(x3),range(x3)];
+
+load('data\boundaries.mat')
+bound_x2 = linspace(lim.x(1),lim.x(2),256)*1e3;
 
 figure(1)
 set(gcf,'PaperPosition',[0,0,13.2,6.8])
@@ -206,4 +207,5 @@ pbaspect(ar)
 % clb.Label.String = '\Delta j_{||} (uA/m^2)';
 % pbaspect(ar)
 
-saveas(gcf,fullfile('plots','cont_comparison_IG.png'))
+saveas(gcf,fullfile('plots','paper0','continuity-comparison.png'))
+close all

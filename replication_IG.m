@@ -1,5 +1,5 @@
 %%
-direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_74';
+direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_75_noscl_norot';
 cfg = gemini3d.read.config(direc);
 direc_rep = fullfile(direc,'/ext');
 cfg_rep = gemini3d.read.config(direc_rep);
@@ -7,22 +7,24 @@ xg_rep = gemini3d.grid.cartesian(cfg_rep);
 load('data\replicate_data_isinglass.mat','in_situ','image')
 
 %%
-[phi,mlon,mlat,E2_bg,E3_bg] = tools.replicate(in_situ,image,xg_rep, ...
-    flow_smoothing_window = 16, ...
-    boundary_smoothing_window = 64, ...
-    show_plots = false, ...
-    save_plots = [0 0 1], ...
-    direc = 'plots\paper0', ...
-    suffix = '', ...
-    starting_letter = 'A', ...
-    add_phi_background = false, ...
-    fit_harmonic = true, ...
-    num_replications = 512, ... %32 or 512
-    arc_definition = "conductance", ...
-    edge_method = "contour", ...
-    do_rotate = true, ...
-    do_scale = true, ...
-    harmonic_mask = [8,8,20]*1e3 ...
+[phi,mlon,mlat,E2_bg,E3_bg] = jules.tools.replicate(in_situ,image,xg_rep ...
+    ,flow_smoothing_window = 16 ...
+    ,boundary_smoothing_window = 64 ...
+    ,show_plots = false ...
+    ,save_plots = [1 1 1] ...
+    ,save_data = false ...
+    ,direc = 'plots\paper0' ...
+    ,suffix = 'noscl_norot' ...
+    ,starting_letter = 'D' ...
+    ,add_phi_background = false ...
+    ,fit_harmonic = true ...
+    ,num_replications = 512 ... %32 or 512
+    ,arc_definition = "conductance" ...
+    ,edge_method = "contour" ...
+    ,do_rotate = 0 ...
+    ,do_scale = 0 ...
+    ,harmonic_mask = [8,8,20]*1e3 ...
+    ,contour_values = [10.5,19.1] ...
     );
 phi_old = phi;
 
@@ -151,19 +153,21 @@ set(0,'defaultSurfaceEdgeColor','flat')
 set(0,'defaultLineLineWidth',lw)
 set(0,'defaultScatterLineWidth',lw)
 set(0,'defaultQuiverLineWidth',lw*0.7)
-tools.setall(0,'FontName',ftn)
-tools.setall(0,'FontSize',fts)
-tools.setall(0,'Multiplier',1)
+jules.tools.setall(0,'FontName',ftn)
+jules.tools.setall(0,'FontSize',fts)
+jules.tools.setall(0,'Multiplier',1)
+
+colorcet = @jules.tools.colorcet;
 
 scl.x = 1e-3; scl.v = 1e-3; scl.dv = 1e0; scl.p = 1e-3;
 unt.x = 'km'; unt.v = 'km/s'; unt.dv = 'Hz'; unt.p = 'kV'; unt.q = 'mW/m^2';
 clm.v = 'D2'; clm.dv = 'CBD1'; clm.p = 'D10'; clm.q = 'L19';
 lim.x = [-1,1]*125; lim.y = [-1,1]*59;  lim.v = [-1,1]*1.3; lim.dv = [-1,1]*0.1;
 
-lbl.x = sprintf('M. east (%s)',unt.x);
-lbl.y = sprintf('M. north (%s)',unt.x);
-lbl.vx = sprintf('v_{east} (%s)',unt.v);
-lbl.vy = sprintf('v_{north} (%s)',unt.v);
+lbl.x = sprintf('Mag. E (%s)',unt.x);
+lbl.y = sprintf('Mag. N (%s)',unt.x);
+lbl.vx = sprintf('v_E (%s)',unt.v);
+lbl.vy = sprintf('v_N (%s)',unt.v);
 
 %% unpack grid and configuration data
 direc = '//dartfs-hpc/rc/lab/L/LynchK/public_html/Gemini3D/isinglass_05';
@@ -194,11 +198,11 @@ x2_part = mlon_to_x2(mlon);
 x3_part = mlat_to_x3(mlat);
 [X2_part,X3_part] = ndgrid(x2_part,x3_part);
 
-edges = tools.find_max_edges(Q_map_part);
+edges = jules.tools.find_max_edges(Q_map_part);
 num_bounds = 2;
 bounds = nan(num_bounds,size(edges,1));
 for i = 1:size(edges,1)
-    [~,bounds(:,i)] = tools.peak_detect(edges(i,:), ...
+    [~,bounds(:,i)] = jules.tools.peak_detect(edges(i,:), ...
         num=num_bounds,smoothness=0.01);
 end
 
@@ -892,7 +896,7 @@ end
 % find best fit harmonic function
 xdata = [X2(:),X3(:)];
 Edata = [E2_int(:),E3_int(:)];
-[~,harm1] = tools.find_harmonic(phi0,xdata,Edata,xg);
+[~,harm1] = jules.tools.find_harmonic(phi0,xdata,Edata,xg);
 
 harmonic_mask = [1,1,2]*10e3;
 mask_A = false(size(X2)); % select data around boundary A
@@ -916,7 +920,7 @@ end
 mask = mask_A | mask_B | mask_t;
 xdata = [X2(mask),X3(mask)];
 Edata = [E2_int(mask),E3_int(mask)];
-[~,harm2] = tools.find_harmonic(phi0,xdata,Edata,xg);
+[~,harm2] = jules.tools.find_harmonic(phi0,xdata,Edata,xg);
 
 %%
 close all
@@ -929,7 +933,7 @@ ltr = 'A';
 nexttile
 lc = 6;
 vw = [130,20];
-title('Brute force - \phi_0(x,y)')
+title('Brute force - \phi_0(r)')
 text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
 surface(X2(1:lc:end,1:lc:end)*scl.x,X3(1:lc:end,1:lc:end)*scl.x, ...

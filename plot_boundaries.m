@@ -11,9 +11,11 @@ set(0,'defaultSurfaceEdgeColor','flat')
 set(0,'defaultLineLineWidth',lw)
 set(0,'defaultScatterLineWidth',lw)
 set(0,'defaultQuiverLineWidth',lw*0.7)
-tools.setall(0,'FontName',ftn)
-tools.setall(0,'FontSize',fts)
-tools.setall(0,'Multiplier',1)
+jules.tools.setall(0,'FontName',ftn)
+jules.tools.setall(0,'FontSize',fts)
+jules.tools.setall(0,'Multiplier',1)
+
+colorcet = @jules.tools.colorcet;
 
 load('data\flux_grad.mat')
 bound2 = bound;
@@ -31,8 +33,8 @@ hold on
 pcolor(X2_imag*scl.x,X3_imag*scl.x,arc.^ap*scl.arc)
 plot(bound_pts*scl.x,bound1.A(bound_pts)*scl.x,'k')
 plot(bound_pts*scl.x,bound1.B(bound_pts)*scl.x,'--k')
-plot(bound_pts*scl.x,bound2.A(bound_pts)*scl.x,'Color',[0,0.9,0],'LineWidth',lw*0.8)
-plot(bound_pts*scl.x,bound2.B(bound_pts)*scl.x,'--','Color',[0,0.9,0],'LineWidth',lw*0.8)
+plot(bound_pts*scl.x,bound2.A(bound_pts)*scl.x,'r')
+plot(bound_pts*scl.x,bound2.B(bound_pts)*scl.x,'--r')
 colormap(colorcet(clm.arc))
 clb = colorbar;
 clb.Label.String = 'Pedersen conductance (S)';
@@ -47,8 +49,8 @@ hold on
 pcolor(X2_imag(2:end-1,2:end-1)*scl.x,X3_imag(2:end-1,2:end-1)*scl.x,edges)
 plot(bound_pts*scl.x,bound.A(bound_pts)*scl.x,'k')
 plot(bound_pts*scl.x,bound.B(bound_pts)*scl.x,'--k')
-plot(bound_pts*scl.x,bound2.A(bound_pts)*scl.x,'Color',[0,0.9,0],'LineWidth',lw)
-plot(bound_pts*scl.x,bound2.B(bound_pts)*scl.x,'--','Color',[0,0.9,0],'LineWidth',lw)
+plot(bound_pts*scl.x,bound2.A(bound_pts)*scl.x,'r')
+plot(bound_pts*scl.x,bound2.B(bound_pts)*scl.x,'--r')
 colormap(colorcet(clm.arc))
 clb = colorbar;
 clb.Label.String = 'Sobel edges (a.u.)';
