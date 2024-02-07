@@ -4,7 +4,7 @@
 **/runs/
 *.db
 *.db
-**\plots\
-**/plots/
+*.gif
+*.mp4
 **\data\
 **/data/
