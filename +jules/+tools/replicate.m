@@ -27,6 +27,7 @@ arguments
     opts.pos_type {mustBeMember(opts.pos_type,["angular","linear"])} = "angular"
     opts.flow_bg (1,2) double {mustBeNumeric} = [nan,nan]
     opts.flow_smoothing_window (1,1) int32 {mustBePositive} = 1
+    opts.do_lowpass (1,1) logical = false
     opts.do_rotate (1,1) logical = true
     opts.do_scale (1,1) logical = true
     opts.arc_definition {mustBeMember(opts.arc_definition,["conductance","flux"])} = "conductance"
@@ -378,14 +379,18 @@ else
 end
 
 fsm = opts.flow_smoothing_window;
-dx_traj = mean(sqrt(diff(x2_traj).^2+diff(x3_traj).^2));
+dx_traj = median(sqrt(diff(x2_traj).^2+diff(x3_traj).^2));
 sample_freq = 1/dx_traj;
 pass_freq = sample_freq/double(fsm);
 fprintf('Flow smoothing window is approximatly %.0f meters.\n',1/pass_freq)
-v2_traj = smoothdata(v2_traj - v_bg(1),'gaussian',fsm);
-v3_traj = smoothdata(v3_traj - v_bg(2),'gaussian',fsm);
-% v2_traj = lowpass(v2_traj - v_bg(1),pass_freq,sample_freq);
-% v3_traj = lowpass(v3_traj - v_bg(2),pass_freq,sample_freq);
+if opts.do_lowpass
+    v2_traj = lowpass(v2_traj - v_bg(1),pass_freq,sample_freq);
+    v3_traj = lowpass(v3_traj - v_bg(2),pass_freq,sample_freq);
+else
+    v2_traj = smoothdata(v2_traj - v_bg(1),'gaussian',fsm);
+    v3_traj = smoothdata(v3_traj - v_bg(2),'gaussian',fsm);
+end
+
 % fv2_traj = griddedInterpolant(x3_traj,v2_traj,'spline');
 % fv3_traj = griddedInterpolant(x3_traj,v3_traj,'spline');
 % x2_traj = linspace(min(x2_traj),max(x2_traj),traj_us*numel(x2_traj));
@@ -651,7 +656,11 @@ if opts.add_phi_background
 end
 
 % remove Nyquist ringing
-phi = smoothdata2(phi,"gaussian",4);
+try
+    phi = smoothdata2(phi,"gaussian",4);
+catch
+    warning('Potential not smoothed. Need version R2023b or higher. Current version = %s\n',version)
+end
 
 % ensure first and second differences match at north and south edges
 phi(:,1) = 3*phi(:,3)-2*phi(:,4);

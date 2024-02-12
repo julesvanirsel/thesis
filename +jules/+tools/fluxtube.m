@@ -125,8 +125,8 @@ if options.reverse
 else
     dir = 1;
 end
-step = 1e-2;
-maxvert = 1e6;
+step = 1e-2;%1e-2
+maxvert = 5e4;%1e6
 verts_ids = stream3(dir*Vx,dir*Vy,dir*Vz,c0_ids(:,1),c0_ids(:,2),c0_ids(:,3),[step maxvert]);
 verts = cellfun(@(v) [gx(v),gy(v),gz(v)],verts_ids,'UniformOutput',0);
 pts = cell2mat(cellfun(@(v) v',verts,'UniformOutput',0))';

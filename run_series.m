@@ -42,8 +42,6 @@ nruns = size(vals,2);
 assert(npars==size(vals,1),'Number of parameters does not match the values array size.')
 fn = gemini3d.find.config(direc);
 
-
-
 for i = 1:nruns
     fid = fopen(fn);
     if nruns == 1

@@ -44,8 +44,8 @@ gem_bin = fullfile(gem_root,'build','gemini.bin');
 fprintf('binary file: %s\n',gem_bin)
 batch_cmd = '#SBATCH';
 mpi_cmd = 'mpiexec';
-jules_root = '//dartfs-hpc/rc/lab/L/LynchK/Jules/thesis';
-matlab_cmd = sprintf('process(''%s'')',path);
+jules_root = '//dartfs-hpc/rc/lab/L/LynchK/Jules/thesis'; % path to github.com/julesvanirsel/thesis
+matlab_cmd = sprintf('jules.sim.process(''%s'')',path);
 
 cfg = gemini3d.read.config(path);
 xg = gemini3d.read.grid(path);
@@ -54,7 +54,7 @@ lx3 = xg.lx(3);
 if all(mod([lx2,lx3],opts.num_cpus)==0)
     num_cpus = opts.num_cpus;
 else
-    num_cpu_options = tools.common_factors(xg.lx(2),xg.lx(3));
+    num_cpu_options = jules.tools.common_factors(xg.lx(2),xg.lx(3));
     [~,num_cpu_id] = min(abs(num_cpu_options - opts.num_cpus));
     num_cpus = num_cpu_options(num_cpu_id);
     warning(['Cannot factor %i into both %i and %i. ' ...

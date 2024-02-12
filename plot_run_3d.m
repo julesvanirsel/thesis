@@ -7,11 +7,13 @@ arguments
     opts.start (1,1) double {mustBeNumeric} = -1
     opts.cad (1,1) double {mustBeNumeric} = -1
     opts.stop (1,1) double {mustBeNumeric} = -1
+    opts.cfg (:,:) struct = struct
+    opts.xg (:,:) struct = struct
     opts.dat (:,:) struct = struct
     opts.plot_type (1,1) int8 = 1
 end
 
-doAnnotate = false;
+doAnnotate = true;
 paper_w = [13,5,8];
 paper_h = [9,5,5];
 
@@ -28,12 +30,12 @@ if any(direc(end)=='/\')
 end
 
 %% hard coded parameters
-f_scl = 1e-3; units.f = 'kA';
-j_scl = 1e+6; units.j = 'uA/m^2';   clm.j = 'D1A';
-n_scl = 1e+0; units.n = 'm^{-3}';   clm.n = 'L9';
-p_scl = 1e-6; units.p = 'MW';
-% s_scl = 1e+0; units.s = 'S/m';      clm.s = 'L18';
-x_scl = 1e-3; units.x = 'km';
+scl.f = 1e-3; units.f = 'kA';
+scl.j = 1e+6; units.j = 'uA/m^2';   clm.j = 'D1A';
+scl.n = 1e+0; units.n = 'm^{-3}';   clm.n = 'L9';
+scl.p = 1e-6; units.p = 'MW';
+scl.s = 1e+0; units.s = 'S/m';      clm.s = 'L18';
+scl.x = 1e-3; units.x = 'km';
 
 colorcet = @jules.tools.colorcet;
 
@@ -42,7 +44,6 @@ zmin = 80e3;
 % xlims = [-1,1]*1300e3;
 xlims = [-1,1]*100e3;
 ylims = [-57,0]*1e3;
-ylims2 = ylims;
 % ylims = [-190,360]*1e3;
 % ylims2 = [-120,290]*1e3;
 % ylims2 = ylims;
@@ -61,7 +62,11 @@ end
 clb_exp = 0; % force no colorbar exponents
 
 %% loading grid data
-xg = gemini3d.read.grid(direc);
+if isempty(fields(opts.xg))
+    xg = gemini3d.read.grid(direc);
+else
+    xg = opts.xg;
+end
 x = double(xg.x2(3:end-2));
 y = double(xg.x3(3:end-2));
 z = double(xg.x1(3:end-2));
@@ -77,7 +82,11 @@ lz = length(z);
 % dV = dX.*dY.*dZ;
 
 %% loading configuration data
-cfg = gemini3d.read.config(direc);
+if isempty(fields(opts.cfg))
+    cfg = gemini3d.read.config(direc);
+else
+    cfg = opts.cfg;
+end
 ymd = cfg.ymd;
 UTsec0 = cfg.UTsec0;
 tdur = cfg.tdur;
@@ -136,18 +145,17 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     %% plotting routines
     set(0,'defaultTextFontSize',fts)
 
-    jz_p = -jz*j_scl;
-    ne_p = ne*n_scl;
-    Xm_p = Xm*x_scl; Ym_p = Ym*x_scl; Zm_p = Zm*x_scl;
+    jz_p = -jz*scl.j;
+    ne_p = ne*scl.n;
+    Xm_p = Xm*scl.x; Ym_p = Ym*scl.x; Zm_p = Zm*scl.x;
 
-    xlims_p = xlims*x_scl;
-    ylims_p = ylims*x_scl;
-    ylims2_p = ylims2*x_scl;
-    zlims_p = zlims*x_scl;
-    lon_ref_p = lon_ref*x_scl;
-    alt_ref_p = alt_ref*x_scl;
+    xlims_p = xlims*scl.x;
+    ylims_p = ylims*scl.x;
+    zlims_p = zlims*scl.x;
+    lon_ref_p = lon_ref*scl.x;
+    alt_ref_p = alt_ref*scl.x;
 
-    j1_range_p = j1_range*j_scl;
+    j1_range_p = j1_range*scl.j;
 
     % flux tube plot
     if ismember('fluxtubes',plots)
@@ -157,11 +165,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
         if opts.plot_type == 1
             ntubes = 3;
-            p0 = [[lon_ref_p,40,alt_ref_p];[lon_ref_p,110,alt_ref_p];[lon_ref_p,180,alt_ref_p]]*1e3*x_scl;
+            p0 = [[lon_ref_p,40,alt_ref_p];[lon_ref_p,110,alt_ref_p];[lon_ref_p,180,alt_ref_p]]*1e3*scl.x;
             v0 = repmat([1,0,0],ntubes,1);
             v1 = repmat([0,1,0],ntubes,1);
-            r0 = ones(1,ntubes)*200e3*x_scl;
-            r1 = ones(1,ntubes)*20e3*x_scl;
+            r0 = ones(1,ntubes)*200e3*scl.x;
+            r1 = ones(1,ntubes)*20e3*scl.x;
             colors = [...
                 [1.0, 0.5, 0.0];...
                 [0.2, 0.2, 0.8];...
@@ -171,11 +179,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             rev = ones(1,ntubes);
         elseif opts.plot_type == 2
             ntubes = 3;
-            p0 = [[lon_ref_p,40,300];[lon_ref_p,160,300];[1000,100,115]]*1e3*x_scl;
+            p0 = [[lon_ref_p,40,300];[lon_ref_p,160,300];[1000,100,115]]*1e3*scl.x;
             v0 = [[1,0,0];[1,0,0];[0,0,1]];
             v1 = repmat([0,1,0],ntubes,1);
-            r0 = [200,200,10]*1e3*x_scl;
-            r1 = [20,20,45]*1e3*x_scl;
+            r0 = [200,200,10]*1e3*scl.x;
+            r1 = [20,20,45]*1e3*scl.x;
             colors = [...
                 [1.0, 0.5, 0.0];...
                 [0.2, 0.2, 0.8];...
@@ -185,12 +193,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             rev = ones(1,ntubes);
         elseif opts.plot_type == 3
             ntubes = 10;
-            p0 = [-400+30*(0:10:40); ones(1,ntubes/2)*7; 125+(0:10:40)]'*1e3*x_scl;
+            p0 = [-400+30*(0:10:40); ones(1,ntubes/2)*7; 125+(0:10:40)]'*1e3*scl.x;
             p0 = repmat(p0,2,1);
             v0 = repmat([1,0,0],ntubes,1);
             v1 = repmat([0,0,1],ntubes,1);
-            r0 = ones(1,ntubes)*100e3*x_scl;
-            r1 = ones(1,ntubes)*5e3*x_scl;
+            r0 = ones(1,ntubes)*100e3*scl.x;
+            r1 = ones(1,ntubes)*5e3*scl.x;
             %             colors = [(1-(0:10:40)/40); (0:10:40)/40; zeros(1,5)]';
             colors = [[1,0,0];[1,0,1];[0,0,1];[0,1,1];[0,1,0]];
             colors = repmat(colors,2,1);
@@ -198,11 +206,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             rev = [ones(1,ntubes/2),zeros(1,ntubes/2)];
         elseif opts.plot_type == 4
             ntubes = 3;
-            p0 = [[lon_ref_p,5,200];[lon_ref_p,10,200];[lon_ref_p,15,200]]*1e3*x_scl;
+            p0 = [[lon_ref_p,5,200];[lon_ref_p,10,200];[lon_ref_p,15,200]]*1e3*scl.x;
             v0 = repmat([1,0,0],ntubes,1);
             v1 = repmat([0,1,0],ntubes,1);
-            r0 = ones(1,ntubes)*2e3*x_scl;
-            r1 = ones(1,ntubes)*2e3*x_scl;
+            r0 = ones(1,ntubes)*2e3*scl.x;
+            r1 = ones(1,ntubes)*2e3*scl.x;
             colors = [...
                 [1.0, 0.5, 0.0];...
                 [0.2, 0.2, 0.8];...
@@ -212,11 +220,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             rev = ones(1,ntubes);
         elseif opts.plot_type == 5
             ntubes = 3;
-            p0 = [[lon_ref_p,40+50,300];[lon_ref_p,110+50,300];[lon_ref_p,180+50,300]]*1e3*x_scl;
+            p0 = [[lon_ref_p,40+50,300];[lon_ref_p,110+50,300];[lon_ref_p,180+50,300]]*1e3*scl.x;
             v0 = repmat([1,0,0],ntubes,1);
             v1 = repmat([0,1,0],ntubes,1);
-            r0 = ones(1,ntubes)*200e3*x_scl;
-            r1 = ones(1,ntubes)*20e3*x_scl;
+            r0 = ones(1,ntubes)*200e3*scl.x;
+            r1 = ones(1,ntubes)*20e3*scl.x;
             colors = [...
                 [1.0, 0.5, 0.0];...
                 [0.2, 0.2, 0.8];...
@@ -226,11 +234,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             rev = ones(1,ntubes);
         elseif opts.plot_type == 6
             ntubes = 3;
-            p0 = [[lon_ref_p,40,alt_ref/1e3];[lon_ref_p,110,alt_ref/1e3];[lon_ref_p,180,alt_ref/1e3]]*1e3*x_scl;
+            p0 = [[lon_ref_p,40,alt_ref/1e3];[lon_ref_p,110,alt_ref/1e3];[lon_ref_p,180,alt_ref/1e3]]*1e3*scl.x;
             v0 = repmat([1,0,0],ntubes,1);
             v1 = repmat([0,1,0],ntubes,1);
-            r0 = ones(1,ntubes)*200e3*x_scl;
-            r1 = ones(1,ntubes)*20e3*x_scl;
+            r0 = ones(1,ntubes)*200e3*scl.x;
+            r1 = ones(1,ntubes)*20e3*scl.x;
             colors = [...
                 [1.0, 0.5, 0.0];...
                 [0.2, 0.2, 0.8];...
@@ -240,11 +248,11 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             rev = ones(1,ntubes);
         elseif opts.plot_type == 7
             ntubes = 3;
-            p0 = [[lon_ref_p,40,alt_ref/1e3];[lon_ref_p,100,alt_ref/1e3];[lon_ref_p,195,alt_ref/1e3]]*1e3*x_scl;
+            p0 = [[lon_ref_p,40,alt_ref/1e3];[lon_ref_p,100,alt_ref/1e3];[lon_ref_p,195,alt_ref/1e3]]*1e3*scl.x;
             v0 = repmat([1,0,0],ntubes,1);
             v1 = repmat([0,1,0],ntubes,1);
-            r0 = ones(1,ntubes)*200e3*x_scl;
-            r1 = ones(1,ntubes)*20e3*x_scl;
+            r0 = ones(1,ntubes)*200e3*scl.x;
+            r1 = ones(1,ntubes)*20e3*scl.x;
             colors = [...
                 [1.0, 0.5, 0.0];...
                 [0.2, 0.2, 0.8];...
@@ -253,24 +261,30 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             res = [64,64,64];
             rev = ones(1,ntubes);
         elseif opts.plot_type == 8
-            ntubes = 3;
-            p0 = [[57,-22,alt_ref/1e3];[15,-43,alt_ref/1e3];[-55,-31,alt_ref/1e3]]*1e3*x_scl;
-            v0 = [[4,1,0];[15,1,0];[-15,1,0]];
+            ntubes = 4;
+            % p0 = [[57,-23,alt_ref/1e3];[15,-43,alt_ref/1e3];[-55,-31,alt_ref/1e3]]*1e3*scl.x;
+            p0 = [ ...
+                [57,-23,alt_ref/1e3]; ...
+                [15,-46,alt_ref/1e3]; ...
+                [15,-46+5,alt_ref/1e3]; ...
+                [-60,-31,alt_ref/1e3] ...
+                ]*1e3*scl.x;
+            v0 = [[4,1,0];[10,1,0];[10,1,0];[-13,1,0]];
             v1 = repmat([0,1,0],ntubes,1);
-            r0 = [20,20,20]*1e3*x_scl;
-            r1 = [3,3,3]*1e3*x_scl;
+            r0 = [20,20,20,20]*1e3*scl.x;
+            r1 = [3,3,3,3]*1e3*scl.x;
             colors = [...
                 [1.0, 0.5, 0.0];...
                 [0.0, 0.5, 0.0];...
+                [0.0, 0.5, 0.0];...
                 [1.0, 0.0, 0.0];...
-%                 [0.2, 0.2, 0.8];...
                 ];
-            res = [100,100,100];
-            rev = [1,0,1];
+            res = [100,2,1000,100];
+            rev = [1,0,0,1];
         end
 
 %         views = [[30,45];[90,0];[0,90]];
-        views = [[225-10,30];[90,0];[0,90]];
+        views = [[225-10-180,38];[90,0];[0,90]];
 %         views = [[-110,-30];[90,0];[0,90]];
         dviews = [[10*2*(UTsec0-UTsec+tdur/2)/tdur,0];[0,0];[0,0]];
 %         dviews = [[10*2*(UTsec0-36000+150/2)/150,0];[0,0];[0,0]];
@@ -282,7 +296,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         % call fluxtube prior for speed
         tubes = struct;
         for n = 1:ntubes
-            tubes.(char(64+n)) = jules.tools.fluxtube(xg,dat,alt_ref*x_scl...
+            tubes.(char(64+n)) = jules.tools.fluxtube(xg,dat,alt_ref*scl.x...
                 ,p0(n,:),r0(n),r1(n),v0=v0(n,:),v1=v1(n,:)...
                 ,reverse=rev(n),calculate_hull=0,res=res(n));
         end
@@ -300,21 +314,22 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
             set(axa,'FontSize',fts)
             set(axa,'FontName',ftn)
-            set(axj,'XColor','none','YColor','none','ZColor','none','ZTick',alt_ref_p)
+            set(axj,'Color','none','XColor','none','YColor','none','ZColor','none','ZTick',alt_ref_p)
             set(axn,'Color','none','XColor','none','YColor','none','ZColor','none','XTick',lon_ref_p)
             set(axt,'Color','none','XGrid','on','YGrid','on','ZGrid','on')
 
             xlim(axj,xlims_p)
-            xlim(axn,xlims_p + (lon_ref_p+xlims_p(1)))
+            xlim(axn,xlims_p - (lon_ref_p+xlims_p(1)))
             xlim(axt,xlims_p)
-            if v==2
-                ylim(axa,ylims2_p)
-            else
-                ylim(axa,ylims_p)
-            end
-            zlim(axj,zlims_p + (alt_ref-zmin)*x_scl)
+            
+            ylim(axj,ylims_p)
+            ylim(axn,ylims_p)
+            ylim(axt,ylims_p)
+
+            zlim(axj,zlims_p + (alt_ref-zmin)*scl.x)
             zlim(axn,zlims_p)
             zlim(axt,zlims_p)
+            
             view(axa,vv)
 %             ar = [0.4*range(xlims_p)*0.7,range(ylims_p),2*range(zlims_p)];
             ar = [range(xlims_p),range(ylims_p)*2,range(zlims_p)];
@@ -335,7 +350,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 % clb.Ruler.TickLabelFormat = clb_fmt;
                 % clb.Ruler.Exponent = clb_exp;
             end
-
+            
             slice(axn,Xm_p,Ym_p,Zm_p,permute(log10(ne_p),[2,1,3]),lon_ref_p,[],[]);
             colormap(axn,colorcet(clm.n))
             clim(axn,[9.8,11.9])
@@ -355,8 +370,8 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 verts = tube.vertices;
                 c0 = tube.caps.start;
                 c1 = tube.caps.end;
-                fluxes(1,n) = tube.flux.in*j_scl*f_scl;
-                fluxes(2,n) = tube.flux.out*j_scl*f_scl;
+                fluxes(1,n) = tube.flux.in*scl.j*scl.f;
+                fluxes(2,n) = tube.flux.out*scl.j*scl.f;
                 in0 = tube.flux.area.in;
                 in1 = tube.flux.area.out;
                 %                 hull = tube.hull;
@@ -395,7 +410,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 flux_strings{2,n} = ['\color[rgb]{',num2str(colors(n,:)),'}'...
                     ,num2str(fluxes(2,n),'%3.1f'),' ',units.f,'  ','\color{black}'];
                 heat_strings{n} = ['\color[rgb]{',num2str(colors(n,:)),'}'...
-                    ,num2str(joule_heatings(n)*p_scl,'%3.1f'),' ',units.p,'  ','\color{black}'];
+                    ,num2str(joule_heatings(n)*scl.p,'%3.1f'),' ',units.p,'  ','\color{black}'];
             end
             if v == 1 && doAnnotate
                 annotation('textbox',[0.52,0.97,0.01,0.01],'String',[...
@@ -406,7 +421,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             end
             if v == 1
                 pan_x = 0.0;
-                pan_y = 0.6; % >0 moves image down
+                pan_y = 0.7; % >0 moves image down
                 if ispc
                     zoom = 1.1;
                 else
@@ -414,17 +429,17 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 end
                 campan(axj,pan_y,pan_x); campan(axn,pan_y,pan_x); campan(axt,pan_y,pan_x)
                 camzoom(axj,zoom); camzoom(axn,zoom); camzoom(axt,zoom)
-                annotation('textarrow',[0.12,0.075],[0.12,0.04],'String','N', ...
-                    'LineWidth',6*lnw,'HeadLength',16,'HeadWidth',16,'HeadStyle','plain')
+                % annotation('textarrow',[0.12,0.075],[0.12,0.04],'String','N', ...
+                %     'LineWidth',6*lnw,'HeadLength',16,'HeadWidth',16,'HeadStyle','plain')
             end
 
             full_folder = [folder,'_',cell2mat(folder_suffix(v))];
             if ~exist(fullfile(direc,'plots_3d',full_folder),'dir')
                 mkdir(direc,fullfile('plots_3d',full_folder));
             end
-            saveas(gcf,fullfile(direc,'plots_3d',full_folder,[filename_prefix,'_',suffix,'.png']))
-            disp(fullfile(direc,'plots_3d',full_folder,[filename_prefix,'_',suffix,'.png']))
-            close all
+            % saveas(gcf,fullfile(direc,'plots_3d',full_folder,[filename_prefix,'_',suffix,'.png']))
+            % disp(fullfile(direc,'plots_3d',full_folder,[filename_prefix,'_',suffix,'.png']))
+            % close all
         end
     end
 end
