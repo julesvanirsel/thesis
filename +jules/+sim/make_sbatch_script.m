@@ -3,7 +3,7 @@ arguments
     direc (1,:) char {mustBeFolder}
     opts.num_cpus (1,1) int32 {mustBePositive} = 64
     opts.num_nodes (1,1) int32 {mustBePositive} = 1
-    opts.time_limit (1,1) int32 {mustBePositive} = 600
+    opts.time_limit (1,1) int32 {mustBePositive} = 720
     opts.do_setup (1,1) logical = true
 end
 
@@ -12,6 +12,7 @@ gem_root = getenv('GEMINI_ROOT');
 mat_root = getenv('GEMINI_MAT_ROOT');
 scr_root = getenv('GEMINI_SCR_ROOT');
 sim_root = getenv('GEMINI_SIM_ROOT');
+jules_root = getenv('JULES_ROOT');
 
 assert(~isempty(gem_root), ...
     'Add environment variable GEMINI_ROOT directing to gemini.bin')
@@ -23,6 +24,9 @@ assert(~isempty(scr_root), ...
     'https://github.com/gemini3d/mat_gemini-scripts'])
 assert(~isempty(sim_root), ...
     'Add environment variable GEMINI_SIM_ROOT directing to gemini simulations')
+assert(~isempty(jules_root), ...
+    ['Add environment variable JULES_ROOT directing to contents of ' ...
+    'https://github.com/julesvanirsel/thesis'])
 
 % setup for gemini matlab tools
 addpath(mat_root)
@@ -44,7 +48,6 @@ gem_bin = fullfile(gem_root,'build','gemini.bin');
 fprintf('binary file: %s\n',gem_bin)
 batch_cmd = '#SBATCH';
 mpi_cmd = 'mpiexec';
-jules_root = '//dartfs-hpc/rc/lab/L/LynchK/Jules/thesis'; % path to github.com/julesvanirsel/thesis
 matlab_cmd = sprintf('jules.sim.process(''%s'')',path);
 
 cfg = gemini3d.read.config(path);

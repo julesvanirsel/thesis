@@ -42,7 +42,7 @@ colorcet = @jules.tools.colorcet;
 zmin = 80e3;
 % xlims = [-1,1]*1050e3;
 % xlims = [-1,1]*1300e3;
-xlims = [-1,1]*100e3;
+xlims = [-1,1]*103e3;
 ylims = [-57,0]*1e3;
 % ylims = [-190,360]*1e3;
 % ylims2 = [-120,290]*1e3;
@@ -70,9 +70,11 @@ end
 x = double(xg.x2(3:end-2));
 y = double(xg.x3(3:end-2));
 z = double(xg.x1(3:end-2));
+[~,lbx] = min(abs(x-xlims(1))); [~,ubx] = min(abs(x-xlims(2)));
+[~,lby] = min(abs(y-ylims(1))); [~,uby] = min(abs(y-ylims(2)));
 [~,ubz] = min(abs(z-alt_ref));
 ubz = ubz + 1; % add buffer cell
-z = z(1:ubz);
+x = x(lbx:ubx); y = y(lby:uby); z = z(1:ubz);
 lz = length(z);
 % dx = double(xg.dx2h);
 % dy = double(xg.dx3h);
@@ -133,8 +135,8 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
     %     Ez = permute(Ez(1:ubz,:,:),[2,3,1]);
     %     jx = permute(dat.J2(1:ubz,:,:),[2,3,1]);
     %     jy = permute(dat.J3(1:ubz,:,:),[2,3,1]);
-    jz = permute(dat.J1(1:ubz,:,:),[2,3,1]);
-    ne = permute(dat.ne(1:ubz,:,:),[2,3,1]);
+    jz = permute(dat.J1(1:ubz,lbx:ubx,lby:uby),[2,3,1]);
+    ne = permute(dat.ne(1:ubz,lbx:ubx,lby:uby),[2,3,1]);
 
     % implicit simulation data
     %     joule = jx.*Ex + jy.*Ey + jz.*Ez;
@@ -264,27 +266,27 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             ntubes = 4;
             % p0 = [[57,-23,alt_ref/1e3];[15,-43,alt_ref/1e3];[-55,-31,alt_ref/1e3]]*1e3*scl.x;
             p0 = [ ...
-                [57,-23,alt_ref/1e3]; ...
-                [15,-46,alt_ref/1e3]; ...
-                [15,-46+5,alt_ref/1e3]; ...
+                [51,-23,alt_ref/1e3]; ...
+                [22,-38,alt_ref/1e3]; ...
+                [22,-45.5,alt_ref/1e3]; ...
                 [-60,-31,alt_ref/1e3] ...
                 ]*1e3*scl.x;
             v0 = [[4,1,0];[10,1,0];[10,1,0];[-13,1,0]];
             v1 = repmat([0,1,0],ntubes,1);
-            r0 = [20,20,20,20]*1e3*scl.x;
-            r1 = [3,3,3,3]*1e3*scl.x;
+            r0 = [20,10,18,20]*1e3*scl.x;
+            r1 = [3,2,3,3]*1e3*scl.x;
             colors = [...
                 [1.0, 0.5, 0.0];...
                 [0.0, 0.5, 0.0];...
                 [0.0, 0.5, 0.0];...
                 [1.0, 0.0, 0.0];...
                 ];
-            res = [100,2,1000,100];
+            res = [200,100,100,200]*2;
             rev = [1,0,0,1];
         end
 
 %         views = [[30,45];[90,0];[0,90]];
-        views = [[225-10-180,38];[90,0];[0,90]];
+        views = [[225-10-180-8,38];[90,0];[0,90]];
 %         views = [[-110,-30];[90,0];[0,90]];
         dviews = [[10*2*(UTsec0-UTsec+tdur/2)/tdur,0];[0,0];[0,0]];
 %         dviews = [[10*2*(UTsec0-36000+150/2)/150,0];[0,0];[0,0]];
@@ -298,9 +300,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
         for n = 1:ntubes
             tubes.(char(64+n)) = jules.tools.fluxtube(xg,dat,alt_ref*scl.x...
                 ,p0(n,:),r0(n),r1(n),v0=v0(n,:),v1=v1(n,:)...
-                ,reverse=rev(n),calculate_hull=0,res=res(n));
+                ,reverse=rev(n),calculate_hull=0,res=res(n)...
+                ,xlims = xlims_p,ylims = ylims_p);
         end
-        for v = 1%1:length(views)
+        for v = 1%:length(views)
             vv = views(v,:)+dviews(v,:);
 
             figure(v)
@@ -374,8 +377,8 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 fluxes(2,n) = tube.flux.out*scl.j*scl.f;
                 in0 = tube.flux.area.in;
                 in1 = tube.flux.area.out;
-                %                 hull = tube.hull;
-                %                 joule_heatings(n) = sum(joule.*dV.*hull,'all');
+                % hull = tube.hull;
+                % joule_heatings(n) = sum(joule.*dV.*hull,'all');
 
                 shadow = nan(size(in0));
                 shadow(in0) = 0;
@@ -384,6 +387,12 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
 
                 pl0 = plot3(axt,c0(:,1),c0(:,2),c0(:,3));
                 pl1 = plot3(axt,c1(:,1),c1(:,2),c1(:,3));
+                if all(range(c0(:,3))<1)
+                    pl0s = plot3(axt,c0(:,1),c0(:,2),ones(size(c0(:,3)))*zmin*scl.x);
+                end
+                if all(range(c1(:,3))<1)
+                    pl1s = plot3(axt,c1(:,1),c1(:,2),ones(size(c1(:,3)))*zmin*scl.x);
+                end
                 stl = streamline(axt,verts);
                 if any(not(isnan(shadow)),'all')
                     shd = slice(axj,Xm_p,Ym_p,Zm_p,permute(shadow,[2,1,3]),[],[],alt_ref_p);
@@ -394,8 +403,10 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 shading(axj,'flat')
                 set(pl0,'Color','k','LineWidth',lnw*2)
                 set(pl1,'Color','b','LineWidth',lnw*2)
+                set(pl0s,'Color','k','LineWidth',lnw*2,'LineStyle',':')
+                set(pl1s,'Color','b','LineWidth',lnw*2,'LineStyle',':')
                 set(shd,'FaceAlpha',0.5)
-                set(stl,'Color',[color,0.5],'LineWidth',lnw)
+                set(stl,'Color',[color,0.2],'LineWidth',lnw)
             end
 
             xlabel(['Mag. east (',units.x,')'],'FontSize',fts)
@@ -423,7 +434,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
                 pan_x = 0.0;
                 pan_y = 0.7; % >0 moves image down
                 if ispc
-                    zoom = 1.1;
+                    zoom = 1.37;
                 else
                     zoom = 1.4;
                 end
@@ -437,9 +448,9 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             if ~exist(fullfile(direc,'plots_3d',full_folder),'dir')
                 mkdir(direc,fullfile('plots_3d',full_folder));
             end
-            % saveas(gcf,fullfile(direc,'plots_3d',full_folder,[filename_prefix,'_',suffix,'.png']))
-            % disp(fullfile(direc,'plots_3d',full_folder,[filename_prefix,'_',suffix,'.png']))
-            % close all
+            saveas(gcf,fullfile(direc,'plots_3d',full_folder,[filename_prefix,'_',suffix,'.png']))
+            disp(fullfile(direc,'plots_3d',full_folder,[filename_prefix,'_',suffix,'.png']))
+            close all
         end
     end
 end

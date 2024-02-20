@@ -65,18 +65,20 @@ end
 x = double(xg.x2(3:end-2)*x_scl);
 y = double(xg.x3(3:end-2)*x_scl);
 z = double(xg.x1(3:end-2)*x_scl);
+xlims = options.xlims;
+ylims = options.ylims;
+zmin = options.zmin;
+[~,lbx] = min(abs(x-xlims(1))); [~,ubx] = min(abs(x-xlims(2)));
+[~,lby] = min(abs(y-ylims(1))); [~,uby] = min(abs(y-ylims(2)));
 [~,ubz] = min(abs(z-alt_ref));
 ubz = ubz + 1; % add buffer cell
-z = z(1:ubz);
-dx = double(xg.dx2h*x_scl);
-dy = double(xg.dx3h*x_scl);
+x = x(lbx:ubx); y = y(lby:uby); z = z(1:ubz);
+dx = double(xg.dx2h(lbx:ubx)*x_scl);
+dy = double(xg.dx3h(lby:uby)*x_scl);
 dz = double(xg.dx1h(1:ubz)*x_scl);
 % dmin = min([dx,dy,dz]);
 dmin = min(dz);
 lx = length(x); ly = length(y); lz = length(z);
-xlims = options.xlims;
-ylims = options.ylims;
-zmin = options.zmin;
 [I,J,K] = ndgrid(1:lx,1:ly,1:lz);
 [X,Y,Z] = ndgrid(x,y,z);
 [Xm,Ym,Zm] = meshgrid(x,y,z);
@@ -115,9 +117,9 @@ elseif strcmp(options.var,'b')
 end
 
 %% change vector field boundaries
-Vx = Vx(:,:,1:ubz);
-Vy = Vy(:,:,1:ubz);
-Vz = Vz(:,:,1:ubz);
+Vx = Vx(lby:uby,lbx:ubx,1:ubz);
+Vy = Vy(lby:uby,lbx:ubx,1:ubz);
+Vz = Vz(lby:uby,lbx:ubx,1:ubz);
 
 %% calculate flux tube streamline vertices
 if options.reverse

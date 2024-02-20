@@ -1,6 +1,6 @@
 %% load simulation
-direc.A = "../../public_html/Gemini3D/isinglass_74/";
-direc.B = "../../public_html/Gemini3D/isinglass_74_noscale_norotate/";
+direc.A = "../../public_html/Gemini3D/isinglass_78/";
+direc.B = "../../public_html/Gemini3D/isinglass_78_noscl_norot/";
 cfg.A = gemini3d.read.config(direc.A);
 cfg.B = gemini3d.read.config(direc.B);
 time = cfg.A.times(end);
@@ -76,7 +76,7 @@ set(0,'defaultSurfaceEdgeColor','flat')
 colorcet = @jules.tools.colorcet;
 
 scl.x = 1e-3; scl.j = 1e6;
-lim.x = [-1,1]*90; lim.y = [-1,1]*58;
+lim.x = [-1,1]*90; lim.y = [-1,1]*57;
 units.j = 'uA/m^2';
 clm.j = 'D1A';
 
@@ -93,14 +93,16 @@ load('data\boundaries.mat')
 bound_x2 = linspace(lim.x(1),lim.x(2),256)*1e3;
 
 figure(1)
-set(gcf,'PaperPosition',[0,0,13.2,6.8])
+set(gcf,'PaperPosition',[0,0,13.2,7.0])
 tlo = tiledlayout(2,3);
+ltr = 'A';
 
 % row 1
 nexttile
-title('div(E) term')
+title('\Sigma_P \nabla_\perp\cdot E')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
-pcolor(X2/1e3,X3/1e3,squeeze(jA_p(2,:,:)))
+pcolor(X2/1e3,X3/1e3,squeeze(jA_p(1,:,:)))
 plot(bound_x2/1e3,bound.A(bound_x2)/1e3-3,'--k')
 plot(bound_x2/1e3,bound.B(bound_x2)/1e3,'--k')
 ylabel(lbl.y)
@@ -111,9 +113,10 @@ clim(j1_range_p*1.4)
 pbaspect(ar)
 
 nexttile
-title('grad(\Sigma_P) term')
+title('E\cdot\nabla\Sigma_P')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
-pcolor(X2/1e3,X3/1e3,squeeze(jB_p(2,:,:)))
+pcolor(X2/1e3,X3/1e3,squeeze(jB_p(1,:,:)))
 plot(bound_x2/1e3,bound.A(bound_x2)/1e3-3,'--k')
 plot(bound_x2/1e3,bound.B(bound_x2)/1e3,'--k')
 xlim(lim.x); ylim(lim.y)
@@ -123,9 +126,10 @@ clim(j1_range_p*0.3)
 pbaspect(ar)
 
 nexttile
-title('grad(\Sigma_H) term')
+title('(E\times b)\cdot\nabla\Sigma_H')
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
-pcolor(X2/1e3,X3/1e3,squeeze(0*jA_p(2,:,:)+0*jB_p(2,:,:)+jC_p(2,:,:)))
+pcolor(X2/1e3,X3/1e3,squeeze(0*jA_p(1,:,:)+0*jB_p(1,:,:)+jC_p(1,:,:)))
 plot(bound_x2/1e3,bound.A(bound_x2)/1e3-3,'--k')
 plot(bound_x2/1e3,bound.B(bound_x2)/1e3,'--k')
 xlim(lim.x); ylim(lim.y)
@@ -136,8 +140,10 @@ pbaspect(ar)
 
 % row 2
 nexttile
+title(' ','FontSize',5)
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
-pcolor(X2/1e3,X3/1e3,squeeze(jA_p(1,:,:)))
+pcolor(X2/1e3,X3/1e3,squeeze(jA_p(2,:,:)))
 plot(bound_x2/1e3,bound.A(bound_x2)/1e3-3,'--k')
 plot(bound_x2/1e3,bound.B(bound_x2)/1e3,'--k')
 xlabel(lbl.x); ylabel(lbl.y)
@@ -150,8 +156,9 @@ clb.Location = 'southoutside';
 pbaspect(ar)
 
 nexttile
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
-pcolor(X2/1e3,X3/1e3,squeeze(jB_p(1,:,:)))
+pcolor(X2/1e3,X3/1e3,squeeze(jB_p(2,:,:)))
 plot(bound_x2/1e3,bound.A(bound_x2)/1e3-3,'--k')
 plot(bound_x2/1e3,bound.B(bound_x2)/1e3,'--k')
 xlabel(lbl.x)
@@ -165,8 +172,9 @@ clb.Location = 'southoutside';
 pbaspect(ar)
 
 nexttile
+text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
-pcolor(X2/1e3,X3/1e3,squeeze(0*jA_p(1,:,:)+0*jB_p(1,:,:)+jC_p(1,:,:)))
+pcolor(X2/1e3,X3/1e3,squeeze(0*jA_p(2,:,:)+0*jB_p(2,:,:)+jC_p(2,:,:)))
 plot(bound_x2/1e3,bound.A(bound_x2)/1e3-3,'--k')
 plot(bound_x2/1e3,bound.B(bound_x2)/1e3,'--k')
 xlabel(lbl.x)
