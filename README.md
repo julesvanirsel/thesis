@@ -1,6 +1,23 @@
 # thesis
 Ph. D. thesis work
 
+## How to install gemini on WSL
+1)  From Windows Powershell:
+```sh
+wsl --install Ubuntu
+```
+2)  Generate a username, \<firstnamelastname\>, and password.
+3)  In WSL:
+```sh
+sudo apt update && sudo apt upgrade
+sudo apt install build-essential # for c and c++ compiler: gcc and g++
+sudo apt install gcc gfortran # for fortran compiler: gfortran
+sudo apt install cmake # for cmake
+sudo apt install libopenmpi-dev openmpi-bin # for mpi commands: e.g. mpiexec
+sudo apt install libhdf5-dev # for h5c++, h5cc, and h5fc)
+which gcc g++ gfortran cmake mpiexec h5c++ h5cc h5fc
+```
+
 ## How to run a Gemini simulation on Andes:
 1)  "mkdir LynchK/public_html/Gemini3D/\<SIMULATION NAME\>"
     -   Try and stick to a sensible simulation name such as \<function\>\_\<type\>\_\<descriptor\>\_\<version\>, e.g. aurora_sharc_wide_02
