@@ -1,12 +1,15 @@
 # thesis
 Ph. D. thesis work
 
-## How to install gemini on WSL
+## How to install GEMINI on WSL
+### Install WSL distribution
 1)  From Windows Powershell:
 ```sh
 wsl --install Ubuntu
 ```
 2)  Generate a username, \<firstnamelastname\>, and password.
+
+### Install standard packages
 3)  In WSL:
 ```sh
 sudo apt update && sudo apt upgrade
@@ -15,7 +18,42 @@ sudo apt install gcc gfortran # for fortran compiler: gfortran
 sudo apt install cmake # for cmake
 sudo apt install libopenmpi-dev openmpi-bin # for mpi commands: e.g. mpiexec
 sudo apt install libhdf5-dev # for h5c++, h5cc, and h5fc)
-which gcc g++ gfortran cmake mpiexec h5c++ h5cc h5fc
+which gcc g++ gfortran cmake mpiexec h5c++ h5cc h5fc # make sure all of these commands exists
+```
+
+### Install external packages
+4)  In WSL's /home/username:
+```sh
+mkdir gemini
+cd gemini
+git clone https://github.com/gemini3d/external.git
+cmake -B external/build -S external -DCMAKE_INSTALL_PREFIX=~/gemini/libgem
+cmake --build external/build
+```
+5)  At the end of ~/.bashrc add
+```sh
+export CMAKE_PREFIX_PATH=~/gemini/libgem
+```
+6)  Restart WSL.
+```sh
+echo $CMAKE_PREFIX_PATH
+```
+
+### Install GEMINI and run self tests
+7)  In WSL's /home/username/gemini:
+```sh
+git clone https://github.com/gemini3d/gemini3d.git
+cd gemini3d
+cmake -B build -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH
+cmake --build build --parallel
+ctest --test-dir build
+```
+
+### Install MATLAB packages
+8)  In WSL's /home/username/gemini:
+```sh
+git clone --recurse-submodules https://github.com/gemini3d/mat_gemini
+git clone --recurse-submodules https://github.com/gemini3d/mat_gemini-scripts
 ```
 
 ## How to run a Gemini simulation on Andes:
