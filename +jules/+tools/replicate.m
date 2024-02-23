@@ -73,6 +73,8 @@ unt.x = 'km'; unt.v = 'km/s'; unt.dv = 'mHz'; unt.p = 'kV';
 clm.v = 'D2'; clm.dv = 'CBD1'; clm.p = 'D10';
 lim.x = [-1,1]*125; lim.y = [-1,1]*59;  lim.v = [-1,1]*1.3; lim.dv = [-1,1]*0.1;
 
+scl.vec = 12*scl.v;
+
 lbl.x = sprintf('Mag. E (%s)',unt.x);
 lbl.y = sprintf('Mag. N (%s)',unt.x);
 lbl.vx = sprintf('v_E (%s)',unt.v);
@@ -782,6 +784,15 @@ if opts.show_plots
     pbaspect(ar)
 end
 
+v2_int_p = (v2_int + opts.plot_bg*v_bg(1))*scl.v;
+v3_int_p = (v3_int + opts.plot_bg*v_bg(2))*scl.v;
+v2_traj_p = (v2_traj_p + opts.plot_bg*v_bg(1))*scl.v;
+v3_traj_p = (v3_traj_p + opts.plot_bg*v_bg(2))*scl.v;
+v2_traj_pv = v2_traj_p*scl.vec/scl.v;
+v3_traj_pv = v3_traj_p*scl.vec/scl.v;
+v2_p = (v2 + opts.plot_bg*v_bg(1))*scl.v;
+v3_p = (v3 + opts.plot_bg*v_bg(2))*scl.v;
+
 if opts.show_plots || opts.save_plots(2)
     figure
     set(gcf,'PaperPosition',[0,0,13.2,6.4])
@@ -797,13 +808,6 @@ if opts.show_plots || opts.save_plots(2)
         lim.dv = [-1,1]*max_dv*scl.dv;
         lim.p = [-1,1]*max_p*scl.p;
     end
-    
-    v2_int_p = (v2_int + opts.plot_bg*v_bg(1))*scl.v;
-    v3_int_p = (v3_int + opts.plot_bg*v_bg(2))*scl.v;
-    v2_traj_p = (v2_traj_p + opts.plot_bg*v_bg(1))*scl.v;
-    v3_traj_p = (v3_traj_p + opts.plot_bg*v_bg(2))*scl.v;
-    v2_p = (v2 + opts.plot_bg*v_bg(1))*scl.v;
-    v3_p = (v3 + opts.plot_bg*v_bg(2))*scl.v;
 
     % row 1
     nexttile
@@ -811,7 +815,7 @@ if opts.show_plots || opts.save_plots(2)
     text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
     hold on
     pcolor(X2*scl.x,X3*scl.x,v2_int_p)
-    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_p,v3_traj_p,'.-r')
+    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_pv,v3_traj_pv,0,'.-r')
     colormap(gca,colorcet(clm.v))
     clb = colorbar;
     clb.Label.String = lbl.vx;
@@ -826,7 +830,7 @@ if opts.show_plots || opts.save_plots(2)
     text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
     hold on
     pcolor(X2*scl.x,X3*scl.x,v2_p)
-    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_p,v3_traj_p,'.-r')
+    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_pv,v3_traj_pv,0,'.-r')
     colormap(gca,colorcet(clm.v))
     xlim(lim.x); ylim(lim.y); clim(lim.v)
     xticks([]); yticks([])
@@ -837,7 +841,7 @@ if opts.show_plots || opts.save_plots(2)
     text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
     hold on
     pcolor(X2*scl.x,X3*scl.x,v2_err*scl.v)
-    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_p,v3_traj_p,'.-r')
+    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_pv,v3_traj_pv,0,'.-r')
     contour(X2*scl.x,X3*scl.x,double(mask),[0.5,0.5],'k')
     colormap(gca,colorcet(clm.v))
     clb = colorbar;
@@ -851,7 +855,7 @@ if opts.show_plots || opts.save_plots(2)
     text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
     hold on
     pcolor(X2*scl.x,X3*scl.x,v3_int_p)
-    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_p,v3_traj_p,'.-r')
+    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_pv,v3_traj_pv,0,'.-r')
     colormap(gca,colorcet(clm.v))
     clb = colorbar;
     clb.Label.String = lbl.vy;
@@ -865,7 +869,7 @@ if opts.show_plots || opts.save_plots(2)
     text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
     hold on
     pcolor(X2*scl.x,X3*scl.x,v3_p)
-    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_p,v3_traj_p,'.-r')
+    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_pv,v3_traj_pv,0,'.-r')
     colormap(gca,colorcet(clm.v))
     xlim(lim.x); ylim(lim.y); clim(lim.v)
     xticks([]); yticks([])
@@ -875,7 +879,7 @@ if opts.show_plots || opts.save_plots(2)
     text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
     hold on
     pcolor(X2*scl.x,X3*scl.x,v3_err*scl.v)
-    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_p,v3_traj_p,'.-r')
+    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_pv,v3_traj_pv,0,'.-r')
     contour(X2*scl.x,X3*scl.x,double(mask),[0.5,0.5],'k')
     colormap(gca,colorcet(clm.v))
     clb = colorbar;
@@ -947,10 +951,6 @@ if opts.show_plots || opts.save_plots(3)
         jules.tools.hsv_params(V2,V3,MLAT,MLON,ALT,300e3,mlon_ref,hsv_sat);
     [hsv_map_clb_err,~,~,hsv_alt_err,hsv_alt_map_err] = ...
         jules.tools.hsv_params(V2_err,V3_err,MLAT,MLON,ALT,300e3,mlon_ref,hsv_sat*0.3);
-    
-    size(v2)
-    size(V2)
-    size(MLAT)
 
     if opts.auto_lim
         qnt = 0.99;
@@ -967,7 +967,9 @@ if opts.show_plots || opts.save_plots(3)
     text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8,'Color','w'); ltr = ltr +1;
     hold on
     pcolor(X2*scl.x,X3*scl.x,hsv_alt);
-    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_p,v3_traj_p,0,'.-r')
+    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_pv,v3_traj_pv,0,'.-r')
+    quiver(60,-51,1e3*scl.vec,0,0,'.-r')
+    text(75,-50,'1 km/s','FontSize',0.8*fts,'Color','w')
     contour(X2_imag*scl.x,X3_imag*scl.x,arc.^ap*scl.arc,4,'--k')%,'Color',[1,1,1]*0.4)
     colormap(gca,hsv_alt_map)
     clb = colorbar;
@@ -988,7 +990,7 @@ if opts.show_plots || opts.save_plots(3)
     hold on
     pcolor(X2*scl.x,X3*scl.x,hsv_alt_err);
     contour(X2*scl.x,X3*scl.x,double(mask),[0.5,0.5],'--k')
-    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_p,v3_traj_p,'.-r')
+    quiver(x2_traj_p*scl.x,x3_traj_p*scl.x,v2_traj_pv,v3_traj_pv,0,'.-r')
     colormap(gca,hsv_alt_map_err)
     clb = colorbar;
     colormap(clb,hsv_map_clb_err)
@@ -1012,6 +1014,7 @@ if opts.show_plots || opts.save_plots(3)
     clb = colorbar;
     clb.Label.String = sprintf('Potential (%s)',unt.p);
     clb.Location = 'southoutside';
+    clim([-1,1]*1.9)
     xlim(lim.x); ylim(lim.y);
     yticks([])
     xlabel(lbl.x)

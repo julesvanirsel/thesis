@@ -1,4 +1,4 @@
-ig = true;
+ig = false;
 %#ok<*UNRCH>
 
 if ig
@@ -194,7 +194,7 @@ if ig
     ylims = [65.2,67.3];
     clims = [1,49];
     clm = 'kbgyw';
-    clb_lbl = 'Q (mW/m^2)';
+    clb_lbl = 'Q_p (mW/m^2)';
 else
     xlims = [165,240];
     ylims = [55,77];

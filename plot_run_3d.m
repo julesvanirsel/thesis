@@ -11,9 +11,10 @@ arguments
     opts.xg (:,:) struct = struct
     opts.dat (:,:) struct = struct
     opts.plot_type (1,1) int8 = 1
+    opts.zoom (1,1) double = 1
 end
 
-doAnnotate = true;
+doAnnotate = false;
 paper_w = [13,5,8];
 paper_h = [9,5,5];
 
@@ -433,11 +434,7 @@ for UTsec = UTsec0+start:cad:UTsec0+stop
             if v == 1
                 pan_x = 0.0;
                 pan_y = 0.7; % >0 moves image down
-                if ispc
-                    zoom = 1.37;
-                else
-                    zoom = 1.4;
-                end
+                zoom = opts.zoom;
                 campan(axj,pan_y,pan_x); campan(axn,pan_y,pan_x); campan(axt,pan_y,pan_x)
                 camzoom(axj,zoom); camzoom(axn,zoom); camzoom(axt,zoom)
                 % annotation('textarrow',[0.12,0.075],[0.12,0.04],'String','N', ...

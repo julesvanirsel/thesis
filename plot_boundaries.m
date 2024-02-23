@@ -62,3 +62,4 @@ pbaspect(ar)
 
 filename = 'boundaries.png';
 saveas(gcf,fullfile('plots','paper0',filename))
+close all

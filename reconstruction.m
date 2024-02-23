@@ -160,6 +160,8 @@ scl.x = 1e-3; scl.v = 1e-3; scl.ve = 1e0; scl.p = 1e-3;
 unt.x = 'km'; unt.v = 'km/s'; unt.ve = 'm/s'; unt.p = 'kV';
 clm.v = 'D2'; clm.p = 'D10';
 
+scl.vec = 50*scl.v;
+
 lbl.x = sprintf('Mag. E (%s)',unt.x);
 lbl.y = sprintf('Mag. N (%s)',unt.x);
 lbl.p = sprintf('Potential (%s)',unt.p);
@@ -176,7 +178,6 @@ lim.vy = [-1,1]*max(abs(v_traj(:,2)))*scl.v;
 lim.ve = [-1,1]*max([v2_err_max,v3_err_max])*scl.ve;
 
 ar = [range(lim.x),range(lim.y),range(lim.y)];
-sc = 70;
 
 figure
 set(gcf,'PaperPosition',[0,0,13.2,6])
@@ -202,20 +203,22 @@ text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
 pcolor(X2*scl.x,X3*scl.x,hsv_alt_tru);
 plot(bound(:,1)*scl.x,bound(:,2)*scl.x,'--k')
-quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.vec,v3_traj*scl.vec,0,'.-r')
+quiver(370,-205,1e3*scl.vec,0,0,'.-r')
+text(430,-200,'1 km/s','FontSize',fts*0.8)
 colormap(gca,hsv_alt_map_tru)
 xlim(lim.x); ylim(lim.y); clim([0,1])
 xticks([]); yticks([])
 pbaspect(ar)
 
 nexttile
-title('Eastward flow error')
+title('Eastward flow difference')
 text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
 pcolor(X2*scl.x,X3*scl.x,v2_err*scl.ve);
 contour(X2*scl.x,X3*scl.x,reg_b,1,'Color',[1,1,1]*0.5)
 plot(bound(:,1)*scl.x,bound(:,2)*scl.x,'--k')
-quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.vec,v3_traj*scl.vec,0,'.-r')
 colormap(gca,colorcet(clm.v))
 xlim(lim.x); ylim(lim.y); clim(lim.ve)
 xticks([]); yticks([])
@@ -242,7 +245,7 @@ text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
 pcolor(X2*scl.x,X3*scl.x,hsv_alt_fit);
 plot(bound(:,1)*scl.x,bound(:,2)*scl.x,'--k')
-quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.vec,v3_traj*scl.vec,0,'.-r')
 colormap(gca,hsv_alt_map_fit)
 clb = colorbar;
 colormap(clb,hsv_map_clb_fit)
@@ -257,13 +260,13 @@ yticks([])
 pbaspect(ar)
 
 nexttile
-title('Northward flow error')
+title('Northward flow difference')
 text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
 pcolor(X2*scl.x,X3*scl.x,v3_err*scl.ve);
 contour(X2*scl.x,X3*scl.x,reg_b,1,'Color',[1,1,1]*0.5)
 plot(bound(:,1)*scl.x,bound(:,2)*scl.x,'--k')
-quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.v,v3_traj*scl.v,'.-r')
+quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.vec,v3_traj*scl.vec,0,'.-r')
 colormap(gca,colorcet(clm.v))
 clb = colorbar;
 clb.Location = 'southoutside';

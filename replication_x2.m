@@ -121,16 +121,18 @@ jules.tools.setall(0,'Multiplier',1)
 
 colorcet = @jules.tools.colorcet;
 
-scl.x = 1e-3; scl.v = 1e-3; scl.s = 1e0; scl.vec = 1e2; scl.q = 1e+3; 
+scl.x = 1e-3; scl.v = 1e-3; scl.s = 1e0; scl.q = 1e+3; 
 unt.x = 'km'; unt.v = 'km/s'; unt.s = 'S'; unt.q = 'mW/m^2'; 
 clm.v = 'D2'; clm.s = 'L18'; clm.q = 'L19';
+
+scl.vec = 80*scl.v;
 
 lbl.x = sprintf('Mag. E (%s)',unt.x);
 lbl.y = sprintf('Mag. N (%s)',unt.x);
 lbl.vx = sprintf('v_E (%s)',unt.v);
 lbl.vy = sprintf('v_N (%s)',unt.v);
 lbl.s = sprintf('\\Sigma_P (%s)',unt.s);
-lbl.q = sprintf('Q (%s)',unt.q);
+lbl.q = sprintf('Q_p (%s)',unt.q);
 
 qnt = 0.99;
 max_v = quantile(abs([ ...
@@ -168,7 +170,7 @@ X3_imag = mlat_to_x3(image.pos(:,:,2));
 %%
 close all
 figure
-set(gcf,'PaperPosition',[0,0,13.2,5.6])
+set(gcf,'PaperPosition',[0,0,13.2,5.5])
 tiledlayout(2,3);
 ltr = 'A';
 
@@ -188,14 +190,16 @@ x3_bounary_B = bound.B(x2_boundary);
 
 % row 1
 nexttile
-title('Precip. flux')
+title('Precip. energy flux')
 text(0.04,1-0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
 pcolor(X2_imag*scl.x,X3_imag*scl.x,image.flux);
 quiver(x2_traj_swrm*scl.x,x3_traj_swrm*scl.x, ...
-    v2_traj_swrm*scl.v*scl.vec,v3_traj_swrm*scl.v*scl.vec,0,'.-b')
+    v2_traj_swrm*scl.vec,v3_traj_swrm*scl.vec,0,'.-b')
 quiver(x2_traj_pfsr*scl.x,x3_traj_pfsr*scl.x, ...
-    v2_traj_pfsr*scl.v*scl.vec,v3_traj_pfsr*scl.v*scl.vec,0,'.-b')
+    v2_traj_pfsr*scl.vec,v3_traj_pfsr*scl.vec,0,'.-b')
+quiver(60,-150,1e3*scl.vec,0,0,'.-b')
+text(150,-145,'1 km/s','FontSize',0.8*fts)
 colormap(gca,colorcet(clm.q))
 clb = colorbar;
 clb.Label.String = lbl.q;
@@ -206,14 +210,14 @@ xticks([])
 pbaspect(ar)
 
 nexttile
-title('Pedersen cond.')
+title('Pedersen conductance')
 text(0.04,1-0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
 pcolor(X2_imag*scl.x,X3_imag*scl.x,image.pedersen);
 quiver(x2_traj_swrm*scl.x,x3_traj_swrm*scl.x, ...
-    v2_traj_swrm*scl.v*scl.vec,v3_traj_swrm*scl.v*scl.vec,0,'.-b')
+    v2_traj_swrm*scl.vec,v3_traj_swrm*scl.vec,0,'.-b')
 quiver(x2_traj_pfsr*scl.x,x3_traj_pfsr*scl.x, ...
-    v2_traj_pfsr*scl.v*scl.vec,v3_traj_pfsr*scl.v*scl.vec,0,'.-b')
+    v2_traj_pfsr*scl.vec,v3_traj_pfsr*scl.vec,0,'.-b')
 plot(x2_boundary*scl.x,x3_bounary_A*scl.x,'k')
 plot(x2_boundary*scl.x,x3_bounary_B*scl.x,'--k')
 colormap(gca,colorcet(clm.s))
@@ -225,7 +229,7 @@ xticks([]); yticks([])
 pbaspect(ar)
 
 nexttile
-title('Track A weighting')
+title('Swarm weighting')
 text(0.04,1-0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr +1;
 hold on
 pcolor(X2*scl.x,X3*scl.x,weight);
@@ -244,7 +248,7 @@ text(0.04,1-0.9,char(ltr),'units','normalized','FontSize',fts*0.8,'Color','w'); 
 hold on
 pcolor(X2*scl.x,X3*scl.x,hsv_alt_swrm);
 quiver(x2_traj_swrm*scl.x,x3_traj_swrm*scl.x, ...
-    v2_traj_swrm*scl.v*scl.vec,v3_traj_swrm*scl.v*scl.vec,0,'.-r')
+    v2_traj_swrm*scl.vec,v3_traj_swrm*scl.vec,0,'.-r')
 plot(x2_traj_pfsr*scl.x,x3_traj_pfsr*scl.x,'r','LineWidth',0.1*lw)
 contour(X2_imag*scl.x,X3_imag*scl.x,image.pedersen*scl.s,4,'--k')
 colormap(gca,hsv_alt_map_swrm)
@@ -266,7 +270,7 @@ hold on
 pcolor(X2*scl.x,X3*scl.x,hsv_alt_pfsr);
 plot(x2_traj_swrm*scl.x,x3_traj_swrm*scl.x,'r','LineWidth',lw*0.1)
 quiver(x2_traj_pfsr*scl.x,x3_traj_pfsr*scl.x, ...
-    v2_traj_pfsr*scl.v*scl.vec,v3_traj_pfsr*scl.v*scl.vec,0,'.-r')
+    v2_traj_pfsr*scl.vec,v3_traj_pfsr*scl.vec,0,'.-r')
 contour(X2_imag*scl.x,X3_imag*scl.x,image.pedersen*scl.s,4,'--k')
 colormap(gca,hsv_alt_map_pfsr)
 clim([0,1])
@@ -281,9 +285,9 @@ text(0.04,1-0.9,char(ltr),'units','normalized','FontSize',fts*0.8,'Color','w'); 
 hold on
 pcolor(X2*scl.x,X3*scl.x,hsv_alt_both);
 quiver(x2_traj_swrm*scl.x,x3_traj_swrm*scl.x, ...
-    v2_traj_swrm*scl.v*scl.vec,v3_traj_swrm*scl.v*scl.vec,0,'.-r')
+    v2_traj_swrm*scl.vec,v3_traj_swrm*scl.vec,0,'.-r')
 quiver(x2_traj_pfsr*scl.x,x3_traj_pfsr*scl.x, ...
-    v2_traj_pfsr*scl.v*scl.vec,v3_traj_pfsr*scl.v*scl.vec,0,'.-r')
+    v2_traj_pfsr*scl.vec,v3_traj_pfsr*scl.vec,0,'.-r')
 contour(X2_imag*scl.x,X3_imag*scl.x,image.pedersen*scl.s,4,'--k')
 colormap(gca,hsv_alt_map_both)
 clb = colorbar;
@@ -298,5 +302,5 @@ xlabel(lbl.x)
 yticks([])
 pbaspect(ar)
 
-saveas(gcf,fullfile('plots','paper0','double_replication.png'))
+saveas(gcf,fullfile('plots','paper0','double-replication.png'))
 close all
