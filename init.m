@@ -1,7 +1,7 @@
 % addpath('\\wsl$\Ubuntu-22.04\home\julesvanirsel\gemini\mat_gemini')
 % addpath('\\wsl$\Ubuntu-22.04\home\julesvanirsel\gemini\mat_gemini-scripts')
-% setenv('GEMINI_ROOT','\\wsl$\Ubuntu\home\julesvanirsel\gemini')
-setenv('CMAKE_PREFIX_PATH','\\dartfs-hpc\rc\lab\L\LynchK\gemini\libgem\')
+% setenv('GEMINI_ROOT','\\wsl$\Ubuntu\home\julesvanirsel\gemini\gemini3d')
+% setenv('CMAKE_PREFIX_PATH','\\wsl$\Ubuntu\home\julesvanirsel\gemini\libgem')
 user = input('User: ');
 
 if ispc

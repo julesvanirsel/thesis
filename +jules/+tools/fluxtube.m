@@ -50,7 +50,7 @@ arguments
     options.show_flux (1,1) logical {mustBeNonempty} = false
     options.calculate_hull (1,1) logical {mustBeNonempty} = false
     options.var (1,1) char {mustBeMember(options.var,['j','v','b'])} = 'j'
-    options.res (1,1) int16 {mustBePositive} = 32
+    options.res (1,1) int16 {mustBePositive} = 64
     options.color (1,3) double {mustBeNonempty} = [0,0,0]
     options.units (1,:) char {mustBeMember(options.units,['m','km'])} = 'km'
 end
@@ -65,11 +65,11 @@ end
 x = double(xg.x2(3:end-2)*x_scl);
 y = double(xg.x3(3:end-2)*x_scl);
 z = double(xg.x1(3:end-2)*x_scl);
-xlims = options.xlims;
-ylims = options.ylims;
+lim.x = options.xlims;
+lim.y = options.ylims;
 zmin = options.zmin;
-[~,lbx] = min(abs(x-xlims(1))); [~,ubx] = min(abs(x-xlims(2)));
-[~,lby] = min(abs(y-ylims(1))); [~,uby] = min(abs(y-ylims(2)));
+[~,lbx] = min(abs(x-lim.x(1))); [~,ubx] = min(abs(x-lim.x(2)));
+[~,lby] = min(abs(y-lim.y(1))); [~,uby] = min(abs(y-lim.y(2)));
 [~,ubz] = min(abs(z-alt_ref));
 ubz = ubz + 1; % add buffer cell
 x = x(lbx:ubx); y = y(lby:uby); z = z(1:ubz);
@@ -127,10 +127,13 @@ if options.reverse
 else
     dir = 1;
 end
-step = 1e-2;%1e-2
-maxvert = 5e4;%1e6
+% step = 1e-1;%1e-2
+% maxvert = (2*size(Vx,3) + size(Vx,2))/step;
+step = 1e-1;
+maxvert = 1e5;
 verts_ids = stream3(dir*Vx,dir*Vy,dir*Vz,c0_ids(:,1),c0_ids(:,2),c0_ids(:,3),[step maxvert]);
-verts = cellfun(@(v) [gx(v),gy(v),gz(v)],verts_ids,'UniformOutput',0);
+% verts = cellfun(@(v) [gx(v),gy(v),gz(v)],verts_ids,'UniformOutput',0);
+verts = stream3(Xm,Ym,Zm,dir*Vx,dir*Vy,dir*Vz,c0(:,1),c0(:,2),c0(:,3),[step maxvert]);
 pts = cell2mat(cellfun(@(v) v',verts,'UniformOutput',0))';
 c1 = cell2mat(cellfun(@(v) v(end,:)',verts,'UniformOutput',0))';
 
@@ -184,10 +187,12 @@ end
 %% plotting
 if options.plot
     sized = 20;
-    zlims = [zmin,alt_ref*1.05]; % add 5% buffer
+    lim.z = [zmin,alt_ref*1.05]; % add 5% buffer
     shadow = nan(size(in0));
     shadow(in0) = 0;
     shadow(in1) = 0;
+
+    colorcet = @jules.tools.colorcet;
     
     % close all
     figure(1)
@@ -207,7 +212,7 @@ if options.plot
         set(pl0_test,'Color','r','LineWidth',2)
         set(stl_test,'Color','r','LineWidth',0.5)
     end
-    line([xlims(1),xlims(2),],[ylims(1),ylims(2)],[80,80])
+    line([lim.x(1),lim.x(2),],[lim.y(1),lim.y(2)],[80,80])
     hold off
     set(shd,'FaceAlpha',1)
     shading flat
@@ -221,12 +226,12 @@ if options.plot
     set(stl,'Color',options.color,'LineWidth',0.5)
     set(gca,'FontSize',sized)
     view([30,45])
-    xlim(xlims)
-    ylim(ylims)
-    zlim(zlims)
-    % ar = [0.4*range(xlims),range(ylims),2*range(zlims)]; %%%CHANGE
-    %     ar = [0.2*range(xlims),range(ylims),range(zlims)]; %%%CHANGE
-    ar = [range(xlims)/2.5,range(ylims),range(zlims)];
+    xlim(lim.x)
+    ylim(lim.y)
+    zlim(lim.z)
+    % ar = [0.4*range(lim.x),range(lim.y),2*range(lim.z)]; %%%CHANGE
+    %     ar = [0.2*range(lim.x),range(lim.y),range(lim.z)]; %%%CHANGE
+    ar = [range(lim.x)/2.5,range(lim.y),range(lim.z)];
     % ar = [1,1,1];
     pbaspect(ar)
     xlabel(['East [',options.units,']'],'FontSize',sized)
