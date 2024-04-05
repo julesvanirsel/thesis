@@ -17,7 +17,7 @@
 % Contact:
 %   jules.van.irsel.gr@dartmouth.edu
 
-function [phi,mlon,mlat,E2_bg,E3_bg,v2_int,v3_int,weight_A,bound] = replicate(track,image,xg,opts)
+function [phi,resnorm,E2_bg,E3_bg,v2_int,v3_int,weight_A,bound] = replicate(track,image,xg,opts)
 arguments
     track (1,1) struct {mustBeNonempty}
     image (1,1) struct {mustBeNonempty}
@@ -52,6 +52,11 @@ end
 ftn = 'Arial';
 fts = 10*2;
 lw = 1.4;
+scs = get(0,'ScreenSize');
+tpl = [0.0*scs(3),0.5*scs(4),0.5*scs(3),0.5*scs(4)];
+tpr = [0.5*scs(3),0.5*scs(4),0.5*scs(3),0.5*scs(4)];
+btl = [0.0*scs(3),0.0*scs(4),0.5*scs(3),0.5*scs(4)];
+btr = [0.5*scs(3),0.0*scs(4),0.5*scs(3),0.5*scs(4)];
 
 close all
 reset(0)
@@ -231,7 +236,7 @@ end
 
 if opts.show_plots || opts.save_data
     figure
-    set(gcf,'PaperPosition',[0,0,13.2,4.8])
+    set(gcf,'PaperPosition',[0,0,13.2,4.8],'Position',tpl)
     tiledlayout(1,2)
     ltr = opts.starting_letter;
 
@@ -287,6 +292,7 @@ end
 
 if opts.show_plots
     figure
+    set(gcf,'Position',tpr)
     hold on
     contour(X2_imag*scl.x,X3_imag*scl.x,arc.^ap*scl.arc)
     plot(bound_pts*scl.x,bound.A(bound_pts)*scl.x,'k')
@@ -498,7 +504,7 @@ for track_id = 1:num_tracks
     
     if opts.show_plots || opts.save_plots(1)
         figure
-        set(gcf,'PaperPosition',[0,0,13.2,3.7]) %2.4
+        set(gcf,'PaperPosition',[0,0,13.2,3.7],'Position',btl) %2.4
         tiledlayout(1,2)
         ltr = opts.starting_letter;
     
@@ -552,7 +558,12 @@ for track_id = 1:num_tracks
         text(85,-51,sprintf('%.0f %s',1,unt.v),'FontSize',fts)
     
         if opts.save_plots(1)
-            filename = sprintf('replications%s.png',opts.suffix);
+            if num_tracks == 1
+                filename = sprintf('replications%s.png',opts.suffix);
+            else
+                filename = sprintf('replications_%s%s.png' ...
+                    ,track_name,opts.suffix);
+            end
             fprintf('Saving %s\n',filename)
             saveas(gcf,fullfile(opts.direc,filename))
         end
@@ -560,6 +571,7 @@ for track_id = 1:num_tracks
     
     if opts.show_plots
         figure
+        set(gcf,'Position',btr)
         hold on
         plot(x3_traj*scl.x,v2_traj*scl.v,'r')
         plot(x3_traj*scl.x,v3_traj*scl.v,'b')
@@ -765,6 +777,35 @@ divv = divergence(X3,X2,v3,v2);
 divv_int = divergence(X3,X2,v3_int,v2_int);
 v2_err = v2-v2_int;
 v3_err = v3-v3_int;
+
+dist2 = v2_err(mask);
+dist3 = v3_err(mask);
+v2_err_min = round(mean(dist2))-round(2*std(dist2));
+v2_err_max = round(mean(dist2))+round(2*std(dist2));
+v3_err_min = round(mean(dist3))-round(2*std(dist3));
+v3_err_max = round(mean(dist3))+round(2*std(dist3));
+resnorm = [ ...
+    norm(abs(v2_err(mask)))/norm(abs(v2_int(mask))) ...
+    ,norm(abs(v3_err(mask)))/norm(abs(v3_int(mask))) ...
+    ];
+fprintf([pad('Electrostatic enforcement results:',80,'both','-'),'\n'])
+fprintf('Eastward error range = %i to %i m/s\n',v2_err_min,v2_err_max)
+fprintf('Northward error range = %i to %i m/s\n',v3_err_min,v3_err_max)
+fprintf('Eastward relative norm of the residuals = %.2f\n',resnorm(1))
+fprintf('Northward relative norm of the residuals = %.2f\n',resnorm(2))
+fprintf([pad('',80,'both','-'),'\n'])
+
+figure
+tiledlayout(2,1)
+nexttile
+histogram(dist2,100)
+xticks([v2_err_min,mean(dist2),v2_err_max]);
+grid on
+nexttile
+histogram(dist3,100)
+xticks([v3_err_min,mean(dist3),v3_err_max]);
+grid on
+saveas(gcf,'histo.png')
 
 if opts.show_plots
     figure

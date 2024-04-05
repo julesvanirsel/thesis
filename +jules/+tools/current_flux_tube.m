@@ -186,7 +186,7 @@ for id = 1:lax-2
 end
 outline = outline(not(isnan(outline(:,1))),:);
 inline = inline(not(isnan(inline(:,1))),:);
-outline(abs(diff(outline(:,3))) > 10) = nan;
+outline(vecnorm(diff(outline)') > 10) = nan;
 
 % generate tube
 tube.vertices = verts;
