@@ -218,7 +218,6 @@ hold on
 pcolor(X2*scl.x,X3*scl.x,v2_err*scl.ve);
 contour(X2*scl.x,X3*scl.x,reg_b,1,'Color',[1,1,1]*0.5)
 plot(bound(:,1)*scl.x,bound(:,2)*scl.x,'--k')
-quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.vec,v3_traj*scl.vec,0,'.-r')
 colormap(gca,colorcet(clm.v))
 xlim(lim.x); ylim(lim.y); clim(lim.ve)
 xticks([]); yticks([])
@@ -266,7 +265,6 @@ hold on
 pcolor(X2*scl.x,X3*scl.x,v3_err*scl.ve);
 contour(X2*scl.x,X3*scl.x,reg_b,1,'Color',[1,1,1]*0.5)
 plot(bound(:,1)*scl.x,bound(:,2)*scl.x,'--k')
-quiver(x2_traj*scl.x,x3_traj*scl.x,v2_traj*scl.vec,v3_traj*scl.vec,0,'.-r')
 colormap(gca,colorcet(clm.v))
 clb = colorbar;
 clb.Location = 'southoutside';

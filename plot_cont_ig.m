@@ -80,7 +80,6 @@ lim.x = [-1,1]*90; lim.y = [-1,1]*57;
 units.j = 'uA/m^2';
 clm.j = 'D1A';
 
-j1_p = j1*scl.j;
 jA_p = jA*scl.j; jB_p = jB*scl.j; jC_p = jC*scl.j;
 
 lbl.x = 'Mag. E (km)';
@@ -93,7 +92,7 @@ load('data\boundaries.mat')
 bound_x2 = linspace(lim.x(1),lim.x(2),256)*1e3;
 
 figure(1)
-set(gcf,'PaperPosition',[0,0,13.2,7.0])
+set(gcf,'PaperPosition',[0,0,13.2,6.95])
 tlo = tiledlayout(2,3);
 ltr = 'A';
 

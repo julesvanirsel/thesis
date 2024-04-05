@@ -1,4 +1,4 @@
-% load simulation structures
+%% load simulation structures
 direc = '\\dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\isinglass_80\';
 if not(ispc)
     direc = strrep(direc,'\','/');
@@ -16,12 +16,12 @@ end
 fprintf('Simulation data loaded.\n')
 
 % plotting parameters
-save_plot = true;
-sffx = '';
+save_plot = false;
+sffx = 'top';
 fntn = 'Arial'; % font name
 fnts = 20; % font size
 linw = 1.5; % line width
-angl = [-25, 30]; % view angle (°)
+angl = [-30, 33]; % view angle (°)
 qntl = 0.95; % colorbar range quantile
 pprw = 13; % paper width (inches)
 pprh = 9; % paper height (inches)
@@ -30,7 +30,7 @@ clc0 = [0, 0, 0]; % start curve color (rgb)
 clc1 = [0, 0, 1]; % end curve color (rgb)
 clef = [1, 0, 1]; % electric field color (rgb)
 offs = 0.5; % projection line offset (km)
-zoom = 1.1; % camera zoom
+zoom = 1.13; % camera zoom
 panx = 1.0; % pan right (°)
 pany = 0.0; % pan up (°)
 
@@ -74,7 +74,7 @@ tube_list = 1:3;
 p0 = [ ...
     [60, -41, 200]; ...
     [10, y(end), 100]; ...
-    [-74, -42, 200]; ...
+    [-74, -41, 200]; ...
     [-60, -20, 200];
     ];
 v0 = [[3,1,0]; [1,0,0]; [1,0,0]; [1,0,0]];
@@ -92,7 +92,7 @@ rev = [0, 1, 0, 0];
 split_factor = [5, 10, 10, 10];
 do_inline = [0, 0, 1, 1];
 outline_axis = [3, 2, 3, 3];
-outline_res = 10;
+outline_res = 4;
 
 % unpack data
 j1 = squeeze(dat.J1(ubz,lbx:ubx,lby:uby))'*scl.j; % A/km^2 = uA/m^2
@@ -104,7 +104,7 @@ E3 = -v2*Bmag; % mV/m
 E2(:,:,1) = nan;
 E3(:,:,1) = nan;
 
-% generate current flux tubes
+%% generate current flux tubes
 for n = tube_list
     tubes.(char(64+n)) = jules.tools.current_flux_tube(xg, dat ...
         , p0(n,:), r0(n), r1(n), v0=v0(n,:), v1=v1(n,:) ...
@@ -142,7 +142,7 @@ set(axn,'Color','none','XColor','none','YColor','none','ZColor','none')
 hold on
 
 % current flux tubes
-in = false(size(j1));
+in0 = false(size(j1));
 out = false(size(j1));
 for n = tube_list
     color = colors(n,:);
@@ -150,7 +150,7 @@ for n = tube_list
     verts = tube.vertices;
     c0 = tube.caps.start;
     c1 = tube.caps.end;
-    in = in | tube.flux.area.in;
+    in0 = in0 | tube.flux.area.in;
     out = out | tube.flux.area.out;
     flux0 = tube.flux.in*scl.f;
     flux1 = tube.flux.out*scl.f;
@@ -161,17 +161,17 @@ for n = tube_list
 
     stl = streamline(verts);
     plot3(c0(:,1),c0(:,2),c0(:,3),'Color',clc0);
-    plot3(c0(:,1),c0(:,2),c0(:,3)*0+z(1)+offs,'Color',clc0);
+    plot3(c0(:,1),c0(:,2),c0(:,3)*0+z(1)+offs,'Color',clc0,'LineStyle',':');
     % plot3(c0(:,1)*0+x(end)-off,c0(:,2),c0(:,3),'Color',cl0);
     if ~iscell(c1)
         plot3(c1(:,1),c1(:,2),c1(:,3),'Color',clc1);
-        plot3(c1(:,1),c1(:,2),c1(:,3)*0+z(1)+offs,'Color',clc1);
+        plot3(c1(:,1),c1(:,2),c1(:,3)*0+z(1)+offs,'Color',clc1,'LineStyle',':');
         % plot3(c1(:,1)*0+x(end)-off,c1(:,2),c1(:,3),'Color',cl1);
     else
         for i=1:length(c1)
             c = cell2mat(c1(i));
             plot3(c(:,1),c(:,2),c(:,3),'Color',clc1);
-            plot3(c(:,1),c(:,2),c(:,3)*0+z(1),'Color',clc1);
+            plot3(c(:,1),c(:,2),c(:,3)*0+z(1),'Color',clc1,'LineStyle',':');
             % plot3(c(:,1)*0+x(end)-off,c(:,2),c(:,3),'Color',cl1);
         end
     end
@@ -183,7 +183,7 @@ for n = tube_list
 end
 
 % field-aligned current slice
-j1(in | out) = nan;
+j1(in0 | out) = nan;
 j1_slice = repmat(j1,[1,1,length(z)]);
 slice(axj,Xm,Ym,Zm,-j1_slice,[],[],z(1))
 colormap(axj,colorcet(clm.j))
@@ -236,3 +236,37 @@ if save_plot
     saveas(gcf,filename)
     close all
 end
+
+%% one off vertical flux calculation
+close all
+[dX,dZ] = meshgrid(dx,dz);
+dA = dX.*dZ; % km^2
+
+cap0 = tubes.B.caps.start; % km
+in0 = squeeze(inpolygon(Xm(end,:,:),Zm(end,:,:),cap0(:,1),cap0(:,3)))';
+j30 = squeeze(dat.J3(lbz:ubz,lbx:ubx,uby))*scl.j; % A/km^2
+flux0_B = sum(in0.*j30.*dA,'all')*scl.f;
+% pcolor(squeeze(Xm(end,:,:)),squeeze(Zm(end,:,:)),double(in0'))
+
+cap1 = tubes.B.caps.end; % km
+in1 = squeeze(inpolygon(Xm(1,:,:),Zm(1,:,:),cap1(:,1),cap1(:,3)))';
+j31 = squeeze(dat.J3(lbz:ubz,lbx:ubx,lby))*scl.j; % A/km^2
+flux1_B = sum(in1.*j31.*dA,'all')*scl.f;
+% pcolor(squeeze(Xm(end,:,:)),squeeze(Zm(end,:,:)),double(in1'))
+
+fprintf('Flux tube B in/outflux = %.2f / %.2f kA\n',flux0_B,flux1_B)
+
+close all
+[dX,dY] = meshgrid(dx,dy);
+dA = dX.*dY; % km^2
+
+out_split = tubes.A.flux.area.out;
+out_split0 = out_split & (squeeze(Ym(:,:,end)) > -15);
+out_split1 = out_split & ~out_split0;
+% pcolor(squeeze(Xm(:,:,end)),squeeze(Ym(:,:,end)),double(out_split0))
+% pcolor(squeeze(Xm(:,:,end)),squeeze(Ym(:,:,end)),double(out_split1))
+flux0_A = sum(out_split0.*j1.*dA,'all')*scl.f;
+flux1_A = sum(out_split1.*j1.*dA,'all')*scl.f;
+
+fprintf('Flux tube A poleward outflux = %.2f kA\n',flux0_A)
+fprintf('Flux tube A equatorward outflux = %.2f kA\n',flux1_A)

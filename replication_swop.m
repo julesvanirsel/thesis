@@ -15,15 +15,19 @@ mlon_to_x2 = griddedInterpolant(mlon,x2);
 mlat_to_x3 = griddedInterpolant(mlat,x3);
 Bmag = mean(xg.Bmag(:));
 
+colorcet = @jules.tools.colorcet;
+
 %% pack up image
 load('data\SW_EXPT_EFIB_TCT02_20230319T081600_sky_inversion.mat','event')
 
 lims_mlon = [min(mlon),max(mlon)];
 lims_mlat = [min(mlat),max(mlat)];
-% lims_mlon = [min(event.maglon_110(:))+360,max(event.maglon_110(:))+360];
-% lims_mlat = [min(event.maglat_110(:)),max(event.maglat_110(:))];
+lims_mlon = [min(event.maglon_110(:))+360,max(event.maglon_110(:))+360];
+lims_mlat = [min(event.maglat_110(:)),max(event.maglat_110(:))];
 % lims_mlon = [263,276];
 % lims_mlat = [65.5,69];
+% lims_mlon = [0,360];
+% lims_mlat = [0,90];
 [~,ida1] = min(abs(event.maglon_110(1,:)+360-lims_mlon(1)));
 [~,ida2] = min(abs(event.maglon_110(1,:)+360-lims_mlon(2)));
 [~,idb1] = min(abs(event.maglat_110(:,1)-lims_mlat(1)));
@@ -92,7 +96,7 @@ close all
 
 figure
 set(gcf,'PaperPosition',[0,0,6.5,5.5])
-set(gcf,'Position',[0,60,1920,1080-150]);
+set(gcf,'Position',[30,60,1500,800]);
 set(gca,'Fontsize',20)
 tiledlayout(2,2)
 
@@ -261,7 +265,7 @@ clim(lim.v2)
 pbaspect(ar)
 
 
-% old
+%% old
 % load('data\replicate_data_isinglass.mat','image','in_situ')
 % image_IG = image;
 % in_situ_IG = in_situ;

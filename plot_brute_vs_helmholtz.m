@@ -27,7 +27,7 @@ jules.tools.setall(0,'Multiplier',1)
 
 colorcet = @jules.tools.colorcet;
 
-scl.x = 1e-3; scl.v = 1e-3; scl.dv = 1e0; scl.p = 1e-3;
+scl.x = 1e-3; scl.v = 1e-3; scl.dv = 1e0; scl.p = 1e-3; scl.q = 1e0;
 unt.x = 'km'; unt.v = 'km/s'; unt.dv = 'Hz'; unt.p = 'kV'; unt.q = 'mW/m^2';
 clm.v = 'D2'; clm.dv = 'CBD1'; clm.p = 'D10'; clm.q = 'L19';
 lim.x = [-1,1]*125; lim.y = [-1,1]*59;  lim.v = [-1,1]*1.3; lim.dv = [-1,1]*0.1;
@@ -580,7 +580,8 @@ if auto_lim
 end
 
 figure
-set(gcf,'PaperPosition',[0,0,13.2,8]) %4.3
+set(gcf,'PaperPosition',[0,0,13.2,9.7]) %4.3
+set(0,'defaultTiledlayoutTileSpacing','tight')
 tiledlayout(4,3);
 ltr = 65;
 
@@ -625,6 +626,7 @@ pbaspect(ar)
 
 % row 2
 nexttile
+title(' ','FontSize',5)
 text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
 pcolor(X2*scl.x,X3*scl.x,(v3_int+plot_bg*v3_bg)*scl.v)
@@ -664,9 +666,10 @@ text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
 pcolor(X2*scl.x,X3*scl.x,divv_int*scl.dv)
 colormap(gca,colorcet(clm.dv))
-clb = colorbar;
-clb.Label.String = sprintf('\\nabla\\cdot\\bfv\\rm (%s)',unt.dv);
-clb.Location = 'westoutside';
+% clb = colorbar;
+% clb.Label.String = sprintf('\\nabla\\cdot\\bfv\\rm (%s)',unt.dv);
+% clb.Location = 'westoutside';
+axdv = gca;
 xlim(lim.x); ylim(lim.y); clim(lim.dv)
 xticks([])
 ylabel(lbl.y)
@@ -700,11 +703,14 @@ pbaspect(ar)
 nexttile
 text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8); ltr = ltr+1;
 hold on
-pcolor(X2*scl.x,X3*scl.x,100*(phitopA-phitopC)*scl.p/lim.p(2))
-colormap(gca,colorcet(clm.p))
+pcolor(X2_part*scl.x,X3_part*scl.x,Q_map_part*scl.q)
+% plot(bounds_x2*scl.x,bounds_x3*scl.x,'--k')
+% pcolor(X2*scl.x,X3*scl.x,100*(phitopA-phitopC)*scl.p/lim.p(2))
+colormap(gca,colorcet(clm.q))
 clb = colorbar;
-clb.Label.String = '\Delta\phi/\phi_{max} (%)';
-clb.Location = 'westoutside';
+% clb.Label.String = '\Delta\phi/\phi_{max} (%)';
+clb.Label.String = sprintf('Q_p (%s)',unt.q);
+clb.Location = 'southoutside';
 xlim(lim.x); ylim(lim.y); %clim([-1,1]*10)
 xlabel(lbl.x); ylabel(lbl.y)
 pbaspect(ar)
@@ -719,6 +725,15 @@ xlim(lim.x); ylim(lim.y); clim(lim.ve/3)
 yticks([])
 xlabel(lbl.x);
 pbaspect(ar)
+clb = colorbar;
+colormap(clb,colorcet(clm.dv))
+% clb.Limits = lim.dv;
+clb.Label.String = sprintf('\\nabla\\cdot\\bfv\\rm (%s)',unt.dv);
+clb.Location = 'southoutside';
+
+ticks = clb.Ticks*range(lim.dv)/range(lim.ve/3);
+clb.TickLabels = cellstr(string(round(ticks,2)));
+% get(clb)
 
 nexttile
 text(0.04,0.9,char(ltr),'units','normalized','FontSize',fts*0.8)
@@ -814,7 +829,7 @@ surface(X2(1:lc:end,1:lc:end)*scl.x,X3(1:lc:end,1:lc:end)*scl.x, ...
 colormap(gca,colorcet(clm.p))
 xlim(lim.x); ylim(lim.y); zlim(1.4*lim.p); clim(lim.p)
 ylbl = ylabel(lbl.y);
-ylbl.Position = [180,100,-2];
+ylbl.Position = [180,100,-2.2];
 zlabel(sprintf('Potential (%s)',unt.p))
 pbaspect(ar)
 view(vw)
