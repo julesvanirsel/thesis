@@ -53,10 +53,11 @@ ftn = 'Arial';
 fts = 10*2;
 lw = 1.4;
 scs = get(0,'ScreenSize');
-tpl = [0.0*scs(3),0.5*scs(4),0.5*scs(3),0.5*scs(4)];
-tpr = [0.5*scs(3),0.5*scs(4),0.5*scs(3),0.5*scs(4)];
-btl = [0.0*scs(3),0.0*scs(4),0.5*scs(3),0.5*scs(4)];
-btr = [0.5*scs(3),0.0*scs(4),0.5*scs(3),0.5*scs(4)];
+% tpl = [0.0*scs(3),0.525*scs(4),0.5*scs(3),0.4*scs(4)];
+% tpr = [0.5*scs(3),0.525*scs(4),0.5*scs(3),0.4*scs(4)];
+% btl = [0.0*scs(3),0.050*scs(4),0.5*scs(3),0.4*scs(4)];
+% btr = [0.5*scs(3),0.050*scs(4),0.5*scs(3),0.4*scs(4)];
+ful = [0.0*scs(3),0.050*scs(4),1.0*scs(3),0.875*scs(4)];
 
 close all
 reset(0)
@@ -236,8 +237,10 @@ end
 
 if opts.show_plots || opts.save_data
     figure
-    set(gcf,'PaperPosition',[0,0,13.2,4.8],'Position',tpl)
-    tiledlayout(1,2)
+    set(gcf,'PaperPosition',[0,0,13.2,4.8],'Position',ful)
+    t = tiledlayout(1,2);
+    t.Title.String = 'Primary and Secondary Boundaries';
+    t.Title.FontSize = 1.5*fts;
     ltr = opts.starting_letter;
 
     nexttile
@@ -291,8 +294,13 @@ if opts.show_plots || opts.save_data
 end
 
 if opts.show_plots
-    figure
-    set(gcf,'Position',tpr)
+    figure;
+    set(gcf,'Position',ful)
+    t = tiledlayout(1,1);
+    t.Title.String = 'Boundaries vs. Conductance Contours';
+    t.Title.FontSize = 1.5*fts;
+
+    nexttile
     hold on
     contour(X2_imag*scl.x,X3_imag*scl.x,arc.^ap*scl.arc)
     plot(bound_pts*scl.x,bound.A(bound_pts)*scl.x,'k')
@@ -504,8 +512,10 @@ for track_id = 1:num_tracks
     
     if opts.show_plots || opts.save_plots(1)
         figure
-        set(gcf,'PaperPosition',[0,0,13.2,3.7],'Position',btl) %2.4
-        tiledlayout(1,2)
+        set(gcf,'PaperPosition',[0,0,13.2,5],'Position',ful) %2.4
+        t = tiledlayout(1,2);
+        t.Title.String = sprintf('Track %s: Replication Subset',track_name);
+        t.Title.FontSize = 1.5*fts;
         ltr = opts.starting_letter;
     
         [~,j_p] = min(abs(x3_traj-bound.B(x0b)));
@@ -553,9 +563,10 @@ for track_id = 1:num_tracks
         xlabel(lbl.x)
         colormap(colorcet(clm.arc))
         pbaspect(ar)
-        rectangle('Position',[73,-56,47,10],'FaceColor','w','EdgeColor','w')
-        quiver(84,-51,-1*vs,0,0,'.-r','LineWidth',lw)
-        text(85,-51,sprintf('%.0f %s',1,unt.v),'FontSize',fts)
+        rectangle('Position',[lim.x(2)*0.6,lim.y(1)*0.8-lim.y(2),lim.x(2),lim.y(2)], ...
+            'FaceColor','w','EdgeColor','w')
+        quiver(lim.x(2)*0.68,lim.y(1)*0.9,-1*vs,0,0,'.-r','LineWidth',lw)
+        text(lim.x(2)*0.7,lim.y(1)*0.9,sprintf('%.0f %s',1,unt.v),'FontSize',fts)
     
         if opts.save_plots(1)
             if num_tracks == 1
@@ -571,7 +582,12 @@ for track_id = 1:num_tracks
     
     if opts.show_plots
         figure
-        set(gcf,'Position',btr)
+        set(gcf,'Position',ful)
+        t = tiledlayout(1,1);
+        t.Title.String = sprintf('Track %s: Plasma Flow Smoothing',track_name);
+        t.Title.FontSize = 1.5*fts;
+    
+        nexttile
         hold on
         plot(x3_traj*scl.x,v2_traj*scl.v,'r')
         plot(x3_traj*scl.x,v3_traj*scl.v,'b')
@@ -581,13 +597,14 @@ for track_id = 1:num_tracks
         legend('Eastward','Northward','Eastward smoothed','Northward smoothed')
         pbaspect(ar)
     
-        figure
-        hold on
-        plot(x3_traj(1:end-1)*scl.x,diff(v2_traj)*scl.v,'r')
-        plot(x3_traj(1:end-1)*scl.x,diff(v3_traj)*scl.v,'b')
-        xlabel(lbl.y); ylabel(sprintf('dFlow (%s)',unt.dv))
-        legend('Eastward','Northward')
-        pbaspect(ar)
+        % figure
+        % set(gcf,'Position',ful)
+        % hold on
+        % plot(x3_traj(1:end-1)*scl.x,diff(v2_traj)*scl.v,'r')
+        % plot(x3_traj(1:end-1)*scl.x,diff(v3_traj)*scl.v,'b')
+        % xlabel(lbl.y); ylabel(sprintf('dFlow (%s)',unt.dv))
+        % legend('Eastward','Northward')
+        % pbaspect(ar)
     end
     
     %% interpolate replicated flow data
@@ -597,7 +614,13 @@ for track_id = 1:num_tracks
     
     if opts.show_plots
         figure
+        t = tiledlayout(1,1);
+        t.Title.String = sprintf('Track %s: Interpolated Flow',track_name);
+        t.Title.FontSize = 1.5*fts;
+        set(gcf,'Position',ful)
         vs = 2;
+
+        nexttile
         hold on
         pcolor(X2_imag*scl.x,X3_imag*scl.x,arc.^ap*scl.arc)
         plot(bound_pts*scl.x,bound.A(bound_pts)*scl.x,'b')
@@ -752,18 +775,19 @@ phi(:,end-0) = 3*phi(:,end-2)-2*phi(:,end-3);
 % zero average potential
 phi = phi - mean(phi,'all');
 
-if opts.show_plots
-    figure
-    hold on
-    surface(X2*scl.x,X3*scl.x,harm*scl.p)
-    contour(X2*scl.x,X3*scl.x,double(mask),[0.5,0.5],'k')
-    colormap(gca,colorcet(clm.p))
-    clb = colorbar;
-    clb.Label.String = sprintf('Harmonic potential (%s)',unt.p);
-    xlim(lim.x); ylim(lim.y);
-    xlabel(lbl.x); ylabel(lbl.y)
-    pbaspect([ar(1:2),1e5])
-end
+% if opts.show_plots
+%     figure
+%     set(gcf,'Position',ful)
+%     hold on
+%     surface(X2*scl.x,X3*scl.x,harm*scl.p)
+%     contour(X2*scl.x,X3*scl.x,double(mask),[0.5,0.5],'k')
+%     colormap(gca,colorcet(clm.p))
+%     clb = colorbar;
+%     clb.Label.String = sprintf('Harmonic potential (%s)',unt.p);
+%     xlim(lim.x); ylim(lim.y);
+%     xlabel(lbl.x); ylabel(lbl.y)
+%     pbaspect([ar(1:2),1e5])
+% end
 
 %% plot final flow fields
 if range(dx2) < 1e-3
@@ -796,20 +820,32 @@ fprintf('Northward relative norm of the residuals = %.2f\n',resnorm(2))
 fprintf([pad('',80,'both','-'),'\n'])
 
 figure
-tiledlayout(2,1)
+set(gcf,'Position',ful)
+t = tiledlayout(2,1);
+t.Title.String = 'Electrostatic Enforcement Results';
+t.Title.FontSize = 1.5*fts;
+
 nexttile
-histogram(dist2,100)
+histogram(dist2,200)
 xticks([v2_err_min,mean(dist2),v2_err_max]);
+xlabel('Eastward error')
 grid on
+
 nexttile
-histogram(dist3,100)
+histogram(dist3,200)
 xticks([v3_err_min,mean(dist3),v3_err_max]);
+xlabel('Northward error')
 grid on
-saveas(gcf,'histo.png')
 
 if opts.show_plots
     figure
+    set(gcf,'Position',ful)
+    t = tiledlayout(1,1);
+    t.Title.String = 'Final Flow Map';
+    t.Title.FontSize = 1.5*fts;
     vs = 2;
+
+    nexttile
     hold on
     pcolor(X2_imag*scl.x,X3_imag*scl.x,arc.^ap*scl.arc)
     plot(bound_pts*scl.x,bound.A(bound_pts)*scl.x,'b')
@@ -836,7 +872,7 @@ v3_p = (v3 + opts.plot_bg*v_bg(2))*scl.v;
 
 if opts.show_plots || opts.save_plots(2)
     figure
-    set(gcf,'PaperPosition',[0,0,13.2,6.4])
+    set(gcf,'PaperPosition',[0,0,13.2,6.4],'Position',ful)
     tiledlayout(3,3);
     ltr = opts.starting_letter;
 
@@ -973,7 +1009,7 @@ end
 
 if opts.show_plots || opts.save_plots(3)
     figure
-    set(gcf,'PaperPosition',[0,0,13.2,4.2])
+    set(gcf,'PaperPosition',[0,0,13.2,4.5],'Position',ful)
     tiledlayout(1,3);
     ltr = opts.starting_letter;
 

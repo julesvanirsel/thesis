@@ -1,10 +1,9 @@
 function make_sbatch_script(direc,opts)
 arguments
     direc (1,:) char {mustBeFolder}
-    opts.num_cpus (1,1) int32 {mustBePositive} = 64
+    opts.num_cpus_per_node (1,1) int32 {mustBePositive} = 64
     opts.num_nodes (1,1) int32 {mustBePositive} = 1
-    opts.time_limit (1,1) int32 {mustBePositive} = 720
-    opts.do_setup (1,1) logical = true
+    opts.max_hours (1,1) double {mustBePositive} = 5
 end
 
 %% init
@@ -15,7 +14,8 @@ sim_root = getenv('GEMINI_SIM_ROOT');
 jules_root = getenv('JULES_ROOT');
 
 assert(~isempty(gem_root), ...
-    'Add environment variable GEMINI_ROOT directing to gemini.bin')
+    ['Add environment variable GEMINI_ROOT directing to contents of ' ...
+    'https://github.com/gemini3d/gemini3d'])
 assert(~isempty(mat_root), ...
     ['Add environment variable GEMINI_MAT_ROOT directing to contents of ' ...
     'https://github.com/gemini3d/mat_gemini'])
@@ -28,85 +28,105 @@ assert(~isempty(jules_root), ...
     ['Add environment variable JULES_ROOT directing to contents of ' ...
     'https://github.com/julesvanirsel/thesis'])
 
-% setup for gemini matlab tools
-addpath(mat_root)
-addpath(scr_root)
-setup
-
-%% setup simulation
 if any(direc(end)=='/\')
     direc = direc(1:end-1);
 end
 [~,sim_name] = fileparts(direc);
-path = fullfile(sim_root,sim_name);
-if opts.do_setup
-    gemini3d.model.setup(path,path)
-end
+direc = fullfile(sim_root,sim_name); % make absolute path
 
-%% generate sbatch script
-gem_bin = fullfile(gem_root,'build','gemini.bin');
-fprintf('binary file: %s\n',gem_bin)
+script_fn = 'batch.script';
 batch_cmd = '#SBATCH';
 mpi_cmd = 'mpiexec';
-matlab_cmd = sprintf('jules.sim.process(''%s'')',path);
+gemini_bin = fullfile(gem_root,'build','gemini.bin');
+matlab_cmd = sprintf('jules.sim.process(''%s'')',direc);
 
-cfg = gemini3d.read.config(path);
-xg = gemini3d.read.grid(path);
-lx2 = xg.lx(2);
-lx3 = xg.lx(3);
-if all(mod([lx2,lx3],opts.num_cpus)==0)
-    num_cpus = opts.num_cpus;
-else
-    num_cpu_options = jules.tools.common_factors(xg.lx(2),xg.lx(3));
-    [~,num_cpu_id] = min(abs(num_cpu_options - opts.num_cpus));
-    num_cpus = num_cpu_options(num_cpu_id);
-    warning(['Cannot factor %i into both %i and %i. ' ...
-        'Using %i workers instead.'],opts.num_cpus,lx2,lx3,num_cpus)
+% check even division of cpus into horizontal cells
+grid_size_fn = fullfile(direc,'inputs','simsize.h5');
+lx1 = double(h5read(grid_size_fn,'/lx1'));
+lx2 = double(h5read(grid_size_fn,'/lx2'));
+lx3 = double(h5read(grid_size_fn,'/lx3'));
+total_cells = num2str(lx1 * lx2 * lx3);
+for p = 1:ceil(length(total_cells)/3)-1
+    total_cells = [total_cells(1:end-4*p+1),',',total_cells(end-4*p+2:end)];
 end
 
-for d = cfg.E0_dir%[cfg.prec_dir,cfg.E0_dir]
-    simsize_fn = fullfile(path,d,'simsize.h5');
-    llon = h5read(simsize_fn,'/llon');
-    llat = h5read(simsize_fn,'/llat');
-    if all([llon,llat] == [lx2,lx3])
-        fprintf('%s grid matches working grid size.\n',simsize_fn)
-        h5write(simsize_fn,'/llon',-1)
-        h5write(simsize_fn,'/llat',-1)
-    end
+% check even division of cpus/nodes into horizontal cells
+n_nodes = opts.num_nodes;
+cpus_per_node = opts.num_cpus_per_node;
+[n_nodes_x2,n_nodes_x3] = jules.tools.nearest_factors(n_nodes);
+[cpus_per_node_x2,cpus_per_node_x3] = jules.tools.nearest_factors(cpus_per_node);
+n_cells = lx2 * lx3;
+n_cpus = double(n_nodes * cpus_per_node);
+cells_per_cpu = n_cells / n_cpus;
+cells_per_node_x2 = lx2 / n_nodes_x2;
+cells_per_node_x3 = lx3 / n_nodes_x3;
+cells_per_cpu_x2 = cells_per_node_x2 / cpus_per_node_x2;
+cells_per_cpu_x3 = cells_per_node_x3 / cpus_per_node_x3;
+
+assert(round(cells_per_cpu) == cells_per_cpu, ...
+    'Number of cells (%i) do not divide evenly into number of cells (%i)', ...
+    n_cells, n_cpus)
+assert(round(cells_per_node_x2) == cells_per_node_x2, ...
+    'Cells in x2 (%i) does not divide into number of nodes in x2 (%i)', ...
+    lx2, n_nodes_x2)
+assert(round(cells_per_node_x3) == cells_per_node_x3, ...
+    'Cells in x3 (%i) does not divide into number of nodes in x3 (%i)', ...
+    lx3, n_nodes_x3)
+assert(round(cells_per_cpu_x2) == cells_per_cpu_x2, ...
+    'Cells in x2 (%i) does not divide into number of cpus in x2 (%i)', ...
+    cells_per_node_x2 * n_nodes_x2, cpus_per_node_x2 * n_nodes_x2)
+assert(round(cells_per_cpu_x3) == cells_per_cpu_x3, ...
+    'Cells in x3 (%i) does not divide into number of cpus in x3 (%i)', ...
+    cells_per_node_x3 * n_nodes_x3, cpus_per_node_x3 * n_nodes_x3)
+
+% check if input fields on gemini grid
+simsize_fn = fullfile(direc,'inputs','fields','simsize.h5');
+llon = h5read(simsize_fn,'/llon');
+llat = h5read(simsize_fn,'/llat');
+if all([llon,llat] == [lx2,lx3])
+    fprintf('%s grid matches working grid size.\n',simsize_fn)
+    h5write(simsize_fn,'/llon',-1)
+    h5write(simsize_fn,'/llat',-1)
 end
 
-script_fn = fullfile(path,'batch.script');
-fprintf('write sbatch script: %s\n',script_fn)
-fid = fopen(script_fn,'w');
+% write batch script
+fid = fopen(fullfile(direc,script_fn),'w');
 
-fprintf(fid,'#!/bin/bash\n\n');
+fprintf(fid,'#!/bin/bash\n');
 
-fprintf(fid,'# Job name\n');
-fprintf(fid,'%s -J %s\n\n',batch_cmd,sim_name);
+fprintf(fid,'\n# Command options:\n');
+fprintf(fid,'%s -J %s\n',batch_cmd,sim_name);
+fprintf(fid,'%s -o %s%s%%j.log\n',batch_cmd,direc,filesep);
+fprintf(fid,'%s -e %s%s%%j.err\n',batch_cmd,direc,filesep);
+fprintf(fid,'%s --mail-type=END,FAIL\n',batch_cmd);
+fprintf(fid,'%s --time=%i\n',batch_cmd,opts.max_hours*60);
+fprintf(fid,'%s --nodes=%i\n',batch_cmd,n_nodes);
+fprintf(fid,'%s --ntasks-per-node=%i\n',batch_cmd,cpus_per_node);
 
-fprintf(fid,'# Output file\n');
-fprintf(fid,'%s -o %s%s%%j.log\n\n',batch_cmd,path,filesep);
+fprintf(fid,'\n# CPU divisions:\n');
+for id = [1,fid]
+    fprintf(id,'# Number of cells = %i x %i x %i = %s\n', ...
+        lx1, lx2, lx3, total_cells);
+    fprintf(id,'# Number of CPUs = %i\n', n_cpus);
+    fprintf(id,'# Number of cells per cpu = %i\n', cells_per_cpu);
+    fprintf(id,'# Number of nodes in x2 = %i\n', n_nodes_x2);
+    fprintf(id,'# Number of nodes in x3 = %i\n', n_nodes_x3);
+    fprintf(id,'# Number of cells per node in x2 = %i\n', ...
+        cells_per_node_x2);
+    fprintf(id,'# Number of cells per node in x3 = %i\n', ...
+        cells_per_node_x3);
+    fprintf(id,'# Number of CPUs per node in x2 = %i\n', cpus_per_node_x2);
+    fprintf(id,'# Number of CPUs per node in x3 = %i\n', cpus_per_node_x3);
+    fprintf(id,'# Number of cells per CPU in x2 = %i\n', cells_per_cpu_x2);
+    fprintf(id,'# Number of cells per CPU in x3 = %i\n', cells_per_cpu_x3);
+end
 
-fprintf(fid,'# Error file\n');
-fprintf(fid,'%s -e %s%s%%j.err\n\n',batch_cmd,path,filesep);
-
-fprintf(fid,'# E-mail options\n');
-fprintf(fid,'%s --mail-type=END,FAIL\n\n',batch_cmd);
-
-fprintf(fid,'# Time limit (minutes)\n');
-fprintf(fid,'%s --time=%i\n\n',batch_cmd,opts.time_limit);
-
-fprintf(fid,'# Number of nodes\n');
-fprintf(fid,'%s --nodes=%i\n\n',batch_cmd,opts.num_nodes);
-
-fprintf(fid,'# Number of tasks per node\n');
-fprintf(fid,'%s --ntasks-per-node=%i\n\n',batch_cmd,num_cpus);
-
-fprintf(fid,'# Commands to run\n');
-fprintf(fid,'%s %s %s;\\\n',mpi_cmd,gem_bin,path);
+fprintf(fid,'\n# Commands to run\n');
+fprintf(fid,'%s %s %s;\\\n',mpi_cmd,gemini_bin,direc);
 fprintf(fid,['matlab -nodisplay -nodesktop -r' ...
-    ' "\\\naddpath(''%s'');\\\ninit;\\\n%s;\\\nexit\\\n"'], ...
-    jules_root,matlab_cmd);
+    ' "\\\naddpath(''%s'');\\\naddpath(''%s'');\\\naddpath(''%s'');' ...
+    '\\\n%s;\\\nexit\\\n"'], ...
+    jules_root,mat_root,scr_root,matlab_cmd);
 
 fclose(fid);
 end

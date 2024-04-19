@@ -56,6 +56,12 @@ git clone --recurse-submodules https://github.com/gemini3d/mat_gemini
 git clone --recurse-submodules https://github.com/gemini3d/mat_gemini-scripts
 ```
 
+## Mount LynchK to WSL (Ubuntu)
+```sh
+sudo apt install cifs-utils
+sudo mount -t cifs -o username=f123451,domain=KIEWIT.DARTMOUTH.EDU -o vers=3.0,file_mode=0660,dir_mode=0770,uid=julesvanirsel //dartfs-hpc.dartmouth.edu/rc/lab/L/LynchK /mnt/lynchk
+```
+
 ## How to run a Gemini simulation on Andes:
 1)  "mkdir LynchK/public_html/Gemini3D/\<SIMULATION NAME\>"
     -   Try and stick to a sensible simulation name such as \<function\>\_\<type\>\_\<descriptor\>\_\<version\>, e.g. aurora_sharc_wide_02

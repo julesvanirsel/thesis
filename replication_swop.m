@@ -1,4 +1,4 @@
-%% load simulation data - mar 19, 2023 - 8:23:44.2 UT
+%% load simulation data - mar 19, 2023 - 8:23:44.2 UT (30224.2 s)
 close all
 direc = '\\Dartfs-hpc\rc\lab\L\LynchK\public_html\Gemini3D\swop_03';
 cfg = gemini3d.read.config(direc);
