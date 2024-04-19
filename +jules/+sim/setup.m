@@ -1,6 +1,7 @@
-function setup(direc)
+function setup(direc,hpc)
 arguments
     direc (1,:) char {mustBeFolder}
+    hpc (1,1) string {mustBeMember(hpc,["hec","discovery"])}
 end
 potential_fn = fullfile(direc,'ext','potential.h5');
 if ~exist(potential_fn,'file')
@@ -13,5 +14,10 @@ assert(~isempty(mat_root), ...
 addpath(mat_root)
 jules.sim.run_ic(direc)
 gemini3d.model.setup(direc,direc)
-jules.sim.pbs(direc)
+if strcmp(hpc,"hec")
+    jules.sim.pbs(direc)
+elseif strcmp(hpc,"discovery")
+    jules.sim.slurm(direc)
+else
+    warning('HPC %s not found. No batch script made.',hpc)
 end
