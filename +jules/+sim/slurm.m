@@ -1,4 +1,4 @@
-function make_sbatch_script(direc,opts)
+function slurm(direc,opts)
 arguments
     direc (1,:) char {mustBeFolder}
     opts.num_cpus_per_node (1,1) int32 {mustBePositive} = 64
