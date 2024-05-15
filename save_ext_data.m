@@ -97,34 +97,34 @@ B.mflow_east = squeeze(mflow(1,ok,tid))'; % see Laundal & Richmond (2016), Eq. 5
 B.mflow_north = -squeeze(mflow(2,ok,tid))';
 
 %% save track file
-file = fullfile(direc,'ext','tracks.h5');
+file = fullfile(direc,'ext','tracks_pfisr-only3.h5');
 
-h5make(file,'/NumTracks',2,'Number of tracks',type='int16')
+h5make(file,'/NumTracks',1,'Number of tracks',type='int16')
 
 % track A
-h5make(file,'/A/Time/Year',year(A.times),'Year',type='int16')
-h5make(file,'/A/Time/DOY',day(A.times,'dayofyear'),'Day of year',type='int16')
-h5make(file,'/A/Time/Seconds',second(A.times,'secondofday'),'Seconds since midnight')
-h5make(file,'/A/Time/Unix',posixtime(A.times),'Unix time')
-
-h5make(file,'/A/Coordinates/Magnetic/Longitude',A.mlon,'Magnetic longitude' ...
-    ,units='Degrees east (0, 360)')
-h5make(file,'/A/Coordinates/Magnetic/Latitude',A.mlat,'Magnetic latitude' ...
-    ,units='Degrees north (-90, 90)')
-h5make(file,'/A/Coordinates/Geographic/Longitude',A.glon,'Geographic longitude' ...
-    ,units='Degrees east (0, 360)')
-h5make(file,'/A/Coordinates/Geographic/Latitude',A.glat,'Geographic latitude' ...
-    ,units='Degrees north (-90, 90)')
-h5make(file,'/A/Coordinates/Geographic/FootLongitude',A.glon_foot,'Footpointed geographic longitude' ...
-    ,units='Degrees east (0, 360)',foot_alt='110 km')
-h5make(file,'/A/Coordinates/Geographic/FootLatitude',A.glat_foot,'Footpointed geographic latitude' ...
-    ,units='Degrees north (-90, 90)',foot_alt='110 km')
-
-h5make(file,'/A/Flow/Magnetic/East',A.mflow_east,'Magnetic eastward plasma flow',units='Meters/second')
-h5make(file,'/A/Flow/Magnetic/North',A.mflow_north,'Magnetic northward plasma flow',units='Meters/second')
-h5make(file,'/A/Flow/Geographic/East',A.gflow_east,'Geographic eastward plasma flow',units='Meters/second')
-h5make(file,'/A/Flow/Geographic/North',A.gflow_north,'Geographic northward plasma flow',units='Meters/second')
-h5make(file,'/A/Current/FieldAligned',A.fac,'Field aligned current',units='Microamperes/meter^2')
+% h5make(file,'/A/Time/Year',year(A.times),'Year',type='int16')
+% h5make(file,'/A/Time/DOY',day(A.times,'dayofyear'),'Day of year',type='int16')
+% h5make(file,'/A/Time/Seconds',second(A.times,'secondofday'),'Seconds since midnight')
+% h5make(file,'/A/Time/Unix',posixtime(A.times),'Unix time')
+% 
+% h5make(file,'/A/Coordinates/Magnetic/Longitude',A.mlon,'Magnetic longitude' ...
+%     ,units='Degrees east (0, 360)')
+% h5make(file,'/A/Coordinates/Magnetic/Latitude',A.mlat,'Magnetic latitude' ...
+%     ,units='Degrees north (-90, 90)')
+% h5make(file,'/A/Coordinates/Geographic/Longitude',A.glon,'Geographic longitude' ...
+%     ,units='Degrees east (0, 360)')
+% h5make(file,'/A/Coordinates/Geographic/Latitude',A.glat,'Geographic latitude' ...
+%     ,units='Degrees north (-90, 90)')
+% h5make(file,'/A/Coordinates/Geographic/FootLongitude',A.glon_foot,'Footpointed geographic longitude' ...
+%     ,units='Degrees east (0, 360)',foot_alt='110 km')
+% h5make(file,'/A/Coordinates/Geographic/FootLatitude',A.glat_foot,'Footpointed geographic latitude' ...
+%     ,units='Degrees north (-90, 90)',foot_alt='110 km')
+% 
+% h5make(file,'/A/Flow/Magnetic/East',A.mflow_east,'Magnetic eastward plasma flow',units='Meters/second')
+% h5make(file,'/A/Flow/Magnetic/North',A.mflow_north,'Magnetic northward plasma flow',units='Meters/second')
+% h5make(file,'/A/Flow/Geographic/East',A.gflow_east,'Geographic eastward plasma flow',units='Meters/second')
+% h5make(file,'/A/Flow/Geographic/North',A.gflow_north,'Geographic northward plasma flow',units='Meters/second')
+% h5make(file,'/A/Current/FieldAligned',A.fac,'Field aligned current',units='Microamperes/meter^2')
 
 % track B
 h5make(file,'/B/Time/Year',year(B.time),'Year' ...
