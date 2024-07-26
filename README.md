@@ -17,7 +17,8 @@ sudo apt install build-essential # for c and c++ compiler: gcc and g++
 sudo apt install gcc gfortran # for fortran compiler: gfortran
 sudo apt install cmake # for cmake
 sudo apt install libopenmpi-dev openmpi-bin # for mpi commands: e.g. mpiexec
-sudo apt install libhdf5-dev # for h5c++, h5cc, and h5fc)
+sudo apt install libhdf5-dev # for h5c++, h5cc, and h5fc
+sudo apt-get install liblapack-dev # for lapack
 which gcc g++ gfortran cmake mpiexec h5c++ h5cc h5fc # make sure all of these commands exists
 ```
 
