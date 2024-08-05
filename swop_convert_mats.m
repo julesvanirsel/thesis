@@ -98,6 +98,7 @@ for f = mat_filenames
         clb = colorbar;
         colormap(gca,colorcet(char(c(3))))
         clb.Label.String = sprintf('%s nm @ %s',c(1),times(6));
+        shading flat
         clim(clims)
         xlim(xlims)
         ylim(ylims)
@@ -116,6 +117,7 @@ for f = mat_filenames
     clb = colorbar;
     colormap(gca,colorcet(char(c(3))))
     clb.Label.String = sprintf('%s nm @ %s',c(1),times(6));
+    shading flat
     clim(clims)
     xlim(xlims)
     ylim(ylims)
@@ -134,6 +136,7 @@ for f = mat_filenames
     clb = colorbar;
     colormap(gca,colorcet(char(c(3))))
     clb.Label.String = sprintf('%s nm @ %s',c(1),times(6));
+    shading flat
     clim(clims)
     xlim(xlims)
     ylim(ylims)
@@ -151,6 +154,7 @@ for f = mat_filenames
     clb = colorbar;
     colormap(gca,colorcet(char(c(3))))
     clb.Label.String = sprintf('%s nm @ %s',c(1),times(6));
+    shading flat
     clim(clims)
     xlim(xlims)
     ylim(ylims)
@@ -202,20 +206,20 @@ xlims = [min(asi_glon(:)),max(asi_glon(:))];
 ylims = [min(asi_glat(:)),max(asi_glat(:))];
 clear('magnetic_footpointing')
 
-ok_mats = repmat(' ',24,71);
+ok_mats = repmat(' ',24,73);
 i = 1;
 while ~feof(fid)
     l = fgetl(fid);
     ok_mats(i,:) = sprintf('%s',l);
     i = i+1;
 end
-[good_dates,sort_ids] = sort(datetime(ok_mats(:,50:end-2)));
+[good_dates,sort_ids] = sort(datetime(ok_mats(:,50:end-4)));
 ok_mats = ok_mats(sort_ids,:);
-good_ids = ok_mats(:,end) ~= '1';
+good_ids = ok_mats(:,end-2) == '3';
 ok_mats = string(ok_mats);
 good_mats = ok_mats(good_ids)';
 
-for f = good_mats(1)
+for f = good_mats
     f_data = strsplit(f,'\t');
     mat_file = char(f_data(1));
     time = datetime(f_data(2));
@@ -257,7 +261,11 @@ for f = good_mats(1)
 
     clims.g = [quantile(asi_frame.g(:),0.01),quantile(asi_frame.g(:),0.99)];
     tlims = track_times(track_ids([1,3]))+[-1,1]*seconds(1);
-    vlims = [-1,1]*2;
+    % vlims = [-1,1]*(2 + (quantile(abs(track_ve(track_ids[])),0.95)>2));
+    % vlims = [quantile(track_ve(track_ids(1):track_ids(3)),0.05) ...
+        % , quantile(track_ve(track_ids(1):track_ids(3)),0.95)]/1e3 + [-1,1]*0.5;
+    % vlims = [-1,1]*ceil(std(track_ve(track_ids(1):track_ids(3)))/1e3);
+    vlims = [-1,1]*3;
 
     time.Format = 'hh:mm:ss   MMM dd';
     sat = mat_file(22);
@@ -289,28 +297,14 @@ for f = good_mats(1)
     xlabel('Geo. lon.')
     ylabel('Geo. lat.')
     set(gca,'FontSize',15)
+    shading flat
 
-    nexttile(16,[1,5])
+    nexttile(16,[2,5])
     hold on
     plot(track_times,track_ve/1e3,'m','LineWidth',0.6)
     plot(track_times,track_vnh/1e3,'r','LineWidth',0.6)
     plot(track_times,track_vnv/1e3,'--r','LineWidth',0.6)
-    plot([track_times(track_ids(1)),track_times(track_ids(1))],[-1,1]*100,'--g')
-    plot([track_times(track_ids(2)),track_times(track_ids(2))],[-1,1]*100,'--w')
-    plot([track_times(track_ids(3)),track_times(track_ids(3))],[-1,1]*100,'--y')
-    xlim(tlims)
-    ylim(vlims)
-    grid on
-    xlabel('Swarm UT')
-    ylabel('Flow (km/s)')
-    set(gca,'FontSize',15,'Color',[1,1,1]*0,'GridColor','w','GridAlpha',0.6)
-    legend(["v_E","v_{NH}","v_{NV}"],'Color','w','Location','Eastoutside')
-
-
-    nexttile(21,[1,5])
-    hold on
     plot(track_times,track_fac,'c','LineWidth',0.6)
-    plot(track_times,track_ve/1e3,'m','LineWidth',0.6)
     plot([track_times(track_ids(1)),track_times(track_ids(1))],[-1,1]*100,'--g')
     plot([track_times(track_ids(2)),track_times(track_ids(2))],[-1,1]*100,'--w')
     plot([track_times(track_ids(3)),track_times(track_ids(3))],[-1,1]*100,'--y')
@@ -318,10 +312,24 @@ for f = good_mats(1)
     ylim(vlims)
     grid on
     xlabel('Swarm UT')
-    ylabel('FAC (uA/m^2)')
+    ylabel('km/s or uA/m^2')
     set(gca,'FontSize',15,'Color',[1,1,1]*0,'GridColor','w','GridAlpha',0.6)
-    legend(["FAC","v_E"],'Color','w','Location','Eastoutside')
+    legend(["v_E","v_{NH}","v_{NV}","FAC"],'Color','w','Location','Eastoutside')
 
+    % nexttile(21,[1,5])
+    % hold on
+    % plot(track_times,track_fac,'c','LineWidth',0.6)
+    % plot(track_times,track_ve/1e3,'m','LineWidth',0.6)
+    % plot([track_times(track_ids(1)),track_times(track_ids(1))],[-1,1]*100,'--g')
+    % plot([track_times(track_ids(2)),track_times(track_ids(2))],[-1,1]*100,'--w')
+    % plot([track_times(track_ids(3)),track_times(track_ids(3))],[-1,1]*100,'--y')
+    % xlim(tlims)
+    % ylim(vlims)
+    % grid on
+    % xlabel('Swarm UT')
+    % ylabel('FAC (uA/m^2)')
+    % set(gca,'FontSize',15,'Color',[1,1,1]*0,'GridColor','w','GridAlpha',0.6)
+    % legend(["FAC","v_E"],'Color','w','Location','Eastoutside')
     
     set(gcf, 'InvertHardCopy', 'off'); 
     time.Format = 'MMdd';
