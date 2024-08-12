@@ -19,6 +19,8 @@ if isfield(data,'x1')
     data_shrunk.glon = data.glon; % needed for load_conductance
     data_shrunk.h1 = data.h1; % needed for load_conductance
     data_shrunk.Bmag = data.Bmag;
+    data_shrunk.mlon = rad2deg(squeeze(data.phi(1,:,1)));
+    data_shrunk.mlat = 90-rad2deg(squeeze(data.theta(1,1,:)));
 elseif isfield(data,'Phitop')
     data_shrunk.J1 = data.J1;
     data_shrunk.J2 = data.J2;

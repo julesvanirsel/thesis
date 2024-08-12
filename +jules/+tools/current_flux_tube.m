@@ -17,6 +17,7 @@ arguments
     opts.split_factor (1,1) double {mustBePositive} = 10
     opts.outline_axis (1,1) int8 {mustBeMember(opts.outline_axis,[2,3])} = 3;
     opts.outline_res (1,1) int32 {mustBePositive} = 1;
+    opts.max_diff_factor (1,1) double {mustBePositive} = 10;
 end
 
 % unpack grid
@@ -42,8 +43,9 @@ dz = xg.dx1h(lbz:ubz)*scl.x;
 dA = dXm.*dYm;
 lz = length(z);
 
-gap_tolerance = min([dx;dy;dz]);
+gap_tolerance = double(min([dx;dy;dz]))*4;
 split_tube_tolerance = opts.split_factor*pi*r0*r1/opts.res;
+max_diff = gap_tolerance*opts.max_diff_factor;
 
 % unpack data
 jx = double(permute(dat.J2(lbz:ubz,lbx:ubx,lby:uby),[3,2,1]))/scl.x^2;
@@ -132,7 +134,7 @@ if split
 else
     if range(c1(:,3)) > min(dz)
         do_flux1 = false;
-        warning('Inaccurate outflux due to nonhorizontal start curve.')
+        warning('Inaccurate outflux due to nonhorizontal end curve.')
     end
 end
 
@@ -155,10 +157,14 @@ end
 flux0 = -dir*sum(squeeze(jz(:,:,end)).*dA.*in,'all');
 flux1 = dir*sum(squeeze(jz(:,:,end)).*dA.*out,'all');
 
+
+
 % generate outline and inline
 ax_id = opts.outline_axis;
 if ax_id == 3
-    ax = z;
+    max_outline_height = min([c0(:,3); c1_all(:,3)]);
+    [~,zid] = min(abs(z-max_outline_height));
+    ax = z(1:zid);
 else
     ax = y;
 end
@@ -186,7 +192,7 @@ for id = 1:lax-2
 end
 outline = outline(not(isnan(outline(:,1))),:);
 inline = inline(not(isnan(inline(:,1))),:);
-outline(vecnorm(diff(outline)') > 10) = nan;
+outline(vecnorm(diff(outline(:,2:3))') > max_diff) = nan;
 
 % generate tube
 tube.vertices = verts;

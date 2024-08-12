@@ -317,10 +317,14 @@ end
 
 %% unpack track(s)
 if isstruct(struct2array(track))
-    fprintf('Multiple tracks.\n')
     tracks = track;
     track_names = fieldnames(tracks);
     num_tracks = length(track_names);
+    if num_tracks == 1
+        track = tracks.(cell2mat(track_names(1)));
+    else
+        fprintf('Multiple tracks.\n')
+    end
 else
     num_tracks = 1;
 end
@@ -336,6 +340,9 @@ for track_id = 1:num_tracks
         track_name = cell2mat(track_names(track_id));
         track = tracks.(track_name);
         fprintf([pad(sprintf(' Current track = %s ',track_name),80,'both','-'),'\n'])
+        title_pfx = sprintf('Track %s: ',track_name);
+    else
+        title_pfx = '';
     end
 
     % assertions
@@ -514,7 +521,7 @@ for track_id = 1:num_tracks
         figure
         set(gcf,'PaperPosition',[0,0,13.2,5],'Position',ful) %2.4
         t = tiledlayout(1,2);
-        t.Title.String = sprintf('Track %s: Replication Subset',track_name);
+        t.Title.String = sprintf('%sReplication Subset',title_pfx);
         t.Title.FontSize = 1.5*fts;
         ltr = opts.starting_letter;
     
@@ -583,8 +590,8 @@ for track_id = 1:num_tracks
     if opts.show_plots
         figure
         set(gcf,'Position',ful)
-        t = tiledlayout(1,1);
-        t.Title.String = sprintf('Track %s: Plasma Flow Smoothing',track_name);
+        t = tiledlayout(1,1);            
+        t.Title.String = sprintf('%sPlasma Flow Smoothing',title_pfx);
         t.Title.FontSize = 1.5*fts;
     
         nexttile
@@ -615,7 +622,7 @@ for track_id = 1:num_tracks
     if opts.show_plots
         figure
         t = tiledlayout(1,1);
-        t.Title.String = sprintf('Track %s: Interpolated Flow',track_name);
+        t.Title.String = sprintf('%sInterpolated Flow',title_pfx);
         t.Title.FontSize = 1.5*fts;
         set(gcf,'Position',ful)
         vs = 2;
@@ -690,6 +697,8 @@ if num_tracks > 1
     v3_int_B = interpolations.(track_name_B).v3_int;
     v2_int = v2_int_A.*weight_A + v2_int_B.*weight_B;
     v3_int = v3_int_A.*weight_A + v3_int_B.*weight_B;
+else
+    weight_A = ones(size(X2));
 end
 
 E2_int =  v3_int*Bmag; % v = ExB/B^2
@@ -746,7 +755,7 @@ Edata = [E2_int(mask),E3_int(mask)];
 
 if opts.fit_harmonic
     fprintf('Fitting harmonic function.\n')
-    [phi,harm] = jules.tools.find_harmonic(phi0,xdata,Edata,xg);
+    [phi,~] = jules.tools.find_harmonic(phi0,xdata,Edata,xg);
 else
     [E2_0,E3_0] = gradient(-phi0,mean(dx2),mean(dx3));
     E_0 = mean([E2_0(:);E3_0(:)])-mean([E2_int(:),E3_int(:)]);

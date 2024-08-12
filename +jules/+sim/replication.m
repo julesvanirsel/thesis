@@ -23,9 +23,13 @@ image.hall = h5read(file_image,'/Derived/Conductance/Hall');
 
 %% tracks
 file_track = fullfile(direc,'tracks.h5');
-num_track = h5read(file_track,'/NumTracks');
+try
+    num_tracks = h5read(file_track,'/NumTracks');
+catch
+    num_tracks = 1;
+end
 
-for n = 1:num_track
+for n = 1:num_tracks
     ltr = char(64+n);
     tmp.pos(:,1) = h5read(file_track,['/',ltr,'/Coordinates/Magnetic/Longitude']);
     tmp.pos(:,2) = h5read(file_track,['/',ltr,'/Coordinates/Magnetic/Latitude']);
@@ -97,7 +101,7 @@ if happy
         ,units='Meters/second',size='lxp x lyp')
     h5make(file_phi,'/InterpolatedFlow/North',v3_int,'Magnetic northward interpolated flow' ...
         ,units='Meters/second',size='lxp x lyp')
-    for n = 1:num_track
+    for n = 1:num_tracks
         ltr = char(64+n);
         h5make(file_phi,['/Weights/',ltr],weight.(ltr),['Track ',ltr,' weight map'] ...
             ,size='lxp x lyp')
