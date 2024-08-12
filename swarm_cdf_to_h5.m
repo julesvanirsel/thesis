@@ -1,4 +1,4 @@
-direc = fullfile('data','swop','swarm_data');
+direc = fullfile('data','paper2','swarm_data');
 cdfs = {dir(fullfile(direc,'*.cdf')).name};
 
 for cdf = cdfs
@@ -36,8 +36,8 @@ for cdf = cdfs
             warning('%s in %s already exists',var(2:end),path_h5)
         end
 
-        if strcmp(var,'/Latitude'); lat_gc = data; end
-        if strcmp(var,'/Radius'); rad = data; end
+        if strcmp(var,'/Latitude'); lat_gc = double(data); end
+        if strcmp(var,'/Radius'); rad = double(data); end
     end
     
     global_atts = fieldnames(info.GlobalAttributes)';
@@ -46,12 +46,16 @@ for cdf = cdfs
     end
 
     [lat_gd,alt_gd] = geoc2geod(lat_gc,rad);
-    h5create(path_h5,'/GeodeticLatitude',size(lat_gd),'Datatype','double')
-    h5write(path_h5,'/GeodeticLatitude',lat_gd)
-    h5writeatt(path_h5,'/GeodeticLatitude','Units','degrees')
-    h5writeatt(path_h5,'/GeodeticLatitude','Description','Geodetic Latitude.')
-    h5create(path_h5,'/GeodeticAltitude',size(alt_gd),'Datatype','double')
-    h5write(path_h5,'/GeodeticAltitude',alt_gd)
-    h5writeatt(path_h5,'/GeodeticAltitude','Units','m')
-    h5writeatt(path_h5,'/GeodeticAltitude','Description','Geodetic Altitude.')
+    try
+        h5create(path_h5,'/GeodeticLatitude',size(lat_gd),'Datatype','double')
+        h5write(path_h5,'/GeodeticLatitude',lat_gd)
+        h5writeatt(path_h5,'/GeodeticLatitude','Units','degrees')
+        h5writeatt(path_h5,'/GeodeticLatitude','Description','Geodetic Latitude.')
+        h5create(path_h5,'/GeodeticAltitude',size(alt_gd),'Datatype','double')
+        h5write(path_h5,'/GeodeticAltitude',alt_gd)
+        h5writeatt(path_h5,'/GeodeticAltitude','Units','m')
+        h5writeatt(path_h5,'/GeodeticAltitude','Description','Geodetic Altitude.')
+    catch
+        warning('Geodetic data already exists.')
+    end
 end
