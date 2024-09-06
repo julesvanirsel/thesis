@@ -2,12 +2,12 @@
 Ph. D. thesis work
 
 ## How to install inversion infrastructure
-Create a new environment
+Create a new Conda yenvironment
 ```sh
 conda create --name "asi" python=3.10
 ```
 
-Install 
+Install ASI Spectral Inversion
 ```sh
 conda activate asi
 pip install scipy apexpy glob2 scikit-image matplotlib h5py
