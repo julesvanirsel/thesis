@@ -10,7 +10,7 @@ conda create --name "asi" python=3.10
 Install ASI Spectral Inversion
 ```sh
 conda activate asi
-pip install scipy apexpy glob2 scikit-image matplotlib h5py
+pip install numpy~=1.0 scipy apexpy glob2 scikit-image matplotlib h5py
 git clone https://github.com/almule12/asispectralinversion.git
 pip install asispectralinversion/src/
 ```
