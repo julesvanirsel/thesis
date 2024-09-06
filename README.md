@@ -1,6 +1,20 @@
 # thesis
 Ph. D. thesis work
 
+## How to install inversion infrastructure
+Create a new environment
+```sh
+conda create --name "asi" python=3.10
+```
+
+Install 
+```sh
+conda activate asi
+pip install scipy apexpy glob2 scikit-image matplotlib h5py
+git clone https://github.com/almule12/asispectralinversion.git
+pip install asispectralinversion/src/
+```
+
 ## How to install GEMINI on WSL
 ### Install WSL distribution
 1)  From Windows Powershell:
@@ -176,15 +190,19 @@ sudo mount -t cifs -o username=f123451,domain=KIEWIT.DARTMOUTH.EDU -o vers=3.0,f
 - ap_cad3 = 1
 
 ## How to make an ssh key on andes
-1)  ssh-keygen -t ed25519 -C "your_email@example.com"
-2)  eval "$(ssh-agent -s)"
-3)  ssh-add ~/.ssh/id_ed25519
-4)  clip < ~/.ssh/id_ed25519.pub
-5)  in github.com/julesvanirsel go to
-    -   settings
-    -   SSH and GPG keys
-    -   New SSH key
-    enter a Title and paste the key
-6)  git remote set-url origin git@github.com:julesvanirsel/thesis.git
-7)  git config --global user.name "your_username"
-8)  git config --global user.email "your_email_address@example.com"
+```sh
+ssh-keygen -t ed25519 -C "your_email@example.com"
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+clip < ~/.ssh/id_ed25519.pub
+```
+in github.com/julesvanirsel go to
+  -   settings
+  -   SSH and GPG keys
+  -   New SSH key
+enter a Title and paste the key
+```sh
+git remote set-url origin git@github.com:julesvanirsel/thesis.git
+git config --global user.name "your_username"
+git config --global user.email "your_email_address@example.com"
+```
