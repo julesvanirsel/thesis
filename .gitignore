@@ -8,3 +8,9 @@
 *.mp4
 **\data\
 **/data/
+**\glow\
+**/glow/
+**\asispectralinversion\
+**/asispectralinversion/
+**\asispectralinversion_fork\
+**/asispectralinversion_fork/

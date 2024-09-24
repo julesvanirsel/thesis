@@ -2,21 +2,38 @@ direc = fullfile('data','paper2','swarm_data');
 cdfs = {dir(fullfile(direc,'*.cdf')).name};
 
 for cdf = cdfs
-    path = fullfile(direc,cdf{1});
-    path_h5 = [path(1:end-3),'h5'];
-    [all_data, info] = cdfread(path,'DatetimeType','datetime'); 
+    if contains(cdf,'EFI')
+        is_efi = true;
+    elseif contains(cdf,'FAC')
+        is_efi = false;
+    else
+        warning('Skipped %s',cdf{1})
+    end
+    path_cdf = fullfile(direc,cdf{1});
+    path_h5 = [path_cdf(1:end-3),'h5'];
+    [all_data, info] = cdfread(path_cdf,'DatetimeType','datetime'); 
     vars = info.Variables(:,1);
     units = info.VariableAttributes.UNITS(:,2);
-    types = info.VariableAttributes.Type(:,2);
-    descs = info.VariableAttributes.CATDESC(:,2);
+    if is_efi
+        types = info.VariableAttributes.Type(:,2);
+        descs = info.VariableAttributes.CATDESC(:,2);
+    else
+        descs = info.VariableAttributes.DESCRIPTION(:,2);
+    end
 
     for i = 1:length(vars)
         data = [all_data{:,i}];
         var = ['/',vars{i}];
         unit = units{i};
         desc = descs{i};
-        type = types{i};
-        type = lower(type(5:end));
+        if is_efi
+            type = types{i};
+            type = lower(type(5:end));
+        elseif isdatetime(data)
+            type = 'epoch';
+        else
+            type = 'float';
+        end
         if strcmp(type,'float')
             type = 'double';
         elseif strcmp(type(2:end-1),"int")
