@@ -10,7 +10,11 @@
 **/data/
 **\glow\
 **/glow/
+**\glow_legacy\
+**/glow_legacy/
 **\asispectralinversion\
 **/asispectralinversion/
 **\asispectralinversion_fork\
 **/asispectralinversion_fork/
+**/old/
+**\old\

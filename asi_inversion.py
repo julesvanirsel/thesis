@@ -1,64 +1,96 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from asispectralinversion import preprocessing, inversion
 import apexpy
 from datetime import datetime, timedelta, timezone
+from time import time
 import os
-import requests
+from requests import get as requests_get
 import imageio.v3 as iio
-import h5py
+from h5py import File as h5py_File
+# import matplotlib.pyplot as plt
 
 
-def main(direc, date, grid_size_lat, grid_size_lon, num_coadd=3, time_window=15, num_shifts=30, background_method='patches', debug=False, dec = 2):
+def main(direc, date, grid_size_lat, grid_size_lon,
+         is_acc=False, num_coadd=3, time_window=15, num_shifts=30,
+         background_method='patches', debug=False, dec = 2, generous=True):
 
     # init
     if date.tzinfo == None:
         raise Exception('Date requires timezone. E.g. date = datetime(..., tzinfo=timezone.utc).')
     direc = make_valid_path(direc)
     A = apexpy.Apex(date=date)
+    print('\n{:*^89}\n'.format(date.strftime(' %Y-%m-%d %H:%M:%S UT ')))
+    if is_acc:
+        print('USING ACCELERATED MAXWELLIAN SPECTRA')
 
     # load skymap
-    print_progress('LOADING SKYMAP')
+    t0 = print_progress('LOADING SKYMAP')
     skymap_red, skymap_grn, skymap_blu, site_lat, site_lon, site_alt = load_skymap(direc)
     site_mag_lat, _ = A.convert(site_lat, site_lon, 'geo', 'apex', height=site_alt)
-    print('DONE')
+    print_done(t0)
 
     # load glow inversion lookup tables
-    print_progress('LOADING INVERSION LOOKUP TABLES')
-    glow_path = os.path.join(direc, 'glow', date.strftime('%y%j_') + str(sod(date))) + os.sep
-    if debug:
-        print('\nGLOW PATH = {}'.format(glow_path))
+    t0 = print_progress('LOADING INVERSION LOOKUP TABLES')
+    if is_acc:
+        glow_path = os.path.join(direc, 'glow', date.strftime('%y%j_') + str(sod(date)) + '_acc') + os.sep
+        for f in os.listdir(glow_path):
+            if '_acc' in f:
+                glow_input_path = os.path.join(glow_path, f)
+        with open(os.path.join(glow_path, glow_input_path), 'r') as f:
+            glow_input_data = f.readline().split()
+            source_thermal_energy = float(glow_input_data[9])
+    else:
+        glow_path = os.path.join(direc, 'glow', date.strftime('%y%j_') + str(sod(date))) + os.sep
+        source_thermal_energy = -1.0
     invert_table = inversion.load_lookup_tables_directory(glow_path, site_mag_lat)
-    print('DONE')
+    print_done(t0)
+    print('GLOW PATH: {}'.format(glow_path))
 
     # download imagery
     img_times = download_imagery(direc, date, time_window)
 
     # coadd images
-    print_progress('COADDING IMAGERY')
+    t0 = print_progress('COADDING IMAGERY')
     coadd_times_red, time_red = get_coadd_times(date, img_times['630'], num_coadd)
     coadd_times_grn, time_grn = get_coadd_times(date, img_times['558'], num_coadd)
     coadd_times_blu, time_blu = get_coadd_times(date, img_times['428'], num_coadd)
     img_red = load_image(direc, coadd_times_red, 630)
     img_grn = load_image(direc, coadd_times_grn, 558)
     img_blu = load_image(direc, coadd_times_blu, 428)
-    print('DONE')
+    print_done(t0)
+
+    # dark frame subtraction
+    t0 = print_progress('SUBTRACTING DARK FRAMES')
+    # plt.pcolormesh(img_blu, vmin=np.quantile(img_blu, 0.01), vmax=np.quantile(img_blu, 0.99))
+    # plt.savefig('test1.png')
+    darkframe_red = iio.imread(os.path.join(direc, 'biasframes', 'red_bias_processed.png')).astype('float') / 10
+    darkframe_grn = iio.imread(os.path.join(direc, 'biasframes', 'green_bias_processed.png')).astype('float') / 10
+    darkframe_blu = iio.imread(os.path.join(direc, 'biasframes', 'blue_bias_processed.png')).astype('float') / 10
+    darkframe_red -= np.mean(darkframe_red)
+    darkframe_grn -= np.mean(darkframe_grn)
+    darkframe_blu -= np.mean(darkframe_blu)
+    img_red -= darkframe_red
+    img_grn -= darkframe_grn
+    img_blu -= darkframe_blu
+    # plt.pcolormesh(img_blu, vmin=np.quantile(img_blu, 0.01), vmax=np.quantile(img_blu, 0.99))
+    # plt.savefig('test2.png')
+    print_done(t0)
 
     # choose inversion grid
-    lims_lat, lims_lon = A.convert(
-        [np.nanmin(skymap_blu[0]), np.nanmax(skymap_blu[0])], [np.nanmin(skymap_blu[1]), np.nanmax(skymap_blu[1])], 'geo', 'apex', height=110)
-    interp_lat = np.linspace(lims_lat[0], lims_lat[1], grid_size_lat*dec)
-    interp_lon = np.linspace(lims_lon[0], lims_lon[1], grid_size_lon*dec)
+    lims_mlat, lims_mlon = A.convert(
+        [np.nanmin(skymap_red[0]), np.nanmax(skymap_red[0])], [np.nanmin(skymap_red[1]), np.nanmax(skymap_red[1])], 'geo', 'apex', height=110)
+    interp_lat = np.linspace(lims_mlat[0], lims_mlat[1], grid_size_lat*dec)
+    interp_lon = np.linspace(lims_mlon[0], lims_mlon[1], grid_size_lon*dec)
 
     # wavelet denoise the images
-    print_progress('WAVELET DENOISING')
+    t0 = print_progress('WAVELET DENOISING')
     img_denoise_red, _, geod_lon, geod_lat, _, _, bg_red, sigma_red = preprocessing.wavelet_denoise_resample(
         img_red, date, skymap_red[1], skymap_red[0], interp_lon, interp_lat, 110, nshifts=num_shifts, background_method=background_method)
     img_denoise_grn, _, _, _, _, _, bg_grn, sigma_grn = preprocessing.wavelet_denoise_resample(
         img_grn, date, skymap_grn[1], skymap_grn[0], interp_lon, interp_lat, 110, nshifts=num_shifts, background_method=background_method)
     img_denoise_blu, _, _, _, _, _, bg_blu, sigma_blu = preprocessing.wavelet_denoise_resample(
         img_blu, date, skymap_blu[1], skymap_blu[0], interp_lon, interp_lat, 110, nshifts=num_shifts, background_method=background_method)
-    print('DONE')
+    print_done(t0)
 
     # convert to raylaighs
     ray_red, ray_grn, ray_blu = preprocessing.to_rayleighs(img_denoise_red, img_denoise_grn, img_denoise_blu, bg_red, bg_grn, bg_blu)
@@ -75,8 +107,8 @@ def main(direc, date, grid_size_lat, grid_size_lon, num_coadd=3, time_window=15,
     ray_blu[nan_ids] = np.nan
 
     # decimate down to final size
-    geod_lat= geod_lat[::dec, ::dec]
-    geod_lon= geod_lon[::dec, ::dec]
+    geod_lat = geod_lat[::dec, ::dec]
+    geod_lon = geod_lon[::dec, ::dec]
     ray_red_dec = ray_red[::dec, ::dec]
     ray_grn_dec = ray_grn[::dec, ::dec]
     ray_blu_dec = ray_blu[::dec, ::dec]
@@ -85,16 +117,21 @@ def main(direc, date, grid_size_lat, grid_size_lon, num_coadd=3, time_window=15,
     img_denoise_blu = img_denoise_blu[::dec, ::dec]
 
     # invert imagery
-    print_progress('INVERTING IMAGERY')
-    Q, E0, Q_bound_lo, Q_bound_hi, E0_bound_lo, E0_bound_hi = inversion.calculate_E0_Q_v2(ray_red_dec, ray_grn_dec, ray_blu_dec, invert_table, minE0=150, generous=False)
-    SigP, SigH = inversion.calculate_Sig(Q, E0, invert_table, generous=False)
-    print('DONE')
+    t0 = print_progress('INVERTING IMAGERY')
+    Q, E0, Q_bound_lo, Q_bound_hi, E0_bound_lo, E0_bound_hi = inversion.calculate_E0_Q_v2(ray_red_dec, ray_grn_dec, ray_blu_dec, invert_table, minE0=150, generous=generous)
+    SigP, SigH = inversion.calculate_Sig(Q, E0, invert_table, generous=generous)
+    print_done(t0)
 
     # saving inversions
-    print_progress('SAVING INVERSION DATA')
     optical_times = [time_red.timestamp(), time_grn.timestamp(), time_blu.timestamp()]
     optical_coadd_times = [[t.timestamp() for t in coadd_times_red], [t.timestamp() for t in coadd_times_grn], [t.timestamp() for t in coadd_times_blu]]
-    h5f_out = h5py.File(os.path.join(direc, 'INV_PKR_' + date.strftime('%Y%m%d_') + str(sod(date)) + '.h5'), 'w')
+    h5f_path = os.path.join(direc, 'INV_PKR_' + date.strftime('%Y%m%d_') + str(sod(date)) + '.h5')
+    if is_acc:
+        h5f_path = h5f_path[:-3] + '_ACC.h5'
+    h5f_out = h5py_File(h5f_path, 'w')
+    print('FILE PATH: {}'.format(h5f_path))
+
+    t0 = print_progress('SAVING INVERSION DATA')
 
     h5f_out['/'].attrs['GLOBAL DATUM'] = 'WGS84'
     h5f_out['/'].attrs['APEX VERSION'] = apexpy.__version__
@@ -108,6 +145,7 @@ def main(direc, date, grid_size_lat, grid_size_lon, num_coadd=3, time_window=15,
     h5f_out['/'].attrs['Nxi'] = 'Number of image pixels approximately nothward'
     h5f_out['/'].attrs['Nyi'] = 'Number of image pixels approximately nothward'
     h5f_out['/'].attrs['Nc'] = 'Number of coadds'
+    h5f_out['/'].attrs['SOURCE REGION THERMAL ENERGY'] = str(source_thermal_energy) + ' eV'
 
     h5_write(h5f_out, 'Coordinates/Latitude', geod_lat, 'float64', 'degrees north', 'Geodetic latitude', 'Nx x Ny')
     h5_write(h5f_out, 'Coordinates/Longitude', np.mod(geod_lon, 360), 'float64', 'degrees east', 'Geodetic longitude', 'Nx x Ny')
@@ -138,6 +176,7 @@ def main(direc, date, grid_size_lat, grid_size_lon, num_coadd=3, time_window=15,
     h5_write(h5f_out, 'Optical/Preprocessing/Coadded', [img_red, img_grn, img_blu], 'float64', 'counts', 'Coadded images', '3 (red, green, blue) x Nxi x Nyi')
     h5_write(h5f_out, 'Optical/Preprocessing/CoaddTimes', optical_coadd_times, 'float64', 'seconds', 'Unix times of coadded images', '3 (red, green, blue) x Nc')
     h5_write(h5f_out, 'Optical/Preprocessing/Denoised', [img_denoise_red, img_denoise_grn, img_denoise_blu], 'float64', 'counts', 'Denoised images', '3 (red, green, blue) x Nx x Ny')
+    h5_write(h5f_out, 'Optical/Preprocessing/Darkframes', [darkframe_red, darkframe_grn, darkframe_blu], 'float64', 'counts', 'Subtracted dark frames', '3 (red, green, blue) x Nx x Ny')
     h5_write(h5f_out, 'Optical/Preprocessing/Sigma', [sigma_red, sigma_grn, sigma_blu], 'float64', 'counts', 'Gaussian standard deviations of images backgrounds', '3 (red, green, blue)')
     h5_write(h5f_out, 'Optical/Preprocessing/Background', [bg_red, bg_grn, bg_blu], 'float64', 'counts', 'Background values used in denoising', '3 (red, green, blue)')
 
@@ -146,7 +185,7 @@ def main(direc, date, grid_size_lat, grid_size_lon, num_coadd=3, time_window=15,
     h5_write(h5f_out, 'Site/Altitude', site_alt, 'float64', 'meters', 'Geodetic altitude of site', 'Scalar')
     h5_write(h5f_out, 'Site/MagneticLatitude', site_mag_lat, 'float64', 'degrees north', 'Apex magnetic latitude of site', 'Scalar')
 
-    print('DONE')
+    print_done(t0)
 
 
 def get_coadd_times(date, times, num):
@@ -172,6 +211,7 @@ def get_coadd_times(date, times, num):
 
 
 def download_imagery(direc, date, window, debug=False):
+    t0 = time()
     dasc_root = 'http://optics.gi.alaska.edu/amisr_archive/PKR/DASC/PNG/'
     times = {'428':[], '558':[], '630':[]}
     tot = (window*2 + 1)*3
@@ -186,10 +226,10 @@ def download_imagery(direc, date, window, debug=False):
             if os.path.exists(out_path):
                 pct += 1
                 if not(debug):
-                    load_bar('DOWNLOADING IMAGERY', pct, tot)
+                    load_bar('DOWNLOADING IMAGERY', pct, tot, t0)
                 times[str(c)].append(t)
                 continue
-            image = requests.get(url + filename)
+            image = requests_get(url + filename)
             if image.status_code == 200:
                 times[str(c)].append(t)
                 with open(out_path, 'wb') as handler:
@@ -200,8 +240,7 @@ def download_imagery(direc, date, window, debug=False):
                 print('\nREQUEST RETURNED STATUS CODE ' + str(image.status_code) + '.')
             pct += 1
             if not(debug):
-                load_bar('DOWNLOADING IMAGERY', pct, tot)
-    print('DONE')
+                load_bar('DOWNLOADING IMAGERY', pct, tot, t0)
     return times
 
 
@@ -217,11 +256,11 @@ def load_image(direc, times, color):
             img_avg = img_now
         img_prv = img_avg
         n += 1
-    return img_avg
+    return np.transpose(img_avg)
 
 
 def load_skymap(direc, debug=False):
-    h5f = h5py.File(os.path.join(direc, 'imagery', 'skymap.h5'), 'r')
+    h5f = h5py_File(os.path.join(direc, 'imagery', 'skymap.h5'), 'r')
     site_lat = h5f['Site/Latitude'][0]
     site_lon = h5f['Site/Longitude'][0]
     site_alt = h5f['Site/Altitude'][0] / 1e3
@@ -270,13 +309,21 @@ def h5_write(file, name, data, type, units, description, size):
     ds.attrs['SIZE'] = size
 
 
-def load_bar(msg, pct, tot, wdth=75):
+def load_bar(msg, pct, tot, t, wdth=75):
     print((msg + ': ' + '.' * round((wdth - len(msg) - 2) * pct / tot)).ljust(wdth), end=' ', flush=True)
-    print('{} / {} ({:.0f}%)'.format(pct, tot, 100 * pct / tot) + '\r', end='')
+    if pct != tot:
+        print('{} / {} ({:.0f}%)'.format(pct, tot, 100 * pct / tot) + '\r', end='')
+    else:
+        print('DONE ({:.2f} s)'.format(time() - t))
 
 
 def print_progress(name, wdth=75):
-    print((name + ' ').ljust(wdth, '.'), end=' ', flush=True)  
+    print((name + ': ').ljust(wdth, '.'), end=' ', flush=True)
+    return time()
+
+
+def print_done(t):
+    print('DONE ({:.2f} s)'.format(time() - t))
 
 
 def doy(date):
@@ -293,8 +340,14 @@ if __name__ == '__main__':
     grid_size_lon = 512
     with open(os.path.join('data', 'paper2', 'event_data.txt'), 'r') as f:
         lines = f.readlines()
-        for l in lines[1:2]:
-            date_str = l.split()[1].replace('Z','+0000')
-            date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z')
-            print(date)
-            main(direc, date, grid_size_lat, grid_size_lon)
+        done_dates = ['']*(len(lines)-1)
+        for i in range(len(lines)-1):
+            for do_acc in [True]:
+                l = lines[i+1]
+                date_str = l.split()[1].replace('Z','+0000')
+                if date_str in done_dates:
+                    continue
+                else:
+                    done_dates[i] = date_str
+                date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S%z')
+                main(direc, date, grid_size_lat, grid_size_lon, is_acc=do_acc)
