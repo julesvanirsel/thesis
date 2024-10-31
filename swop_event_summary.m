@@ -1,18 +1,35 @@
 % user input
 direc = fullfile('data', 'paper2');
-reload = true; % reload grid
-always_reload = false;
-smooth_distance = 10000e3; % meters
-max_v = 5e3; % meters / second
+reload = false; % reload grid
+plot_bad_data = true;
+save_plot = true;
+
+from_inverions = true;
+subtract_background_flow = false;
+skip_along_track = false;
+do_ephem_fix = true;
+is_acc = true;
+sfx = strrep(num2str([from_inverions, subtract_background_flow, ...
+    skip_along_track, do_ephem_fix, is_acc]), ' ', '');
+
+smooth_distance = 1000e3; % meters
+max_v = 4e3; % meters / second
 max_dt = 5; % seconds
 win = 20; % seconds
 outlier_window = 20; % seconds
 grd.cell_size = [320, 448];
 tdur = 60; % seconds
 vvels_cad = 5; % minutes
-events = 2;
-save_plot = false;
-clrs = dictionary(["red", "grn", "blu"], [630, 558, 428]);
+events = 2;%1:11;
+
+clrs = dictionary(["red", "gre", "blu"], [630, 558, 428]);
+
+%#ok<*UNRCH>
+
+always_reload = false;
+if length(events) > 1
+    always_reload = true;
+end
 
 %% plotting parameters
 colorcet = @jules.tools.colorcet;
@@ -55,26 +72,34 @@ while ~feof(fid)
     grd.cfgs{i}.x3parms = str2double(strsplit(tmp{9}, ','));
     arcs{i} = tmp{10};
     sigs{i} = str2double(strsplit(tmp{11}, ','));
-    vbgs{i} = str2double(strsplit(tmp{12}, ','));
+    if subtract_background_flow
+        vbgs{i} = str2double(strsplit(tmp{12}, ','));
+    else
+        vbgs{i} = [0,0];
+    end
     i = i+1;
 end
 fclose(fid);
 
 % load skymaps
-dasc.maph5 = fullfile(direc, 'dasc_data', 'imagery', 'skymap.h5');
-tmp_glat = h5read(dasc.maph5, '/Footpointing/Apex/Latitude');
-tmp_glon = h5read(dasc.maph5, '/Footpointing/Apex/Longitude');
-dasc.glat.red = tmp_glat(1:end-1, :, 3);
-dasc.glat.grn = tmp_glat(1:end-1, :, 2);
-dasc.glat.blu = tmp_glat(1:end-1, :, 1);
-dasc.glat.con = nan(grd.cell_size);
-dasc.glon.red = tmp_glon(1:end-1, :, 3);
-dasc.glon.grn = tmp_glon(1:end-1, :, 2);
-dasc.glon.blu = tmp_glon(1:end-1, :, 1);
-dasc.glon.con = nan(grd.cell_size);
+if not(from_inverions)
+    dasc.maph5 = fullfile(direc, 'dasc_data', 'imagery', 'skymap.h5');
+    tmp_glat = h5read(dasc.maph5, '/Footpointing/Apex/Latitude');
+    tmp_glon = h5read(dasc.maph5, '/Footpointing/Apex/Longitude');
+    dasc.glat.red = tmp_glat(1:end-1, :, 3);
+    dasc.glat.gre = tmp_glat(1:end-1, :, 2);
+    dasc.glat.blu = tmp_glat(1:end-1, :, 1);
+    dasc.glat.con = nan(grd.cell_size);
+    dasc.glon.red = tmp_glon(1:end-1, :, 3);
+    dasc.glon.gre = tmp_glon(1:end-1, :, 2);
+    dasc.glon.blu = tmp_glon(1:end-1, :, 1);
+    dasc.glon.con = nan(grd.cell_size);
+end
 
 % main
 for i = events
+    % input('Press any key to continue ...')
+
     time = times{i};
     sat = sats{i};
     vbg = vbgs{i}*scl.v;
@@ -85,11 +110,11 @@ for i = events
     time.Format = 'uuuuMMdd';
     for pid = 1:99
         try
-            pfisr.fn = dir(fullfile(direc, 'pfisr_data', sprintf('%s.%03i_lp_%imin*lat.h5', time, pid, vvels_cad))).name;
+            pfisr.h5 = dir(fullfile(direc, 'pfisr_data', sprintf('%s.%03i_lp_%imin*lat.h5', time, pid, vvels_cad))).name;
         catch
             continue
         end
-        pfisr.h5 = fullfile(direc, 'pfisr_data', pfisr.fn);
+        pfisr.h5 = fullfile(direc, 'pfisr_data', pfisr.h5);
         pfisr.time = mean(datetime(h5read(pfisr.h5, '/Time/UnixTime'), 'ConvertFrom', 'posixtime'));
         [~, pfisr.id] = min(abs(pfisr.time - time));
         pfisr.time = pfisr.time(pfisr.id);
@@ -98,75 +123,116 @@ for i = events
             break
         end
     end
+    pfisr.alt = h5read(pfisr.h5, '/VvelsGeoCoords/Altitude');
+    [~, pfisr.alt_id] = min(abs(pfisr.alt(1, :) - 110));
     pfisr.glat = h5read(pfisr.h5, '/VvelsGeoCoords/Latitude');
     pfisr.glon = h5read(pfisr.h5, '/VvelsGeoCoords/Longitude') + 360;
-    pfisr.glat = pfisr.glat(:, end)';
-    pfisr.glon = pfisr.glon(:, end)';
+    pfisr.glat = pfisr.glat(:, pfisr.alt_id)';
+    pfisr.glon = pfisr.glon(:, pfisr.alt_id)';
     pfisr.vvels = h5read(pfisr.h5, '/VvelsGeoCoords/Velocity');
-    pfisr.ve = squeeze(pfisr.vvels(1, :, end, pfisr.id))*scl.v - vbg(1);
-    pfisr.vn = squeeze(pfisr.vvels(2, :, end, pfisr.id))*scl.v + vbg(2);
+    pfisr.ve = squeeze(pfisr.vvels(1, :, pfisr.alt_id, pfisr.id))*scl.v - vbg(1);
+    pfisr.vn = squeeze(pfisr.vvels(2, :, pfisr.alt_id, pfisr.id))*scl.v + vbg(2);
     pfisr.bad = vecnorm([pfisr.ve; pfisr.vn]) > max_v*scl.v; % large flows
     pfisr.ve(pfisr.bad) = nan;
     pfisr.glat_removed = pfisr.glat;
     pfisr.glat_removed(not(pfisr.bad)) = nan;
 
     % gather dasc data
-    imgs_root = fullfile(direc, 'dasc_data', 'imagery', string(time));
-    for c = ["red", "grn", "blu"]
-        tmp_imgs = {dir(fullfile(imgs_root, ['*', num2str(clrs(c)), '.png'])).name};
-        tmp_times = NaT(1, length(tmp_imgs));
-        for j = 1:length(tmp_imgs)
-            tmp = strsplit(tmp_imgs{j}, '_');
-            tmp_times(j) = datetime([tmp{2}, tmp{3}], 'InputFormat', 'uuuuMMddHHmmss');
+    if from_inverions
+        if is_acc
+            dasc.h5 = fullfile(direc, 'dasc_data', sprintf('INV_PKR_%s_%i_ACC.h5', time, second(time, 'secondofday')));
+        else
+            dasc.h5 = fullfile(direc, 'dasc_data', sprintf('INV_PKR_%s_%i.h5', time, second(time, 'secondofday')));
         end
-        [~, dasc.id.(c)] = min(abs(tmp_times - time));
-        dasc.(c) = imread(fullfile(imgs_root, tmp_imgs{dasc.id.(c)}));
-        dasc.time.(c) = tmp_times(dasc.id.(c));
-        dasc.dt.(c) = dasc.time.(c) - time;
-        dasc.imgs.(c) = tmp_imgs{dasc.id.(c)};
+        dasc.time.con = datetime(h5read(dasc.h5, '/Time/Unix'), 'ConvertFrom', 'posixtime');
+        dasc.dt.con = dasc.time.con - time;
+        dasc.glat.con = h5read(dasc.h5, '/Coordinates/Latitude');
+        dasc.glon.con = h5read(dasc.h5, '/Coordinates/Longitude');
+        dasc.SIGP = h5read(dasc.h5, '/Derived/Conductance/Pedersen');
+        dasc.SIGH = h5read(dasc.h5, '/Derived/Conductance/Hall');
+        tmp_times = datetime(h5read(dasc.h5, '/Optical/Times'), 'ConvertFrom', 'posixtime');
+        j = 1;
+        for cl = ["Red", "Green", "Blue"]
+            c = char(cl); c = string(lower(c(1:3)));
+            dasc.time.(c) = tmp_times(j);
+            dasc.dt.(c) = dasc.time.(c) - time;
+            dasc.(c) = h5read(dasc.h5, ['/Optical/', char(cl)])*scl.c;
+            dasc.glat.(c) = dasc.glat.con;
+            dasc.glon.(c) = dasc.glon.con;
+            j = j + 1;
+        end
+    else
+        imgs_root = fullfile(direc, 'dasc_data', 'imagery', string(time));
+        for c = ["red", "gre", "blu"]
+            tmp_imgs = {dir(fullfile(imgs_root, ['*', num2str(clrs(c)), '.png'])).name};
+            tmp_times = NaT(1, length(tmp_imgs));
+            for j = 1:length(tmp_imgs)
+                tmp = strsplit(tmp_imgs{j}, '_');
+                tmp_times(j) = datetime([tmp{2}, tmp{3}], 'InputFormat', 'uuuuMMddHHmmss');
+            end
+            [~, dasc.id.(c)] = min(abs(tmp_times - time));
+            dasc.(c) = imread(fullfile(imgs_root, tmp_imgs{dasc.id.(c)}));
+            dasc.time.(c) = tmp_times(dasc.id.(c));
+            dasc.dt.(c) = dasc.time.(c) - time;
+            dasc.imgs.(c) = tmp_imgs{dasc.id.(c)};
+            dasc.SIGP = nan(grd.cell_size);
+            dasc.SIGH = nan(grd.cell_size);
+        end
     end
 
-    % gather inversion data
-    dasc.SIGP = nan(grd.cell_size);
-    dasc.SIGH = nan(grd.cell_size);
-
     % gather swarm data
-    efi.fn = sprintf('SW_EXPT_EFI%s*%i%02i%02i*.h5', sat, year(time), month(time), day(time));
-    efi.fn = dir(fullfile(direc, 'swarm_data', efi.fn)).name;
-    efi.glon = wrapTo360(h5read(fullfile(direc, 'swarm_data', efi.fn), '/Longitude110km'))';
-    efi.glat = h5read(fullfile(direc, 'swarm_data', efi.fn), '/GeodeticLatitude110km')';
-    efi.times = h5read(fullfile(direc, 'swarm_data', efi.fn), '/Timestamp');
+    if skip_along_track
+        efi.h5 = sprintf('SW_EXPT_EFI%s*%i%02i%02i*0302_novx.h5', sat, year(time), month(time), day(time));
+    else
+        efi.h5 = sprintf('SW_EXPT_EFI%s*%i%02i%02i*0302.h5', sat, year(time), month(time), day(time));
+    end
+    efi.h5 = dir(fullfile(direc, 'swarm_data', efi.h5)).name;
+    efi.h5 = fullfile(direc, 'swarm_data', efi.h5);
+    efi.glat = h5read(efi.h5, '/GeodeticLatitude110km')';
+    efi.glon = wrapTo360(h5read(efi.h5, '/Longitude110km'))';
+    efi.times = h5read(efi.h5, '/Timestamp');
     efi.times = datetime(efi.times, 'ConvertFrom', 'posixtime');
     [~, efi.id] = min(abs(efi.times - time));
     efi.ids = (-win:win)*2 + efi.id;
     efi.time = efi.times(efi.id);
     efi.dt = efi.time - time;
-    efi.ve = h5read(fullfile(direc, 'swarm_data', efi.fn), '/ViE')'*scl.v - vbg(1);
-    efi.vn = h5read(fullfile(direc, 'swarm_data', efi.fn), '/ViN')'*scl.v - vbg(2);
+    efi.ve = h5read(efi.h5, '/ViE')'*scl.v - vbg(1);
+    efi.vn = h5read(efi.h5, '/ViN')'*scl.v - vbg(2); 
     [~, efi.bad] = rmoutliers(vecnorm([efi.ve;efi.vn]), 'movmean', 2*outlier_window); % outliers
     efi.bad = efi.bad | vecnorm([efi.ve;efi.vn]) > max_v*scl.v; % large flows
-    efi.ve(efi.bad) = nan;
+    if not(plot_bad_data)
+        efi.ve(efi.bad) = nan;
+    end
     efi.glat_removed = efi.glat;
     efi.glat_removed(not(efi.bad)) = nan;
-
-    fac.fn = sprintf('SW_OPER_FAC%s*%i%02i%02i*.h5', sat, year(time), month(time), day(time));
-    fac.fn = dir(fullfile(direc, 'swarm_data', fac.fn)).name;
-    fac.glon = wrapTo360(h5read(fullfile(direc, 'swarm_data', fac.fn), '/Longitude110km'))';
-    fac.glat = h5read(fullfile(direc, 'swarm_data', fac.fn), '/GeodeticLatitude110km')';
-    fac.times = h5read(fullfile(direc, 'swarm_data', fac.fn), '/Timestamp');
+    
+    fac.h5 = sprintf('SW_OPER_FAC%s*%i%02i%02i*0401.h5', sat, year(time), month(time), day(time));
+    fac.h5 = dir(fullfile(direc, 'swarm_data', fac.h5)).name;
+    fac.h5 = fullfile(direc, 'swarm_data', fac.h5);
+    fac.glat = h5read(fac.h5, '/GeodeticLatitude110km')';
+    fac.glon = wrapTo360(h5read(fac.h5, '/Longitude110km'))';
+    fac.times = h5read(fac.h5, '/Timestamp');
     fac.times = datetime(fac.times, 'ConvertFrom', 'posixtime');
-    [~, fac.id] = min(abs(fac.times - time));
+    [~, fac.id] = min(abs(fac.times - efi.time));
     fac.ids = (-win:win) + fac.id;
     fac.time = fac.times(fac.id);
     fac.dt = fac.time - time;
-    fac.fac = h5read(fullfile(direc, 'swarm_data', fac.fn), '/FAC')*scl.j;
+    fac.fac = h5read(fac.h5, '/FAC')*scl.j;
     fac.fac_prec = fac.fac;
     fac.fac_rtrn = fac.fac;
     fac.fac_prec(fac.fac > 0) = nan;
-    fac.fac_rtrn(fac.fac <= 0) = nan;    
+    fac.fac_rtrn(fac.fac <= 0) = nan;
     
+    % TII ephemeris fix
+    if do_ephem_fix
+        fglat = griddedInterpolant(posixtime(fac.times), fac.glat);
+        fglon = griddedInterpolant(posixtime(fac.times), fac.glon);
+        efi.glat = fglat(posixtime(efi.times));
+        efi.glon = fglon(posixtime(efi.times));
+    end
+
     assert(abs(seconds(dasc.dt.red)) < max_dt, 'DASC red time difference: %.3f', seconds(dasc.dt.red))
-    assert(abs(seconds(dasc.dt.grn)) < max_dt, 'DASC green time difference: %.3f', seconds(dasc.dt.grn))
+    assert(abs(seconds(dasc.dt.gre)) < max_dt, 'DASC green time difference: %.3f', seconds(dasc.dt.gre))
     assert(abs(seconds(dasc.dt.blu)) < max_dt, 'DASC blue time difference: %.3f', seconds(dasc.dt.blu))
     assert(abs(seconds(efi.dt)) < max_dt, 'EFI time difference: %.3f', seconds(efi.dt))
     assert(abs(seconds(fac.dt)) < max_dt, 'FAC time difference: %.3f', seconds(fac.dt))
@@ -175,7 +241,7 @@ for i = events
     time.Format = 'default';
     fprintf('  Time:                      %s\n', time)
     fprintf('  DASC red:                  %s, dt = %+6.3f seconds\n', dasc.time.red, seconds(dasc.dt.red))
-    fprintf('  DASC green:                %s, dt = %+6.3f seconds\n', dasc.time.grn, seconds(dasc.dt.grn))
+    fprintf('  DASC green:                %s, dt = %+6.3f seconds\n', dasc.time.gre, seconds(dasc.dt.gre))
     fprintf('  DASC blue:                 %s, dt = %+6.3f seconds\n', dasc.time.blu, seconds(dasc.dt.blu))
     fprintf('  EFI: %.3f E, %.3f N @ %s, dt = %+6.3f seconds\n', efi.glon(efi.id), efi.glat(efi.id), efi.time, seconds(efi.dt))
     fprintf('  FAC: %.3f E, %.3f N @ %s, dt = %+6.3f seconds\n', fac.glon(fac.id), fac.glat(fac.id), fac.time, seconds(fac.dt))
@@ -183,7 +249,7 @@ for i = events
 
     % gather grid data
     grd.cfg = grd.cfgs{i};
-    if ~isfield(grd, 'xg') || reload
+    if ~isfield(grd, 'xg') || reload || always_reload
         grd.xg = gemini3d.grid.cartesian(grd.cfg);
         grd.xg = jules.tools.shrink(grd.xg);
         if not(always_reload)
@@ -193,10 +259,10 @@ for i = events
         warning('Grid is already loaded')
     end
 
-    grd.glon = squeeze(grd.xg.glon(end, :, :));
     grd.glat = squeeze(grd.xg.glat(end, :, :));
-    grd.glon = [grd.glon(1, :), grd.glon(:, end)', grd.glon(end, end:-1:1), grd.glon(end:-1:1, 1)'];
+    grd.glon = squeeze(grd.xg.glon(end, :, :));
     grd.glat = [grd.glat(1, :), grd.glat(:, end)', grd.glat(end, end:-1:1), grd.glat(end:-1:1, 1)'];
+    grd.glon = [grd.glon(1, :), grd.glon(:, end)', grd.glon(end, end:-1:1), grd.glon(end:-1:1, 1)'];
     grd.smooth = smooth_distance / range(grd.xg.x2);
     jules.tools.grid_params(grd.cell_size, [grd.cfg.xdist, grd.cfg.ydist]/1e3);
     angle = atan2(grd.xg.glat(1, end, 1) - grd.xg.glat(1, 1, 1), ...
@@ -206,13 +272,19 @@ for i = events
     assert(grd.xg.lx(3) == grd.cell_size(2), 'x3 size not equal to target size.')
 
     % get color limits
-    tmp_grn = dasc.grn(inpolygon(dasc.glon.grn(:), dasc.glat.grn(:), grd.glon(:), grd.glat(:)));
-    lim.c = [quantile(tmp_grn, 0.05), quantile(tmp_grn, 0.95)];
+    tmp_gre = dasc.gre(inpolygon(dasc.glon.gre(:), dasc.glat.gre(:), grd.glon(:), grd.glat(:)));
+    lim.c = [quantile(tmp_gre, 0.05), quantile(tmp_gre, 0.95)];
+    tmp_sig = dasc.SIGP(inpolygon(dasc.glon.con(:), dasc.glat.con(:), grd.glon(:), grd.glat(:)));
+    lim.p = [quantile(tmp_sig, 0.05), quantile(tmp_sig, 0.95)];
+    tmp_sig = dasc.SIGH(inpolygon(dasc.glon.con(:), dasc.glat.con(:), grd.glon(:), grd.glat(:)));
+    lim.h = [quantile(tmp_sig, 0.05), quantile(tmp_sig, 0.95)];
+    lim.p = lim.p + [-1,1]*range(lim.p)*0.1;
+    lim.h = lim.h + [-1,1]*range(lim.h)*0.1;
 
     if arcs{i} == 'p'
-        dasc.arc = smoothdata2(dasc.SIGP, "gaussian", grd.smooth);
+        dasc.arc = smoothdata2(dasc.SIGP, 'gaussian', grd.smooth);
     elseif arcs{i} == 'h'
-        dasc.arc = smoothdata2(dasc.SIGH, "gaussian", grd.smooth);
+        dasc.arc = smoothdata2(dasc.SIGH, 'gaussian', grd.smooth);
     end
     dasc.arc(not(inpolygon(dasc.glon.con, dasc.glat.con, grd.glon, grd.glat))) = nan;
     ctrs.A = contour(dasc.glon.con, dasc.glat.con, dasc.arc, [1, 1]*sigs{i}(1));
@@ -244,12 +316,13 @@ for i = events
     tlo = tiledlayout(2, 3, 'TileSpacing', 'tight', 'Padding', 'tight');
     title(tlo, sprintf([ ...
         '\nTIME: %s UT (UTsec0 = %i)    SAT: %s    GRID: %.0fx%.0fkm    EFI: %+.1fs    FAC: %+.1fs    PFISR: %+.1fs    DLON: %+.2f°    DLAT: %+.2f°    DIR: %s\n' ...
-        'RED: %s    GREEN: %s    BLUE: %s    INVERSION: %s\n' ...
-        'EFI: SW_*%s    FAC: SW_*%s    PFISR: %s\n'], ...
+        'BG FLOW: %i,%ikm/s    DASC: %s    PFISR: %s\n' ...
+        'EFI: %s    FAC: %s\n'], ...
         time, second(time, 'secondofday')-tdur, sat, range(grd.xg.x2(3:end-2))/1e3, range(grd.xg.x3(3:end-2))/1e3, ...
         seconds(efi.dt), seconds(fac.dt), seconds(pfisr.dt), ...
         fac.glon(fac.id) - efi.glon(efi.id), fac.glat(fac.id) - efi.glat(efi.id), ...
-        fullfile(direc, 'dasc_data'), dasc.imgs.red, dasc.imgs.grn, dasc.imgs.blu, pfisr.fn, efi.fn(35:end), fac.fn(35:end), pfisr.fn), ...
+        direc, vbg(1), vbg(2), dasc.h5(length(direc)+1:end), pfisr.h5(length(direc)+1:end), ...
+        efi.h5(length(direc)+1:end), fac.h5(length(direc)+1:end)), ...
         'Interpreter', 'none', 'FontSize', 11)
 
     for j = 1:6
@@ -264,9 +337,9 @@ for i = events
             colormap(gca, colorcet(clm.r))
             clb_label = sprintf('630 nm @ t%+.0f s (kR)', seconds(dasc.dt.red));
             case 2
-            pcolor(dasc.glon.grn, dasc.glat.grn, dasc.grn)
+            pcolor(dasc.glon.gre, dasc.glat.gre, dasc.gre)
             colormap(gca, colorcet(clm.g))
-            clb_label = sprintf('558 nm @ t%+.0f s (kR)', seconds(dasc.dt.grn));
+            clb_label = sprintf('558 nm @ t%+.0f s (kR)', seconds(dasc.dt.gre));
             case 3
             pcolor(dasc.glon.blu , dasc.glat.blu , dasc.blu)
             colormap(gca, colorcet(clm.b))
@@ -283,6 +356,7 @@ for i = events
             text(lim.x(1)+0.2, lim.y(1)+0.2, '1 uA/m^2', 'Color', 'b')
             text(lim.x(1)+0.2, lim.y(1)+0.35, 'Red = Parallel', 'Color', 'r')
             colormap(gca, colorcet(clm.s))
+            clim(lim.p)
             clb_label = 'Pedersen Conductance (S)';
             case 5
             pcolor(dasc.glon.con , dasc.glat.con , dasc.SIGH)
@@ -293,6 +367,7 @@ for i = events
             quiver(fac.glon(fac.ids), fac.glat(fac.ids), ...
                 fac.fac_rtrn(fac.ids)*cos(angle), fac.fac_rtrn(fac.ids)*sin(angle), 0, '.-r')
             colormap(gca, colorcet(clm.s))
+            clim(lim.h)
             clb_label = 'Hall Conductance (S)';
             case 6
             contour(dasc.glon.con , dasc.glat.con , dasc.arc, 6, 'LineWidth', 1)
@@ -307,10 +382,18 @@ for i = events
         end
         if any(j==1:3)
             quiver(efi.glon(efi.ids), efi.glat(efi.ids), efi.ve(efi.ids), efi.vn(efi.ids), 0, '.-g')
+            % if skip_along_track
+            %     quiver(efi.glon(efi.ids), efi.glat(efi.ids), ...
+            %         efi.ve(efi.ids)*cos(angle) - efi.vn(efi.ids)*sin(angle), ...
+            %         efi.ve(efi.ids)*sin(angle) + efi.vn(efi.ids)*cos(angle), 0, '.-g')
+            % else
+            %     quiver(efi.glon(efi.ids), efi.glat(efi.ids), efi.ve(efi.ids), efi.vn(efi.ids), 0, '.-g')
+            % end
             scatter(efi.glon(efi.ids), efi.glat_removed(efi.ids), 'or')
+            plot(efi.glon(efi.ids), efi.glat(efi.ids), 'w')
             quiver(pfisr.glon, pfisr.glat, pfisr.ve, pfisr.vn, 0, '.-g')
             scatter(pfisr.glon, pfisr.glat_removed, 'or')
-            plot(efi.glon(efi.ids), efi.glat(efi.ids), 'w')
+            plot(pfisr.glon, pfisr.glat, 'w')
             scatter(efi.glon(efi.id), efi.glat(efi.id), 500, 'xw')
             plot(grd.glon, grd.glat, '--w')
             set(gca, 'Color', [1, 1, 1]/2)
@@ -330,26 +413,22 @@ for i = events
     end
     
     % inset
-    outline_glon = dasc.glon.red(not(isnan(dasc.glon.red)));
-    outline_glat = dasc.glat.red(not(isnan(dasc.glon.red)));
+    outline_glon = dasc.glon.red(not(isnan(dasc.blu)));
+    outline_glat = dasc.glat.red(not(isnan(dasc.blu)));
     outline_hull = convhull(outline_glon, outline_glat);
-    axes('Position', [-0.01, .88, .09, .09])
+    axes('Position', [-0.015, .875, .09, .09])
     hold on
     plot(outline_glon(outline_hull), outline_glat(outline_hull), 'k')
-    contour(dasc.glon.con, dasc.glat.con, dasc.arc, 4, 'Color', [1, 1, 1]*0.6)
     plot(grd.glon, grd.glat, 'k')
     plot(efi.glon(efi.ids), efi.glat(efi.ids), 'k')
     plot(pfisr.glon, pfisr.glat, 'k')
-    shading flat
-    colormap(gca, colorcet(clm.g))
-    clim(lim.c)
     pbaspect([1, 1, 1])
     box off
     set(gca, 'Color', 'None', 'XColor', 'None', 'YColor', 'None')
     
     if save_plot
-        filename = sprintf('%i%02i%02i_%i_%s.png', ...
-            year(time), month(time), day(time), second(time, 'secondofday'), sat);
+        filename = sprintf('%i%02i%02i_%i_%s_%s.png', ...
+            year(time), month(time), day(time), second(time, 'secondofday'), sat, sfx);
         fprintf('Saving %s\n', fullfile(direc, filename))
         exportgraphics(gcf, fullfile(direc, filename), 'Resolution', 600)
         close all
