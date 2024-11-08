@@ -14,6 +14,27 @@ pip install numpy~=1.0 scipy apexpy glob2 scikit-image matplotlib h5py
 git clone https://github.com/almule12/asispectralinversion.git
 pip install asispectralinversion/src/
 ```
+## How to install GEMINI on HEC
+1) Clone code
+```sh
+git clone https://github.com/gemini3d/gemini3d.git
+```
+2) Load modules
+```
+module use /nasa/modulefiles/testing
+module load gcc/13.2
+module load openmpi/4.1.6-toss4-gnu
+module load comp-intel/2023.2.1
+```
+3) Configure build directory and compile code
+```
+cmake -B build
+cmake --build build --parallel
+```
+4) Run Ctests
+```
+ctest --test-dir build
+```
 
 ## How to install GEMINI on WSL
 ### Install WSL distribution
