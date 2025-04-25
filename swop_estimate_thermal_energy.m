@@ -1,6 +1,28 @@
 do_plot = true;
 save_plot = true;
+plot_meta = false;
 happy = true;
+clbg = [8, 79, 106] / 255;
+cltx = [1, 1, 1];
+clr1 = [244, 187, 129] / 255;
+clr2 = [100, 255, 255] / 255;
+clr3 = [255, 255, 255] / 255;
+clr4 = [255, 30, 30] / 255;
+%#ok<*UNRCH>
+
+fntn = 'Arial';
+fnts = 14 * 2;
+linw = 2;
+reset(0)
+set(0, 'defaultSurfaceEdgeColor', 'flat')
+set(0, 'defaultLineLineWidth', linw)
+set(0, 'defaultQuiverLineWidth', linw)
+jules.tools.setall(0, 'FontName', fntn)
+jules.tools.setall(0, 'FontSize', fnts)
+jules.tools.setall(0, 'Multiplier', 1)
+colorcet = @jules.tools.colorcet;
+
+clm.U = 'L19'; clm.c = 'L17';
 
 direc = fullfile('data', 'paper2');
 save_direc = fullfile(direc, 'dasc_data', 'thermal_energies');
@@ -38,7 +60,7 @@ for iq = iqs
             glat = h5read(h5fn, '/Coordinates/Latitude');
             glon = h5read(h5fn, '/Coordinates/Longitude');
             Q = h5read(h5fn, '/Derived/Energy/Flux');
-            E0 = h5read(h5fn, '/Derived/Energy/Characteristic');
+            E0 = h5read(h5fn, '/Derived/Energy/Characteristic') / 1e3;
             red = h5read(h5fn, '/Optical/Red');
             glat(isnan(E0)) = nan;
             glon(isnan(E0)) = nan;
@@ -49,7 +71,7 @@ for iq = iqs
             E0_filtered(red < quantile(red(:), red_filter_quantile)) = nan;
             
             % determine energy histograms
-            bin_edges = linspace(10, 3e3, 301);
+            bin_edges = linspace(0.010, 3, 301);
             bin_means = (bin_edges(1:end-1) + bin_edges(2:end)) / 2;
             hist1 = histcounts(E0, bin_edges);
             hist2 = histcounts(E0_filtered, bin_edges);
@@ -76,70 +98,95 @@ for iq = iqs
             f2db = f2conf95(2,2) - temp_fit_filtered;
             thermal_energies_error(iq, ir, il) = f2db;
             
+            ar = [1, 1, 1];
+
             if do_plot
                 close all
-                figure('Position', [10, 60, 1000, 800], 'PaperUnits', 'inches', 'PaperPosition', [0, 0, 7, 10])
+                figure('Position', [10, 60, 1000, 800], ...
+                    'PaperUnits', 'inches', 'PaperPosition', [0, 0, 9, 7] * 2)
                 tlo = tiledlayout(2, 2, 'TileSpacing','tight', 'Padding','tight');
-                title(tlo, sprintf('Q filtered out: top %0i%% quantile, Red filtered out: lower %0i%% quantile, Calculated source region thermal energy: %i±%i eV', ...
-                    round(100*(1-Q_filter_quantile)), round(100*red_filter_quantile), round(temp_fit_filtered, -1), round(f2db, -1)))
+                if plot_meta
+                    title(tlo, sprintf('Q filtered out: top %0i%% quantile, Red filtered out: lower %0i%% quantile, Calculated source region thermal energy: %i±%i eV', ...
+                        round(100*(1-Q_filter_quantile)), round(100*red_filter_quantile), round(temp_fit_filtered * 1e3, -1), round(f2db * 1e3, -1)), ...
+                        'Color', cltx, 'FontSize', 0.5*fts)
+                end
 
-                nexttile
+                ax1 = nexttile;
                 pcolor(glon, glat, Q)
                 shading flat
-                colorbar
-                clim([0, 20])
+                clb = colorbar;
+                clb.Color = cltx;
+                colormap(gca, colorcet(clm.U))
+                clim([0, 21])
                 xlabel('Geodetic longitude (°)')
                 ylabel('Geodetic latitude (°)')
-                title('Q (mW/m^2)')
+                pbaspect(ar)
+                title('Total energy flux, Q (mW/m^2)', 'Color', cltx)
 
-                nexttile
+                ax2 = nexttile;
                 pcolor(glon, glat, E0)
                 shading flat
-                colorbar
-                clim([0, 3e3])
+                clb = colorbar;
+                clb.Color = cltx;
+                colormap(gca, colorcet(clm.c))
+                clim([0, 3.1])
                 xlabel('Geodetic longitude (°)')
                 ylabel('Geodetic latitude (°)')
-                title('Unaccelerated Maxwellian E0 (eV)')
+                pbaspect(ar)
+                title('Unaccelerated characteristic energy, E0 (keV)', 'Color', cltx)
 
-                nexttile
+                ax3 = nexttile;
                 pcolor(glon, glat, E0_filtered)
                 shading flat
-                colorbar
-                clim([0, 3e3])
+                clb = colorbar;
+                clb.Color = cltx;
+                colormap(gca, colorcet(clm.c))
+                clim([0, 3.1])
                 xlabel('Geodetic longitude (°)')
                 ylabel('Geodetic latitude (°)')
-                title('Filtered Unaccelerated Maxwellian E0 (eV)')
+                pbaspect(ar)
+                title('Filtered E0 (keV)', 'Color', cltx)
 
-                nexttile
+                ax4 = nexttile;
                 hold on
-                histogram(E0, bin_edges, 'FaceColor', [1/2, 1/2, 1], 'EdgeColor', 'none');
-                histogram(E0_filtered, bin_edges, 'FaceColor', [1, 1/2, 1/2], 'EdgeColor', 'none');
-                plot(bin_means, f1(bin_means), 'b', 'LineWidth', 2)
-                plot(bin_means, f2(bin_means), 'r', 'LineWidth', 2)
-                plot([temp_fit_unfiltered, temp_fit_unfiltered], [0, f1(f1.b)], 'Color', [0, 0, 1], 'LineWidth', 1)
-                plot([temp_max_unfiltered, temp_max_unfiltered], [0, m1], 'Color', [0, 0, 1], 'LineWidth', 1, 'LineStyle', '--')
-                plot([temp_fit_filtered, temp_fit_filtered], [0, f2(f2.b)], 'Color', [1, 0, 0], 'LineWidth', 1)
-                plot([temp_max_filtered, temp_max_filtered], [0, m2], 'Color', [1, 0, 0], 'LineWidth', 1, 'LineStyle', '--')
-                xlim([0, 3e3]); ylim([0, max([hist1, hist2])*1.05])
-                xlabel('Thermal energy, E0 (keV)')
+                histogram(E0, bin_edges, 'FaceColor', clr1, 'EdgeColor', 'none', 'FaceAlpha', 1);
+                histogram(E0_filtered, bin_edges, 'FaceColor', clr2, 'EdgeColor', 'none', 'FaceAlpha', 1);
+                plot([temp_fit_unfiltered, temp_fit_unfiltered], [0, f1(f1.b)], 'Color', clr3, 'LineWidth', linw)
+                plot([temp_fit_filtered, temp_fit_filtered], [0, f2(f2.b)], 'Color', clr4, 'LineWidth', linw)
+                plot([temp_max_unfiltered, temp_max_unfiltered], [0, m1], 'Color', clr3, 'LineWidth', linw, 'LineStyle', '--')
+                plot([temp_max_filtered, temp_max_filtered], [0, m2], 'Color', clr4, 'LineWidth', linw, 'LineStyle', '--')
+                plot(bin_means, f1(bin_means), 'Color', clr3, 'LineWidth', linw)
+                plot(bin_means, f2(bin_means), 'Color', clr4, 'LineWidth', linw)
+                xlim([0, 3.1]); ylim([0, max([hist1, hist2])*1.05])
+                xlabel('Unaccelerated characteristic energy (keV)')
+                % pbaspect(ar)
                 legend('Unfiltered', 'Filtered', ...
-                    sprintf('Unfiltered fit (%i eV peak)', round(f1.b, -1)), ...
-                    sprintf('Filtered fit (%i eV peak)', round(f2.b, -1)))
+                    sprintf('Unfiltered fit:%s%i eV', ' ', round(f1.b * 1e3, -1)), ...
+                    sprintf('Filtered fit:%s%i eV', ' ', round(f2.b * 1e3, -1)), ...
+                    sprintf('Unfiltered peak:%s%i eV', ' ', round(temp_max_unfiltered * 1e3, -1)), ...
+                    sprintf('Filtered peak:%s%i eV', ' ', round(temp_max_filtered * 1e3, -1)), ...
+                    'TextColor', cltx, 'Location', 'northeast')
+                legend('boxoff')
                 
+                set(gcf, 'Color', clbg, 'InvertHardcopy', 'off')
+                set([ax1, ax2, ax3, ax4], 'Color', 'none', 'GridColor', cltx, 'MinorGridColor', cltx, ...
+                    'XColor', cltx, 'YColor', cltx, 'ZColor', cltx)
+
                 if save_plot
                     filename = sprintf('%i%02i%02i_%i.png', ...
                         year(time), month(time), day(time), second(time, 'secondofday'));
                     filename = fullfile(save_direc, filename);
                     fprintf('Saving %s\n', filename)
-                    exportgraphics(gcf, filename, 'Resolution', 600)
+                    % exportgraphics(gcf, filename, 'Resolution', 600)
+                    print(gcf, filename, '-dpng', '-r96')
                     close all
                 else
                     input('Press any key to continue ... ')
                 end
-                fprintf('Thermal energy = %i eV for %s\n', round(temp_fit_filtered, -1), time)
+                fprintf('Thermal energy = %i eV for %s\n', round(temp_fit_filtered * 1e3, -1), time)
             else
                 time.Format = "default";
-                fprintf('Thermal energy = %i eV for %s\n', round(temp_fit_filtered, -1), time)
+                fprintf('Thermal energy = %i eV for %s\n', round(temp_fit_filtered * 1e3, -1), time)
             end
         end
     end

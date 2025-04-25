@@ -1,42 +1,56 @@
 % user input
 direc = fullfile('data', 'paper2');
-reload = false; % reload grid
+reload = true; % reload grid
+always_reload = false;
 plot_bad_data = true;
-save_plot = true;
+save_plot = 1;
+events = 1:11;
 
 from_inverions = true;
 subtract_background_flow = false;
 skip_along_track = false;
 do_ephem_fix = true;
 is_acc = true;
+filter_pfisr = true;
 sfx = strrep(num2str([from_inverions, subtract_background_flow, ...
     skip_along_track, do_ephem_fix, is_acc]), ' ', '');
 
-smooth_distance = 1000e3; % meters
+smooth_distance = 5000e3; % meters
 max_v = 4e3; % meters / second
+max_v_pfisr = 590; % meters / second
 max_dt = 5; % seconds
 win = 20; % seconds
 outlier_window = 20; % seconds
-grd.cell_size = [320, 448];
+grd.cell_size = [288, 384];
 tdur = 60; % seconds
 vvels_cad = 5; % minutes
-events = 2;%1:11;
 
 clrs = dictionary(["red", "gre", "blu"], [630, 558, 428]);
 
 %#ok<*UNRCH>
 
-always_reload = false;
 if length(events) > 1
     always_reload = true;
 end
 
-%% plotting parameters
-colorcet = @jules.tools.colorcet;
+% plotting parameters
 clm.r = 'L13'; clm.g = 'L14'; clm.b = 'L15'; clm.s = 'L18'; clm.c = 'L19';
 scl.v = 1e-3; scl.j = 1e0; scl.c = 1e-3;
+fntn = 'Arial';
+fnts = 11 * 2;
+linw = 1.5;
+clbg = [8, 79, 106] / 255;
+cltx = [1, 1, 1];
+reset(0)
+set(0, 'defaultSurfaceEdgeColor', 'flat')
+set(0, 'defaultLineLineWidth', linw)
+set(0, 'defaultQuiverLineWidth', linw)
+jules.tools.setall(0, 'FontName', fntn)
+jules.tools.setall(0, 'FontSize', fnts)
+jules.tools.setall(0, 'Multiplier', 1)
+colorcet = @jules.tools.colorcet;
 
-% load datetimes, sats, and grid data
+%% load datetimes, sats, and grid data
 evts_fn = fullfile(direc, 'event_data.txt');
 evts_num = 0;
 fid = fopen(evts_fn);
@@ -130,14 +144,33 @@ for i = events
     pfisr.glat = pfisr.glat(:, pfisr.alt_id)';
     pfisr.glon = pfisr.glon(:, pfisr.alt_id)';
     pfisr.vvels = h5read(pfisr.h5, '/VvelsGeoCoords/Velocity');
+    pfisr.evvels = h5read(pfisr.h5, '/VvelsGeoCoords/errVelocity');
     pfisr.ve = squeeze(pfisr.vvels(1, :, pfisr.alt_id, pfisr.id))*scl.v - vbg(1);
     pfisr.vn = squeeze(pfisr.vvels(2, :, pfisr.alt_id, pfisr.id))*scl.v + vbg(2);
-    pfisr.bad = vecnorm([pfisr.ve; pfisr.vn]) > max_v*scl.v; % large flows
+    pfisr.eve = squeeze(pfisr.evvels(1, :, pfisr.alt_id, pfisr.id))*scl.v;
+    pfisr.evn = squeeze(pfisr.evvels(2, :, pfisr.alt_id, pfisr.id))*scl.v;
+    pfisr.bad = vecnorm([pfisr.ve; pfisr.vn]) > max_v_pfisr*scl.v; % large flows
     pfisr.ve(pfisr.bad) = nan;
+    pfisr.vn(pfisr.bad) = nan;
     pfisr.glat_removed = pfisr.glat;
     pfisr.glat_removed(not(pfisr.bad)) = nan;
+    
+    %% load superdarn data
+    sdarn.h5 = fullfile(direc, 'superdarn_data', 'superdarn_pkr_jules.hdf5');
+    sdarn.time = h5read(sdarn.h5, '/df/block0_values');
+    sdarn.time = datetime(sdarn.time(:, :)');
+    [~, sdarn.id] = min(abs(sdarn.time - time));
+    sdarn.time = sdarn.time(sdarn.id);
+    sdarn.dt = sdarn.time - time;
+    sdarn.b1v = h5read(sdarn.h5, '/df/block1_values');
+    sdarn.vme = sdarn.b1v(1, sdarn.id) * scl.v;
+    sdarn.vmn = sdarn.b1v(2, sdarn.id) * scl.v;
+    sdarn.quality = sdarn.b1v(3, sdarn.id);
+    sdarn.nearest_data = sdarn.b1v(4, sdarn.id);
 
-    % gather dasc data
+    assert(seconds(sdarn.dt) == 0, 'SuperDARN datetime does not match simulation time.')
+
+    %% gather dasc data
     if from_inverions
         if is_acc
             dasc.h5 = fullfile(direc, 'dasc_data', sprintf('INV_PKR_%s_%i_ACC.h5', time, second(time, 'secondofday')));
@@ -198,8 +231,8 @@ for i = events
     efi.dt = efi.time - time;
     efi.ve = h5read(efi.h5, '/ViE')'*scl.v - vbg(1);
     efi.vn = h5read(efi.h5, '/ViN')'*scl.v - vbg(2); 
-    [~, efi.bad] = rmoutliers(vecnorm([efi.ve;efi.vn]), 'movmean', 2*outlier_window); % outliers
-    efi.bad = efi.bad | vecnorm([efi.ve;efi.vn]) > max_v*scl.v; % large flows
+    [~, efi.bad] = rmoutliers(vecnorm([efi.ve; efi.vn]), 'movmean', 2*outlier_window); % outliers
+    efi.bad = efi.bad | vecnorm([efi.ve; efi.vn]) > max_v*scl.v; % large flows
     if not(plot_bad_data)
         efi.ve(efi.bad) = nan;
     end
@@ -270,6 +303,34 @@ for i = events
 
     assert(grd.xg.lx(2) == grd.cell_size(1), 'x2 size not equal to target size.')
     assert(grd.xg.lx(3) == grd.cell_size(2), 'x3 size not equal to target size.')
+    
+    % get background pfisr flow
+    [~, ida] = max(grd.glat);
+    [~, idb] = max(grd.glon);
+    [~, idc] = min(grd.glat);
+    [~, idd] = min(grd.glon);
+    fpfisr = griddedInterpolant(pfisr.glat, pfisr.glon);
+    fbottom = griddedInterpolant([grd.glat(idc), grd.glat(idd)], [grd.glon(idc), grd.glon(idd)]);
+    ftop = griddedInterpolant([grd.glat(idb), grd.glat(ida)], [grd.glon(idb), grd.glon(ida)]);
+    glat_min = fzero(@(x)(fbottom(x) - fpfisr(x)), 0);
+    glat_max = fzero(@(x)(ftop(x) - fpfisr(x)), 0);
+    if filter_pfisr
+        pfisr.ids = pfisr.glat >= glat_min & pfisr.glat <= glat_max;
+        pfisr.ids = pfisr.ids & not(isnan(pfisr.ve));
+    else
+        pfisr.ids = true(size(pfisr.glat));
+    end
+    pfisr.glat_avg = pfisr.glat;
+    pfisr.glat_avg(not(pfisr.ids)) = nan;
+    pfisr.ve_avg = mean(pfisr.ve(pfisr.ids));
+    pfisr.vn_avg = mean(pfisr.vn(pfisr.ids));
+    mag_dec = atan2(grd.xg.x3(end) - grd.xg.x3(1), grd.xg.x2(end) - grd.xg.x2(1));
+    pfisr.vme_avg = pfisr.ve_avg * cos(mag_dec) - pfisr.vn_avg * sin(mag_dec);
+    pfisr.vmn_avg = pfisr.ve_avg * sin(mag_dec) + pfisr.vn_avg * cos(mag_dec);
+
+    % rotate sdarn for plotting
+    sdarn.ve_avg = sdarn.vmn * sin(mag_dec) + sdarn.vme * cos(mag_dec);
+    sdarn.vn_avg = sdarn.vmn * cos(mag_dec) - sdarn.vme * sin(mag_dec);
 
     % get color limits
     tmp_gre = dasc.gre(inpolygon(dasc.glon.gre(:), dasc.glat.gre(:), grd.glon(:), grd.glat(:)));
@@ -282,9 +343,9 @@ for i = events
     lim.h = lim.h + [-1,1]*range(lim.h)*0.1;
 
     if arcs{i} == 'p'
-        dasc.arc = smoothdata2(dasc.SIGP, 'gaussian', grd.smooth);
+        dasc.arc = smoothdata2(dasc.SIGP, 'gaussian', {grd.smooth, 1});
     elseif arcs{i} == 'h'
-        dasc.arc = smoothdata2(dasc.SIGH, 'gaussian', grd.smooth);
+        dasc.arc = smoothdata2(dasc.SIGH, 'gaussian', {grd.smooth, 1});
     end
     dasc.arc(not(inpolygon(dasc.glon.con, dasc.glat.con, grd.glon, grd.glat))) = nan;
     ctrs.A = contour(dasc.glon.con, dasc.glat.con, dasc.arc, [1, 1]*sigs{i}(1));
@@ -307,33 +368,43 @@ for i = events
         max([grd.glon, efi.glon(efi.ids), fac.glon(fac.ids)])] + [-1, 1]*0.2;
     lim.y = [min([grd.glat, efi.glat(efi.ids), fac.glat(fac.ids)]), ...
         max([grd.glat, efi.glat(efi.ids), fac.glat(fac.ids)])] + [-1, 1]*0.1;
-    % ar = [range(lim.x)*cosd(mean(lim.y)), range(lim.y), 1];
-    ar = [1.2, 1, 1];
+    ar = [1, 1, 1];
     
-    % plot
+    %% plot
     close all
-    figure('Position', [10, 60, 1500, 800], 'PaperUnits', 'inches', 'PaperPosition', [0, 0, 10, 10])
+    figure('Position', [10, 60, 1500, 800], ...
+        'PaperUnits', 'inches', 'PaperPosition', [0, 0, 11.5, 7] * 2)
     tlo = tiledlayout(2, 3, 'TileSpacing', 'tight', 'Padding', 'tight');
     title(tlo, sprintf([ ...
         '\nTIME: %s UT (UTsec0 = %i)    SAT: %s    GRID: %.0fx%.0fkm    EFI: %+.1fs    FAC: %+.1fs    PFISR: %+.1fs    DLON: %+.2f°    DLAT: %+.2f°    DIR: %s\n' ...
-        'BG FLOW: %i,%ikm/s    DASC: %s    PFISR: %s\n' ...
+        'MAG BG FLOW: (%.0f,%.0f) [PFISR] & (%.0f,%.0f) [SDARN] m/s    DASC: %s    PFISR: %s\n' ...
         'EFI: %s    FAC: %s\n'], ...
         time, second(time, 'secondofday')-tdur, sat, range(grd.xg.x2(3:end-2))/1e3, range(grd.xg.x3(3:end-2))/1e3, ...
         seconds(efi.dt), seconds(fac.dt), seconds(pfisr.dt), ...
         fac.glon(fac.id) - efi.glon(efi.id), fac.glat(fac.id) - efi.glat(efi.id), ...
-        direc, vbg(1), vbg(2), dasc.h5(length(direc)+1:end), pfisr.h5(length(direc)+1:end), ...
+        direc, pfisr.vme_avg / scl.v, pfisr.vmn_avg / scl.v, sdarn.vme / scl.v, sdarn.vmn / scl.v, dasc.h5(length(direc)+1:end), pfisr.h5(length(direc)+1:end), ...
         efi.h5(length(direc)+1:end), fac.h5(length(direc)+1:end)), ...
-        'Interpreter', 'none', 'FontSize', 11)
+        'Interpreter', 'none', 'FontSize', fnts * 0.54, 'Color', cltx)
+
+    % legend positions
+    legx = lim.x(1) + (lim.x(end) - lim.x(1)) * 0.03;
+    legy = lim.y(1) + (lim.y(end) - lim.y(1)) * 0.07;
+    legdx = (lim.x(end) - lim.x(1)) / 20;
+    legdy = (lim.y(end) - lim.y(1)) / 20;
 
     for j = 1:6
-        nexttile
+        ax.(char(64 + j)) = nexttile;
         hold on
         switch j
             case 1
             pcolor(dasc.glon.red, dasc.glat.red, dasc.red)
-            quiver(lim.x(1)+0.2, lim.y(1)+0.1, 1, 0, '.-g')
-            text(lim.x(1)+0.2, lim.y(1)+0.2, '2 km/s', 'Color', 'g')
-            text(lim.x(1)+0.2, lim.y(1)+0.35, 'O removed', 'Color', 'r')
+            quiver(legx, legy - 0.6*legdy, 1, 0, 0, '.-g')
+            text(legx, legy + 0*legdy, '1 km/s', 'Color', 'g', 'FontSize', fnts * 0.7)
+            text(legx, legy + 1*legdy, 'O removed', 'Color', 'r', 'FontSize', fnts * 0.7)
+            text(legx, legy + 2*legdy, 'PFISR BG', 'Color', 'm', 'FontSize', fnts * 0.7)
+            text(legx, legy + 3*legdy, 'SDARN BG', 'Color', 'c', 'FontSize', fnts * 0.7)
+            % text(quantile(grd.glon, 0.05), quantile(grd.glat, 0.14), ...
+                % sprintf('%.0f, %.0f m/s', pfisr.ve_avg * 1e3, pfisr.vn_avg * 1e3), 'Color', 'm', 'FontSize', fnts * 0.7)
             colormap(gca, colorcet(clm.r))
             clb_label = sprintf('630 nm @ t%+.0f s (kR)', seconds(dasc.dt.red));
             case 2
@@ -346,22 +417,18 @@ for i = events
             clb_label = sprintf('428 nm @ t%+.0f s (kR)', seconds(dasc.dt.blu));
             case 4
             pcolor(dasc.glon.con , dasc.glat.con , dasc.SIGP)
-            plot(bdry.A.lon, bdry.A.lat, 'k', 'LineWidth', 2)
-            plot(bdry.B.lon, bdry.B.lat, '--k', 'LineWidth', 2)
             quiver(fac.glon(fac.ids), fac.glat(fac.ids), ...
                 fac.fac_prec(fac.ids)*cos(angle), fac.fac_prec(fac.ids)*sin(angle), 0, '.-b')
             quiver(fac.glon(fac.ids), fac.glat(fac.ids), ...
                 fac.fac_rtrn(fac.ids)*cos(angle), fac.fac_rtrn(fac.ids)*sin(angle), 0, '.-r')
-            quiver(lim.x(1)+0.2, lim.y(1)+0.1, 1, 0, '.-b')
-            text(lim.x(1)+0.2, lim.y(1)+0.2, '1 uA/m^2', 'Color', 'b')
-            text(lim.x(1)+0.2, lim.y(1)+0.35, 'Red = Parallel', 'Color', 'r')
+            quiver(lim.x(1)+0.25, lim.y(1) + 0.10, 1, 0, 0, '.-b')
+            text(lim.x(1)+0.2, lim.y(1) + 0.22, '1 uA/m^2', 'Color', 'b', 'FontSize', fnts * 0.7)
+            text(lim.x(1)+0.2, lim.y(1) + 0.38, 'Red = Parallel', 'Color', 'r', 'FontSize', fnts * 0.7)
             colormap(gca, colorcet(clm.s))
             clim(lim.p)
             clb_label = 'Pedersen Conductance (S)';
             case 5
             pcolor(dasc.glon.con , dasc.glat.con , dasc.SIGH)
-            plot(bdry.A.lon, bdry.A.lat, 'k', 'LineWidth', 2)
-            plot(bdry.B.lon, bdry.B.lat, '--k', 'LineWidth', 2)
             quiver(fac.glon(fac.ids), fac.glat(fac.ids), ...
                 fac.fac_prec(fac.ids)*cos(angle), fac.fac_prec(fac.ids)*sin(angle), 0, '.-b')
             quiver(fac.glon(fac.ids), fac.glat(fac.ids), ...
@@ -371,8 +438,6 @@ for i = events
             clb_label = 'Hall Conductance (S)';
             case 6
             contour(dasc.glon.con , dasc.glat.con , dasc.arc, 6, 'LineWidth', 1)
-            plot(bdry.A.lon, bdry.A.lat, 'k', 'LineWidth', 2)
-            plot(bdry.B.lon, bdry.B.lat, '--k', 'LineWidth', 2)
             colormap(gca, colorcet('C2'))
             if arcs{i} == 'p'
                 clb_label = 'Pedersen Conductance (S)';
@@ -382,136 +447,92 @@ for i = events
         end
         if any(j==1:3)
             quiver(efi.glon(efi.ids), efi.glat(efi.ids), efi.ve(efi.ids), efi.vn(efi.ids), 0, '.-g')
-            % if skip_along_track
-            %     quiver(efi.glon(efi.ids), efi.glat(efi.ids), ...
-            %         efi.ve(efi.ids)*cos(angle) - efi.vn(efi.ids)*sin(angle), ...
-            %         efi.ve(efi.ids)*sin(angle) + efi.vn(efi.ids)*cos(angle), 0, '.-g')
-            % else
-            %     quiver(efi.glon(efi.ids), efi.glat(efi.ids), efi.ve(efi.ids), efi.vn(efi.ids), 0, '.-g')
-            % end
-            scatter(efi.glon(efi.ids), efi.glat_removed(efi.ids), 'or')
+            scatter(efi.glon(efi.ids), efi.glat_removed(efi.ids), 'or', 'LineWidth', linw)
             plot(efi.glon(efi.ids), efi.glat(efi.ids), 'w')
-            quiver(pfisr.glon, pfisr.glat, pfisr.ve, pfisr.vn, 0, '.-g')
-            scatter(pfisr.glon, pfisr.glat_removed, 'or')
+            quiver(pfisr.glon, pfisr.glat, pfisr.ve, pfisr.vn, 0, '.-r')
+            quiver(pfisr.glon, pfisr.glat_avg, pfisr.ve, pfisr.vn, 0, '.-g')
+            quiver(legx + 2*legdx, legy + 5*legdy, 0, 0, 0 ,'ow')
+            quiver(legx + 2*legdx, legy + 5*legdy, pfisr.ve_avg, pfisr.vn_avg, 0 ,'m')
+            quiver(legx + 2*legdx, legy + 5*legdy, sdarn.ve_avg, sdarn.vn_avg, 0 ,'c')
+            scatter(pfisr.glon, pfisr.glat_removed, 'or', 'LineWidth', linw)
             plot(pfisr.glon, pfisr.glat, 'w')
-            scatter(efi.glon(efi.id), efi.glat(efi.id), 500, 'xw')
+            scatter(efi.glon(efi.id), efi.glat(efi.id), 500, 'xw', 'LineWidth', linw)
             plot(grd.glon, grd.glat, '--w')
             set(gca, 'Color', [1, 1, 1]/2)
             clim(lim.c)
         else
             plot(fac.glon(fac.ids), fac.glat(fac.ids), 'k')
-            scatter(fac.glon(fac.id), fac.glat(fac.id), 500, 'xk')
+            scatter(fac.glon(fac.id), fac.glat(fac.id), 500, 'xk', 'LineWidth', linw)
             plot(grd.glon, grd.glat, '--k')
+            plot(bdry.A.lon, bdry.A.lat, 'k', 'LineWidth', 2)
+            plot(bdry.B.lon, bdry.B.lat, '--k', 'LineWidth', 2)
         end
         shading flat
         clb = colorbar;
+        clb.Color = cltx;
         clb.Label.String = clb_label;
+        clb.Label.Color = cltx;
         if any(j==4:6); xlabel('geodetic longitude (deg)'); end
         if any(j==[1, 4]); ylabel('geodetic latitude (deg)'); end
         xlim(lim.x); ylim(lim.y)
         pbaspect(ar)
     end
-    
+  
+    for j = fieldnames(ax)'
+        set(ax.(j{1}), 'Color', [1, 1, 1], 'GridColor', cltx, 'MinorGridColor', cltx, ...
+            'XColor', cltx, 'YColor', cltx, 'ZColor', cltx)
+    end
+
     % inset
     outline_glon = dasc.glon.red(not(isnan(dasc.blu)));
     outline_glat = dasc.glat.red(not(isnan(dasc.blu)));
     outline_hull = convhull(outline_glon, outline_glat);
-    axes('Position', [-0.015, .875, .09, .09])
+    axes('Position', [-0.021, .912, .09, .09])
     hold on
-    plot(outline_glon(outline_hull), outline_glat(outline_hull), 'k')
-    plot(grd.glon, grd.glat, 'k')
-    plot(efi.glon(efi.ids), efi.glat(efi.ids), 'k')
-    plot(pfisr.glon, pfisr.glat, 'k')
+    plot(outline_glon(outline_hull), outline_glat(outline_hull), 'Color', cltx)
+    plot(grd.glon, grd.glat, 'Color', cltx)
+    plot(efi.glon(efi.ids), efi.glat(efi.ids), 'Color', cltx)
+    plot(pfisr.glon, pfisr.glat, 'Color', cltx)
     pbaspect([1, 1, 1])
     box off
     set(gca, 'Color', 'None', 'XColor', 'None', 'YColor', 'None')
     
+    set(gcf, 'Color', clbg, 'InvertHardcopy', 'off')
+
+
     if save_plot
         filename = sprintf('%i%02i%02i_%i_%s_%s.png', ...
             year(time), month(time), day(time), second(time, 'secondofday'), sat, sfx);
-        fprintf('Saving %s\n', fullfile(direc, filename))
-        exportgraphics(gcf, fullfile(direc, filename), 'Resolution', 600)
+        filename = fullfile(direc, filename);
+        fprintf('Saving %s\n', filename)
+        % exportgraphics(gcf, fullfile(direc, filename), 'Resolution', 600)
+        print(gcf, filename, '-dpng', '-r96')
         close all
     end
+    
+    % plot pfisr data error bars
+    figure
+    hold on
+    plot(pfisr.glat, pfisr.ve, 'r')
+    plot(pfisr.glat, pfisr.vn, 'b')
+    plot(pfisr.glat, pfisr.ve - pfisr.eve, ':r')
+    plot(pfisr.glat, pfisr.ve + pfisr.eve, ':r')
+    plot(pfisr.glat, pfisr.vn - pfisr.evn, ':b')
+    plot(pfisr.glat, pfisr.vn + pfisr.evn, ':b')
+    xlabel('geodetic latitude (°)')
+    ylabel('flow (km/s)')
+    xlim(lim.y); ylim([-1, 1] * 2 * max_v_pfisr / 1e3)
+    legend('geodetic east', 'geodetic north')
+    
+    if save_plot
+        filename = sprintf('%i%02i%02i_%i_%s_%s.png', ...
+                year(time), month(time), day(time), second(time, 'secondofday'), sat, sfx);
+        filename = fullfile(direc, 'pfisr_data', filename);
+        fprintf('Saving %s\n', filename)
+        print(gcf, filename, '-dpng', '-r96')
+        close all
+    end
+
 end
 
 fclose all;
-
-%% temp
-% t0 = datetime(2023, 2, 10, 9, 50, 0);
-% t1 = datetime(2023, 2, 10, 9, 53, 0);
-% 
-% load data\swop\flow_data_alex\SW_EXPT_EFIA_TCT02_20230210T094600_horiz_geodet.mat
-% fac_alex = SW_EXPT_EFIA_TCT02_20230210T094600.FAC_micro;
-% glat110_alex = SW_EXPT_EFIA_TCT02_20230210T094600.Footpoint_Lat;
-% glon110_alex = SW_EXPT_EFIA_TCT02_20230210T094600.Footpoint_Lon;
-% time_alex = NaT(1, length(fac_alex));
-% for i = 1:length(fac_alex)
-%     tmp = pad(num2str(SW_EXPT_EFIA_TCT02_20230210T094600.UTtime(i)), 10, 'left', '0');
-%     time_alex(i) = datetime(tmp, 'InputFormat', 'HHmmss.SSS') - datetime('today') + datetime(2023, 2, 10);
-% end
-% ids_alex = (time_alex >= t0) & (time_alex <= t1);
-% 
-% fn_swrm = fullfile('data', 'paper2', 'swarm_data', 'SW_OPER_FACATMS_2F_20230210T000000_20230210T235959_0401.h5');
-% fac_swrm = h5read(fn_swrm, '/FAC');
-% glat110_swrm = h5read(fn_swrm, '/GeodeticLatitude110km');
-% glon110_swrm = h5read(fn_swrm, '/Longitude110km');
-% time_swrm = datetime(h5read(fn_swrm, '/Timestamp'), 'ConvertFrom', 'posixtime');
-% ids_swrm = (time_swrm >= t0) & (time_swrm <= t1);
-% 
-% close all
-% 
-% figure
-% hold on
-% plot(time_alex(ids_alex)-seconds(1), fac_alex(ids_alex), 'DisplayName', 'Alex (delayed 1 second, or 1 index)')
-% plot(time_swrm(ids_swrm), fac_swrm(ids_swrm), 'DisplayName', 'Jules')
-% legend
-% grid on
-% yticks(0)
-% xlabel('UT')
-% ylabel('Swarm A FAC (uA/m^2)')
-% 
-% figure
-% hold on
-% plot(glat110_alex(ids_alex), fac_alex(ids_alex), 'DisplayName', 'Alex')
-% plot(glat110_swrm(ids_swrm), fac_swrm(ids_swrm), 'DisplayName', 'Jules')
-% legend
-% grid on
-% yticks(0)
-% xlabel('Geodetic Latitude Footpointed to 110 km (deg)')
-% ylabel('Swarm A FAC (uA/m^2)')
-% 
-% figure
-% hold on
-% plot(glon110_alex(ids_alex), fac_alex(ids_alex), 'DisplayName', 'Alex')
-% plot(glon110_swrm(ids_swrm)+0.081, fac_swrm(ids_swrm), 'DisplayName', 'Jules')
-% legend
-% grid on
-% yticks(0)
-% xlabel('Geodetic Longitude Footpointed to 110 km (deg)')
-% ylabel('Swarm A FAC (uA/m^2)')
-
-%%
-% load data\paper2\dasc_data\skymap.mat
-% load data\paper2\dasc_data\20230210_35488_dasc.mat
-% h5fn = 'data\paper2\dasc_data\skymap.h5';
-% h5writeatt(h5fn, '/', 'Site', 'Poker Flat')
-% h5writeatt(h5fn, '/', 'Site Altitude', '213 meters')
-% h5writeatt(h5fn, '/', 'Site Geodetic Latitude', '213 meters')
-% 
-% h5create(h5fn, '/Azimuth', size(az), 'Datatype', 'double')
-% h5write(h5fn, '/Azimuth', az)
-% h5writeatt(h5fn, '/Azimuth', 'Units', 'degrees')
-% h5writeatt(h5fn, '/Azimuth', 'Description', 'Azimuth')
-% 
-% glat = magnetic_footpointing.('110km').lat;
-% glon = magnetic_footpointing.('110km').lon;
-% sigh = data.green_rayleighs;
-% 
-% close all
-% hold on
-% pcolor(glon, glat, sigh)
-% quiver(glon110_alex, glat110_alex, fac_alex, 0*fac_alex, '.-g')
-% xlim([min(glon(:)), max(glon(:))])
-% ylim([min(glat(:)), max(glat(:))])
-% shading flat
